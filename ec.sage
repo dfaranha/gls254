@@ -41,21 +41,15 @@ def to_lambda(P):
     return (P[0], P[0] + P[1]/P[0])
 
 def compress(xP, lP):
-    return (xP + s*lP[1].trace(), lP[0].trace())
+    return xP + s*(lP[0].integer_representation() % 2)
 
 def uncompress(cp):
-    tr1 = 0
-    xP, tr0 = cp
-    if (xP[1].trace() != 1):
-        # Fix bit of xP[1] and update the trace of lP[1]
-        xP += s
-        tr1 = xP[1].integer_representation() % 2
-    t = b/xP^2 + xP^2 + a
-    lP = half_trace_2x(t)
-    if (lP[0].integer_representation() % 2 != tr0):
+    t = (cp[1].integer_representation() % 2) + F2m(1)
+    xP = cp + t*s
+    eq = b/xP^2 + xP^2 + a
+    lP = half_trace_2x(eq)
+    if (lP[0].integer_representation() % 2 != t):
         lP += 1
-    if (lP[1].integer_representation() % 2 != tr1):
-        lP += s
     return (xP, lP)
 
 # We can see that the curve has a point (p, sqrt(b)) of small of small order 2
