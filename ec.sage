@@ -1,12 +1,10 @@
-# Define the base field (actually an extension of F2)
-R.<Z> = PolynomialRing(GF(2))
-F2m.<z> = GF(2^127, modulus = Z^127 + Z^63 + 1)
-# Define a quadratic extension on top)
-F2x.<s> = F2m.extension(x^2 + x + 1)
+load("cp.sage")
+load("field.sage")
 
 # Define curve coefficients, notice we are using a different b than the original paper.
+one = F2m(1)
 a = F2x(s);
-b = F2m(z^27 + 1)
+b = F2m(z^27 + one)
 
 E = EllipticCurve(F2x, [1, s, 0, 0, b])
 # Sage does not compute the order of this curve, so I brought it over from MAGMA. It is 2 * r, for prime r.
@@ -14,18 +12,6 @@ n = 2894802230932904885589274625217197696348525180873138864451012042540221131005
 # Cofactor of the prime-order subgroup
 h = 2
 r = n//h
-
-def half_trace_2m(a):
-    c = 0
-    for i in range(0, 64):
-        c = c + a^(2^(2*i))
-    return c
-
-def half_trace_2x(a):
-    l1 = half_trace_2m(a[1])
-    c0 = a[0] + l1^2
-    l0 = half_trace_2m(c0 + c0.trace())
-    return l0 + (l1 + c0.trace()) * s
 
 def generator(E):
     # Let's get a generator of the right order from MAGMA.
@@ -38,19 +24,45 @@ def generator(E):
     return E(xP,yP)
 
 def to_lambda(P):
-    return (P[0], P[0] + P[1]/P[0])
-
-def compress(xP, lP):
-    return xP + s*(lP[0].integer_representation() % 2)
-
-def uncompress(cp):
-    t = (cp[1].integer_representation() % 2) + F2m(1)
-    xP = cp + t*s
-    eq = b/xP^2 + xP^2 + a
-    lP = half_trace_2x(eq)
-    if (lP[0].integer_representation() % 2 != t):
-        lP += 1
+    xP = P[0]
+    lP = P[0] + P[1]/P[0]
+    assert((lP^2 + lP + a)*xP^2 == xP^4 + b)
     return (xP, lP)
+
+def from_lambda(xP, lP):
+    return E(xP, (lP + xP) * xP)
+
+def from_lambda_prj(Xp, Lp, Zp):
+    return E(Xp/Zp, (Lp/Zp + Xp/Zp) * Xp/Zp)
+
+def double_weiss(xP, lP):
+    # Now compute the formulas and verify, it should be true at the end.
+    x2P = lP^2 + lP + a
+    y2P = xP^2 + lP*x2P + x2P
+    return (x2P, y2P)
+
+def double(Xp, Lp, Zp):
+    global mt, ma, mb, sq
+    mt += 4
+    ma += 1
+    sq += 4
+    T = Lp^2 + Lp * Zp + a * Zp^2
+    X2 = T^2
+    Z2 = T * Zp^2
+    L2 = (Xp * Zp)^2 + X2 + T * (Lp * Zp) + Z2
+    return (X2, L2, Z2)
+
+def doubleb(Xp, Lp, Zp):
+    global mt, ma, mb, sq
+    mt += 3
+    ma += 1
+    mb += 1
+    sq += 4
+    T = Lp^2 + Lp * Zp + a * Zp^2
+    X2 = T^2
+    Z2 = T * Zp^2
+    L2 = (Lp + Xp)^2 * ((Lp + Xp)^2 + T + Zp^2) + (a^2 + b) * Zp^4 + X2 + (a + 1) * Z2
+    return (X2, L2, Z2)
 
 # We can see that the curve has a point (p, sqrt(b)) of small of small order 2
 P = E(0, sqrt(b))
@@ -59,21 +71,25 @@ assert(2*P == 0*P)
 # If this is a valid point in the curve, the following should be the point at infinity.
 P = generator(E)
 
+mt = ma = mb = sq = 0
 for i in range(0, 100):
     # Pick a random point
     P = randrange(r) * P
+
     (xP, lP) = to_lambda(P)
-
-    # Now let's check that the Weierstrass formulas to double a point are correct.
-
-    # Now compute the formulas and verify, it should be true at the end.
-    x2P = lP^2 + lP + a
-    y2P = xP^2 + lP*x2P + x2P
-    assert(E(x2P,y2P) == 2*P)
-
-    # Check that lambda-coordinates satisfy equation
-    assert((lP^2 + lP + a)*xP^2 == xP^4 + b)
+    assert(P == from_lambda(xP, lP))
+    assert(from_lambda_prj(xP, lP, one) == P)
 
     # Point compression method
     cp = compress(xP, lP)
     assert((xP, lP) == uncompress(cp))
+
+    # Formulas
+    assert(E(double_weiss(xP, lP)) == 2*P)
+
+    (X2, L2, Z2) = double(xP, lP, one)
+    assert(from_lambda_prj(X2, L2, Z2) == 2*P)
+    (X2, L2, Z2) = doubleb(xP, lP, one)
+    assert(from_lambda_prj(X2, L2, Z2) == 2*P)
+
+    k = randrange(r)
