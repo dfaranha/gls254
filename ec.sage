@@ -114,6 +114,37 @@ def smu_double_always_add(xP, lP, scalar):
             (Xq, Lq, Zq) = (X3, L3, Z3)
     return (Xq, Lq, Zq)
 
+def curve_details(b):
+    #Define a curve that E is a quadratic twist of
+    q = ZZ(2^127)
+    E = EllipticCurve(F2m, [1, 1, 0, 0, b])
+    t = q + 1 - E.cardinality()
+    #t=-t also gives solution
+    n = (q-1)^2 + t^2
+    
+    r = max(n.factor())[0]
+    S = Integers(r)
+    #Formula from "A New Double Point Multiplication Method..."
+    mu = S(q-1)*(S(t)^(-1))
+    return n, r, mu
+
+def curve_details_test():
+    print("Based on current curve")
+    n1, r1, mu = curve_details(b)
+
+    assert n == n1
+    assert r == r1
+    assert mu^2 + 1 == 0
+
+    print("Based on values in paper A New Double Point Multiplication Method")
+    b1 = F2m.fetch_int(0x2BACF997126F185C3E67CB944EEB1168)
+    n1, r1, mu = curve_details(b1)
+    S = Integers(r1)
+    assert n1 == 2*r1
+    assert r1 == ZZ(14474011154664524427946373126085988481488994894707048965286167243381422079089)
+    assert mu^2 + 1 == 0
+    #assert S(mu) == S(8008021148421066531327005693257209127155969932631024546964258714431222018403)
+    print("Curve details works!")
 
 # We can see that the curve has a point (p, sqrt(b)) of small of small order 2
 P = E(0, sqrt(b))
@@ -123,6 +154,8 @@ assert(2*P == 0*P)
 P = h * generator(E)
 assert(r*P == 0*P)
 Q = randrange(r) * P
+
+curve_details_test()
 
 mt = ma = mb = sq = 0
 for i in range(0, 10):
