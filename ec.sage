@@ -95,24 +95,8 @@ def add_mix(Xp, Lp, Zp, xQ, lQ):
     Zpq = (A * B) * Zp
     return (Xpq, Lpq, Zpq)
 
-def smu_double_add(xP, lP, scalar):
-    Xq = xP
-    Lq = lP
-    Zq = one
-    for i in list(bin(k))[3:]:
-        (Xq, Lq, Zq) = doubleb_prj(Xq, Lq, Zq)
-        if int(i) != 0:
-            (Xq, Lq, Zq) = add_prj(Xq, Lq, Zq, xP, lP, one)
-    return (Xq, Lq, Zq)
-
-def smu_double_always_add(xP, lP, scalar):
-    (Xq, Lq, Zq) = (xP, lP, one)
-    for i in list(bin(k))[3:]:
-        (Xq, Lq, Zq) = doubleb_prj(Xq, Lq, Zq)
-        (X3, L3, Z3) = add_prj(Xq, Lq, Zq, xP, lP, one)
-        if int(i) != 0:
-            (Xq, Lq, Zq) = (X3, L3, Z3)
-    return (Xq, Lq, Zq)
+def psi_aff(xP, lP):
+    return (xP[0] + xP[1] + xP[1]*s, lP[0] + lP[1] + (lP[1] + 1)*s)
 
 def curve_details(b):
     #Define a curve that E is a quadratic twist of
@@ -121,7 +105,7 @@ def curve_details(b):
     t = q + 1 - E.cardinality()
     #t=-t also gives solution
     n = (q-1)^2 + t^2
-    
+
     r = max(n.factor())[0]
     S = Integers(r)
     #Formula from "A New Double Point Multiplication Method..."
@@ -152,7 +136,7 @@ def decomp(k, q, t):
     beta2 = (QQ(t)/QQ(t^2 + (q-1)^2))*QQ(k)
     b1 = beta1.round()
     b2 = beta2.round()
-    
+
     k1 = k - b1*(1-q) - b2*t
     k2 = - b1*t - b2*(q-1)
     return k1, k2
@@ -166,6 +150,40 @@ def decomp_test():
     assert S(k1)+S(k2)*S(mu) == S(k)
     print("Decomp works!")
 
+def smu_double_add(xP, lP, scalar):
+    Xq = xP
+    Lq = lP
+    Zq = one
+    for i in list(bin(k))[3:]:
+        (Xq, Lq, Zq) = doubleb_prj(Xq, Lq, Zq)
+        if int(i) != 0:
+            (Xq, Lq, Zq) = add_prj(Xq, Lq, Zq, xP, lP, one)
+    return (Xq, Lq, Zq)
+
+def smu_double_always_add(xP, lP, scalar):
+    (Xq, Lq, Zq) = (xP, lP, one)
+    for i in list(bin(k))[3:]:
+        (Xq, Lq, Zq) = doubleb_prj(Xq, Lq, Zq)
+        (X3, L3, Z3) = add_prj(Xq, Lq, Zq, xP, lP, one)
+        if int(i) != 0:
+            (Xq, Lq, Zq) = (X3, L3, Z3)
+    return (Xq, Lq, Zq)
+
+def smu_double_add_glv(xP, lP, scalar):
+    n, r, t, mu = curve_details(b)
+    (Xq, Lq, Zq) = (xP, lP, one)
+    k1, k2 = decomp(scalar, ZZ(2^127), t)
+    l = max(len(k1.bits()), len(k2.bits()))
+    for i in range(l, 0):
+        (Xq, Lq, Zq) = doubleb_prj(Xq, Lq, Zq)
+        if (k1.bits()[i]):
+            (Xq, Lq, Zq) = add_prj(Xq, Lq, Zq, xP, lP, one)
+        if (k2.bits()[i]):
+            _xP, _lP = psi_aff(xP, lP)
+            (Xq, Lq, Zq) = add_prj(Xq, Lq, Zq, _xP, _lP, one)
+    return (Xq, Lq, Zq)
+
+
 #Input must be odd
 #Modified alg 6 from "Exponent Recoding and Regular Exponentiation Algorithms"
 #by Joye et al
@@ -174,11 +192,11 @@ def regular_recode(k, w):
     v = ZZ(2^(w-1))
     acc = k
     k_reg = [0] * l
-    
+
     for i in range(l-1):
         k_reg[i] = (n % (2*v))-v
         acc = (acc-k_reg[i])/v
-        
+
     k_reg[l-1] = acc
     return k_reg
 
@@ -187,7 +205,7 @@ def regular_recode_test():
     w = 4
     k1_reg = regular_recode(k1, w)
     assert(len(k1_reg) == 44)
-    
+
     acc = ZZ(0)
     v = ZZ(1)
     for i in range(len(k1_reg)):
@@ -210,6 +228,7 @@ decomp_test()
 regular_recode_test()
 
 mt = ma = mb = sq = 0
+_, _, _, mu = curve_details(b)
 for i in range(0, 10):
     k = randrange(r)
 
@@ -252,6 +271,9 @@ for i in range(0, 10):
     (X3, L3, Z3) = smu_double_always_add(xP, lP, k)
     assert(from_lambda_prj(X3, L3, Z3) == k*P)
 
+    (xP, lP) = psi_aff(xP, lP)
+    assert(from_lambda_aff(xP, lP) == int(mu)*P)
+
 # Benchmarks by operation counts
 print("Operation counts as (muls, mul_a, mul_b, sqrs)")
 
@@ -262,3 +284,7 @@ print("Double-add       : ", mt, ma, mb, sq)
 mt = ma = mb = sq = 0
 (X3, L3, Z3) = smu_double_always_add(xP, lP, k)
 print("Double-add-always: ", mt, ma, mb, sq)
+
+mt = ma = mb = sq = 0
+(X3, L3, Z3) = smu_double_add_glv(xP, lP, k)
+print("GLV-double-add: ", mt, ma, mb, sq)
