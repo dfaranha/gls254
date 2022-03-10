@@ -151,36 +151,49 @@ def decomp_test():
     print("Decomp works!")
 
 def smu_double_add(xP, lP, scalar):
-    Xq = xP
-    Lq = lP
-    Zq = one
-    for i in list(bin(k))[3:]:
+    (Xq, Lq, Zq) = (xP, lP, one)
+    bits = list(reversed(Integer(scalar).bits()))
+    for i in bits[1:]:
         (Xq, Lq, Zq) = doubleb_prj(Xq, Lq, Zq)
-        if int(i) != 0:
-            (Xq, Lq, Zq) = add_prj(Xq, Lq, Zq, xP, lP, one)
+        if i:
+            (Xq, Lq, Zq) = add_mix(Xq, Lq, Zq, xP, lP)
     return (Xq, Lq, Zq)
 
 def smu_double_always_add(xP, lP, scalar):
     (Xq, Lq, Zq) = (xP, lP, one)
-    for i in list(bin(k))[3:]:
+    bits = list(reversed(Integer(scalar).bits()))
+    for i in bits[1:]:
         (Xq, Lq, Zq) = doubleb_prj(Xq, Lq, Zq)
-        (X3, L3, Z3) = add_prj(Xq, Lq, Zq, xP, lP, one)
-        if int(i) != 0:
-            (Xq, Lq, Zq) = (X3, L3, Z3)
+        (X3, L3, Z3) = add_mix(Xq, Lq, Zq, xP, lP)
+        if i: (Xq, Lq, Zq) = (X3, L3, Z3)
     return (Xq, Lq, Zq)
 
 def smu_double_add_glv(xP, lP, scalar):
     n, r, t, mu = curve_details(b)
-    (Xq, Lq, Zq) = (xP, lP, one)
     k1, k2 = decomp(scalar, ZZ(2^127), t)
-    l = max(len(k1.bits()), len(k2.bits()))
-    for i in range(l, 0):
+    assert((k1 + k2*mu) % r == scalar)
+
+    _xP, _lP = psi_aff(xP, lP)
+    if (k1 < 0): lP += 1
+    if (k2 < 0): _lP += 1
+
+    bits1 = list(Integer(k1).bits())
+    bits2 = list(Integer(k2).bits())
+
+    l = max(len(bits1), len(bits2))
+    if (len(bits1) > len(bits2)):
+        (Xq, Lq, Zq) = (xP, lP, one)
+    if (len(bits2) > len(bits1)):
+        (Xq, Lq, Zq) = (_xP, _lP, one)
+    if (len(bits1) == len(bits2)):
+        (Xq, Lq, Zq) = add_mix(xP, lP, one, _xP, _lP)
+
+    for i in range(l - 2, -1, -1):
         (Xq, Lq, Zq) = doubleb_prj(Xq, Lq, Zq)
-        if (k1.bits()[i]):
-            (Xq, Lq, Zq) = add_prj(Xq, Lq, Zq, xP, lP, one)
-        if (k2.bits()[i]):
-            _xP, _lP = psi_aff(xP, lP)
-            (Xq, Lq, Zq) = add_prj(Xq, Lq, Zq, _xP, _lP, one)
+        if (i < len(bits1) and bits1[i] != 0):
+            (Xq, Lq, Zq) = add_mix(Xq, Lq, Zq, xP, lP)
+        if (i < len(bits2) and bits2[i] != 0):
+            (Xq, Lq, Zq) = add_mix(Xq, Lq, Zq, _xP, _lP)
     return (Xq, Lq, Zq)
 
 
@@ -269,6 +282,8 @@ for i in range(0, 10):
     (X3, L3, Z3) = smu_double_add(xP, lP, k)
     assert(from_lambda_prj(X3, L3, Z3) == k*P)
     (X3, L3, Z3) = smu_double_always_add(xP, lP, k)
+    assert(from_lambda_prj(X3, L3, Z3) == k*P)
+    (X3, L3, Z3) = smu_double_add_glv(xP, lP, k)
     assert(from_lambda_prj(X3, L3, Z3) == k*P)
 
     (xP, lP) = psi_aff(xP, lP)
