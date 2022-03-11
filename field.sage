@@ -24,5 +24,3 @@ def derive_trace_2m_fast_formula():
         if(tr != 0):
             print(i, tr)
     print()
-
-derive_trace_2m_fast_formula()
