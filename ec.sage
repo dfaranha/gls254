@@ -95,6 +95,46 @@ def add_mix(Xp, Lp, Zp, xQ, lQ):
     Zpq = (A * B) * Zp
     return (Xpq, Lpq, Zpq)
 
+def double_add(Xq, Lq, Zq, xP, lP):
+    global mt, ma, mb, sq
+    mt += 10
+    ma += 1
+    sq += 6
+
+    T = Lq^2 + Lq * Zq + a * Zq^2
+    A = Xq^2 *Zq^2 + T*(Lq^2 + (a+1+lP)*Zq^2)
+    B = (xP * Zq^2 + T)^2
+    Xr = (xP * Zq^2) * A^2
+    Zr = A * B *Zq^2
+    Lr = T*(A+B)^2 + (lP+1)*Zr
+    return (Xr, Lr, Zr)
+
+def double_add_add(Xq, Lq, Zq, xP1, lP1, xP2, lP2):
+    global mt, ma, mb, sq
+    mt += 17
+    ma += 1
+    sq += 8
+
+    T = Lq^2 + Lq*Zq + a*Zq^2
+    U = Xq^2 * Zq^2 + T*(Lq^2 + (a + 1 + lP1)*Zq^2)
+    F = xP1 * Zq^2
+    G = (F+T)^2
+    H = U^2 * F
+    I = U * G * Zq^2
+    J = (lP1 + lP2 + 1)*I + T*(U+G)^2
+
+    (Xc, Lc, Zc) = double_add(Xq, Lq, Zq, xP1, lP1)
+    assert H == Xc
+    assert I == Zc
+    assert J == lP2 * Zc + Lc
+    K = xP2 * I
+    L = (H + K)^2
+    M = H * J
+    Xr = J * K * M
+    Zr = I * J * L
+    Lr = (L + M)^2 + Zr*(lP2 + 1)
+    return (Xr, Lr, Zr)
+
 def neg_aff(xP, lP):
     return (xP, lP + 1)
 
@@ -352,6 +392,12 @@ for i in range(0, 10):
     (X3, L3, Z3) = add_prj(xP, lP, one, xQ, lQ, one)
     assert(from_lambda_prj(X3, L3, Z3) == P + Q)
 
+    #Test atomic formulas:
+    (X3, L3, Z3) = double_add(xQ, lQ, one, xP, lP)
+    assert(from_lambda_prj(X3, L3, Z3) == 2*Q + P)
+    (X3, L3, Z3) = double_add_add(xQ, lQ, one, xP, lP, xQ, lQ)
+    assert(from_lambda_prj(X3, L3, Z3) == 3*Q + P)
+
     # Test scalar multiplication algorithms
     (X3, L3, Z3) = smu_double_add(xP, lP, k)
     assert(from_lambda_prj(X3, L3, Z3) == k*P)
@@ -379,3 +425,14 @@ print("Double-add-always: ", mt, ma, mb, sq)
 mt = ma = mb = sq = 0
 (X3, L3, Z3) = smu_double_add_glv(xP, lP, k)
 print("GLV-double-add: ", mt, ma, mb, sq)
+
+
+
+print("test")
+for i in range(1, 1000, 1):
+    print(i)
+    k = r - i
+    (X3, L3, Z3) = smu_double_add_glv_reg(xP, lP, k)
+    assert(from_lambda_prj(X3, L3, Z3) == k*P)
+    
+print("done")
