@@ -1,3 +1,6 @@
+from random import randrange
+
+
 load("cp.sage")
 load("field.sage")
 
@@ -243,13 +246,11 @@ def smu_double_add_glv(xP, lP, scalar):
             (Xq, Lq, Zq) = add_mix(Xq, Lq, Zq, _xP, _lP)
     return (Xq, Lq, Zq)
 
-def smu_double_add_glv_reg(xP, lP, scalar):
+def smu_double_add_glv_reg(xP, lP, scalar, w = 4):
     #b = F2m(z^49 + z^25 + 1)
     n, r, t, mu = curve_details(b)
     k1, k2 = decomp(scalar, t)
     assert((k1+k2*mu) % r == scalar)
-
-    w = 4
     
     c1 = (k1 + 1) % 2
     c2 = (k2 + 1) % 2
@@ -283,24 +284,21 @@ def smu_double_add_glv_reg(xP, lP, scalar):
     (Xq, Lq, Zq) = add_mix(xP1, lP1, one, xP2, lP2)
 
     for i in range(l - 2, -1, -1):
-        for j in range(w-1):
+        for j in range(w-2):
             (Xq, Lq, Zq) = doubleb_prj(Xq, Lq, Zq)
         if k1r[i] < 0:
             (xP1, lP1) = T[(-k1r[i]-1)/2]
             (xP1, lP1) = neg_aff(xP1, lP1)
-            (Xq, Lq, Zq) = add_mix(Xq, Lq, Zq, xP1, lP1)
         else:
             (xP1, lP1) = T[(k1r[i]-1)/2]
-            (Xq, Lq, Zq) = add_mix(Xq, Lq, Zq, xP1, lP1)
         if k2r[i] < 0:
             (xP2, lP2) = T[(-k2r[i]-1)/2]
             (xP2, lP2) = psi_aff(xP2, lP2)
             (xP2, lP2) = neg_aff(xP2, lP2)
-            (Xq, Lq, Zq) = add_mix(Xq, Lq, Zq, xP2, lP2)
         else:
             (xP2, lP2) = T[(k2r[i]-1)/2]
             (xP2, lP2) = psi_aff(xP2, lP2)
-            (Xq, Lq, Zq) = add_mix(Xq, Lq, Zq, xP2, lP2)    
+        (Xq, Lq, Zq) = double_add_add(Xq, Lq, Zq, xP1, lP1, xP2, lP2)
 
     if c1 == 1:
         (mxP, mlP) = neg_aff(xP, lP)
@@ -349,6 +347,7 @@ assert(2*P == 0*P)
 P = h * generator(E)
 assert(r*P == 0*P)
 Q = randrange(r) * P
+R = randrange(r) * P
 
 curve_details_test()
 decomp_test()
@@ -356,15 +355,31 @@ regular_recode_test()
 
 mt = ma = mb = sq = 0
 _, _, _, mu = curve_details(b)
+
+print("looking for exception")
+for i in range(1, 1000, 1):
+    print(i)
+    P = randrange(r)*P
+    (xP, lP) = to_lambda_aff(P)
+    k = r - 1
+    (X3, L3, Z3) = smu_double_add_glv_reg(xP, lP, k)
+    valid = from_lambda_prj(X3, L3, Z3) == k*P
+    if not valid:
+        print(P)
+    assert valid
+print("done")
+
 for i in range(0, 10):
     k = randrange(r)
 
     # Pick a random point
     P = k * P
     Q = k * Q
+    R = k * R
 
     (xP, lP) = to_lambda_aff(P)
     (xQ, lQ) = to_lambda_aff(Q)
+    (xR, lR) = to_lambda_aff(R)
 
     # Test convertion to/from lambda coordinates
     assert(P == from_lambda_aff(xP, lP))
@@ -395,8 +410,8 @@ for i in range(0, 10):
     #Test atomic formulas:
     (X3, L3, Z3) = double_add(xQ, lQ, one, xP, lP)
     assert(from_lambda_prj(X3, L3, Z3) == 2*Q + P)
-    (X3, L3, Z3) = double_add_add(xQ, lQ, one, xP, lP, xQ, lQ)
-    assert(from_lambda_prj(X3, L3, Z3) == 3*Q + P)
+    (X3, L3, Z3) = double_add_add(xQ, lQ, one, xP, lP, xR, lR)
+    assert(from_lambda_prj(X3, L3, Z3) == 2*Q + P + R)
 
     # Test scalar multiplication algorithms
     (X3, L3, Z3) = smu_double_add(xP, lP, k)
@@ -425,14 +440,3 @@ print("Double-add-always: ", mt, ma, mb, sq)
 mt = ma = mb = sq = 0
 (X3, L3, Z3) = smu_double_add_glv(xP, lP, k)
 print("GLV-double-add: ", mt, ma, mb, sq)
-
-
-
-print("test")
-for i in range(1, 1000, 1):
-    print(i)
-    k = r - i
-    (X3, L3, Z3) = smu_double_add_glv_reg(xP, lP, k)
-    assert(from_lambda_prj(X3, L3, Z3) == k*P)
-    
-print("done")
