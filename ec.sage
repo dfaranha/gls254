@@ -251,7 +251,7 @@ def smu_double_add_glv_reg(xP, lP, scalar, w = 4):
     n, r, t, mu = curve_details(b)
     k1, k2 = decomp(scalar, t)
     assert((k1+k2*mu) % r == scalar)
-    
+
     c1 = (k1 + 1) % 2
     c2 = (k2 + 1) % 2
     k1 = k1 + c1
@@ -339,6 +339,30 @@ def regular_recode_test():
     assert acc == k1
     print("Regular recoding works!")
 
+def table_exception_test(w = 4):
+    n, r, t, mu = curve_details(b)
+    w = 4
+    print("enumerating table")
+    for i in range(1, 2**(w-1) + 1, 2):
+        for j in range(1, 2**(w-1) + 1, 2):
+            k = int((i + j * mu) % r)
+            print(i, j, k)
+            if (k % (2**(w-1)) == 0):
+                print("OH NO")
+            k = int((i - j * mu) % r)
+            print(i, -j, k)
+            if (k % (2**(w-1)) == 0):
+                print("OH NO")
+            k = int((-i + j * mu) % r)
+            print(-i, j, k)
+            if (k % (2**(w-1)) == 0):
+                print("OH NO")
+            k = int((-i - j * mu) % r)
+            print(-i, -j, k)
+            if (k % (2**(w-1)) == 0):
+                print("OH NO")
+    print("done")
+
 # We can see that the curve has a point (p, sqrt(b)) of small of small order 2
 P = E(0, sqrt(b))
 assert(2*P == 0*P)
@@ -352,6 +376,7 @@ R = randrange(r) * P
 curve_details_test()
 decomp_test()
 regular_recode_test()
+table_exception_test()
 
 mt = ma = mb = sq = 0
 _, _, _, mu = curve_details(b)
@@ -420,7 +445,13 @@ for i in range(0, 10):
     assert(from_lambda_prj(X3, L3, Z3) == k*P)
     (X3, L3, Z3) = smu_double_add_glv(xP, lP, k)
     assert(from_lambda_prj(X3, L3, Z3) == k*P)
-    (X3, L3, Z3) = smu_double_add_glv_reg(xP, lP, k)
+    (X3, L3, Z3) = smu_double_add_glv_reg(xP, lP, k, 4)
+    assert(from_lambda_prj(X3, L3, Z3) == k*P)
+    (X3, L3, Z3) = smu_double_add_glv_reg(xP, lP, k, 5)
+    assert(from_lambda_prj(X3, L3, Z3) == k*P)
+    (X3, L3, Z3) = smu_double_add_glv_reg(xP, lP, k, 6)
+    assert(from_lambda_prj(X3, L3, Z3) == k*P)
+    (X3, L3, Z3) = smu_double_add_glv_reg(xP, lP, k, 7)
     assert(from_lambda_prj(X3, L3, Z3) == k*P)
 
     (xP, lP) = psi_aff(xP, lP)
@@ -440,3 +471,19 @@ print("Double-add-always: ", mt, ma, mb, sq)
 mt = ma = mb = sq = 0
 (X3, L3, Z3) = smu_double_add_glv(xP, lP, k)
 print("GLV-double-add: ", mt, ma, mb, sq)
+
+mt = ma = mb = sq = 0
+(X3, L3, Z3) = smu_double_add_glv_reg(xP, lP, k, 4)
+print("GLV-reg-4-double-add: ", mt, ma, mb, sq)
+
+mt = ma = mb = sq = 0
+(X3, L3, Z3) = smu_double_add_glv_reg(xP, lP, k, 5)
+print("GLV-reg-5-double-add: ", mt, ma, mb, sq)
+
+mt = ma = mb = sq = 0
+(X3, L3, Z3) = smu_double_add_glv_reg(xP, lP, k, 6)
+print("GLV-reg-6-double-add: ", mt, ma, mb, sq)
+
+mt = ma = mb = sq = 0
+(X3, L3, Z3) = smu_double_add_glv_reg(xP, lP, k, 7)
+print("GLV-reg-7-double-add: ", mt, ma, mb, sq)
