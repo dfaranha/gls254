@@ -286,18 +286,13 @@ def smu_double_add_glv_reg(xP, lP, scalar, w = 4):
     for i in range(l - 2, -1, -1):
         for j in range(w-2):
             (Xq, Lq, Zq) = doubleb_prj(Xq, Lq, Zq)
-        if k1r[i] < 0:
             (xP1, lP1) = T[(-k1r[i]-1)/2]
-            (xP1, lP1) = neg_aff(xP1, lP1)
-        else:
-            (xP1, lP1) = T[(k1r[i]-1)/2]
-        if k2r[i] < 0:
             (xP2, lP2) = T[(-k2r[i]-1)/2]
             (xP2, lP2) = psi_aff(xP2, lP2)
+        if k1r[i] < 0:
+            (xP1, lP1) = neg_aff(xP1, lP1)
+        if k2r[i] < 0:
             (xP2, lP2) = neg_aff(xP2, lP2)
-        else:
-            (xP2, lP2) = T[(k2r[i]-1)/2]
-            (xP2, lP2) = psi_aff(xP2, lP2)
         (Xq, Lq, Zq) = double_add_add(Xq, Lq, Zq, xP1, lP1, xP2, lP2)
 
     if c1 == 1:
@@ -339,30 +334,6 @@ def regular_recode_test():
     assert acc == k1
     print("Regular recoding works!")
 
-def table_exception_test(w = 4):
-    n, r, t, mu = curve_details(b)
-    w = 4
-    print("enumerating table")
-    for i in range(1, 2**(w-1) + 1, 2):
-        for j in range(1, 2**(w-1) + 1, 2):
-            k = int((i + j * mu) % r)
-            print(i, j, k)
-            if (k % (2**(w-1)) == 0):
-                print("OH NO")
-            k = int((i - j * mu) % r)
-            print(i, -j, k)
-            if (k % (2**(w-1)) == 0):
-                print("OH NO")
-            k = int((-i + j * mu) % r)
-            print(-i, j, k)
-            if (k % (2**(w-1)) == 0):
-                print("OH NO")
-            k = int((-i - j * mu) % r)
-            print(-i, -j, k)
-            if (k % (2**(w-1)) == 0):
-                print("OH NO")
-    print("done")
-
 # We can see that the curve has a point (p, sqrt(b)) of small of small order 2
 P = E(0, sqrt(b))
 assert(2*P == 0*P)
@@ -376,13 +347,12 @@ R = randrange(r) * P
 curve_details_test()
 decomp_test()
 regular_recode_test()
-table_exception_test()
 
 mt = ma = mb = sq = 0
 _, _, _, mu = curve_details(b)
 
 print("looking for exception")
-for i in range(1, 1000, 1):
+for i in range(1, 1, 1):
     print(i)
     P = randrange(r)*P
     (xP, lP) = to_lambda_aff(P)
