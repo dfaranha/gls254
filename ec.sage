@@ -269,31 +269,103 @@ def smu_double_add_glv_reg(xP, lP, scalar, w = 4):
 
     _xP, _lP = psi_aff(xP, lP)
     (xP1, lP1, xP2, lP2) = (one, one, one, one)
+
+    (xP1, lP1) = T[(abs(k1r[l-1])-1)/2]
+    (xP2, lP2) = T[(abs(k2r[l-1])-1)/2]
+    (xP2, lP2) = psi_aff(xP2, lP2)
     if k1r[l-1] < 0:
-        (xP1, lP1) = T[(-k1r[l-1]-1)/2]
         (xP1, lP1) = neg_aff(xP1, lP1)
-    else:
-        (xP1, lP1) = T[(k1r[l-1]-1)/2]
     if k2r[l-1] < 0:
-        (xP2, lP2) = T[(-k2r[l-1]-1)/2]
-        (xP2, lP2) = psi_aff(xP2, lP2)
         (xP2, lP2) = neg_aff(xP2, lP2)
-    else:
-        (xP2, lP2) = T[(k2r[l-1]-1)/2]
-        (xP2, lP2) = psi_aff(xP2, lP2)
     (Xq, Lq, Zq) = add_mix(xP1, lP1, one, xP2, lP2)
 
     for i in range(l - 2, -1, -1):
         for j in range(w-2):
             (Xq, Lq, Zq) = doubleb_prj(Xq, Lq, Zq)
-            (xP1, lP1) = T[(-k1r[i]-1)/2]
-            (xP2, lP2) = T[(-k2r[i]-1)/2]
-            (xP2, lP2) = psi_aff(xP2, lP2)
+        (xP1, lP1) = T[(abs(k1r[i])-1)/2]
+        (xP2, lP2) = T[(abs(k2r[i])-1)/2]
+        (xP2, lP2) = psi_aff(xP2, lP2)
+
         if k1r[i] < 0:
             (xP1, lP1) = neg_aff(xP1, lP1)
         if k2r[i] < 0:
             (xP2, lP2) = neg_aff(xP2, lP2)
         (Xq, Lq, Zq) = double_add_add(Xq, Lq, Zq, xP1, lP1, xP2, lP2)
+
+    if c1 == 1:
+        (mxP, mlP) = neg_aff(xP, lP)
+        (Xq, Lq, Zq) = add_mix(Xq, Lq, Zq, mxP, mlP)
+    if c2 == 1:
+        (mxP, mlP) = neg_aff(_xP, _lP)
+        (Xq, Lq, Zq) = add_mix(Xq, Lq, Zq, mxP, mlP)
+
+    return (Xq, Lq, Zq)
+
+def smu_double_add_glv_reg_tab(xP, lP, scalar, w = 4):
+    #b = F2m(z^49 + z^25 + 1)
+    n, r, t, mu = curve_details(b)
+    k1, k2 = decomp(scalar, t)
+    assert((k1+k2*mu) % r == scalar)
+
+    c1 = (k1 + 1) % 2
+    c2 = (k2 + 1) % 2
+    k1 = k1 + c1
+    k2 = k2 + c2
+    k1r = regular_recode(k1, w)
+    k2r = regular_recode(k2, w)
+    l = len(k1r)
+
+    T1 = []
+    T2 = []
+    T  = []
+    (x2, l2) = double_aff(xP, lP)
+    (Xacc, Lacc, Zacc) = (xP, lP, one)
+    for i in range(2**(w-2)):
+        T1.append((Xacc / Zacc, Lacc / Zacc))
+        T2.append(psi_aff(Xacc / Zacc, Lacc / Zacc))
+        (Xacc, Lacc, Zacc) = add_mix(Xacc, Lacc, Zacc, x2, l2)
+
+    for i in range(2**(w-2)):
+        (xP1, lP1) = T1[i]
+        for j in range(2**(w-2)):
+            (xP2, lP2) = T2[j]
+            (Xacc, Lacc, Zacc) = add_mix(xP1, lP1, one, xP2, lP2)
+            T.append((Xacc / Zacc, Lacc / Zacc))
+
+    for i in range(2**(w-2)):
+        (xP1, lP1) = T1[i]
+        for j in range(2**(w-2)):
+            (xP2, lP2) = T2[j]
+            (Xacc, Lacc, Zacc) = add_mix(xP1, lP1, one, xP2, lP2+1)
+            T.append((Xacc / Zacc, Lacc / Zacc))
+
+    _xP, _lP = psi_aff(xP, lP)
+    (xP1, lP1, xP2, lP2) = (one, one, one, one)
+
+    (xP1, lP1) = T1[(abs(k1r[l-1])-1)/2]
+    (xP2, lP2) = T2[(abs(k2r[l-1])-1)/2]
+    if k1r[l-1] < 0:
+        (xP1, lP1) = neg_aff(xP1, lP1)
+    if k2r[l-1] < 0:
+        (xP2, lP2) = neg_aff(xP2, lP2)
+    (Xq, Lq, Zq) = add_mix(xP1, lP1, one, xP2, lP2)
+
+    for i in range(l - 2, -1, -1):
+        for j in range(w-2):
+            (Xq, Lq, Zq) = doubleb_prj(Xq, Lq, Zq)
+
+        k = 2**(w-2)*(abs(k1r[i])-1)/2 + (abs(k2r[i])-1)/2
+        if k1r[i] > 0 and k2r[i] > 0:
+            (xP1, lP1) = T[k]
+        if k1r[i] < 0 and k2r[i] < 0:
+            (xP1, lP1) = T[k]
+            (xP1, lP1) = neg_aff(xP1, lP1)
+        if k1r[i] > 0 and k2r[i] < 0:
+            (xP1, lP1) = T[k+2**(2*w-4)]
+        if k1r[i] < 0 and k2r[i] > 0:
+            (xP1, lP1) = T[k+2**(2*w-4)]
+            (xP1, lP1) = neg_aff(xP1, lP1)
+        (Xq, Lq, Zq) = double_add(Xq, Lq, Zq, xP1, lP1)
 
     if c1 == 1:
         (mxP, mlP) = neg_aff(xP, lP)
@@ -423,6 +495,12 @@ for i in range(0, 10):
     assert(from_lambda_prj(X3, L3, Z3) == k*P)
     (X3, L3, Z3) = smu_double_add_glv_reg(xP, lP, k, 7)
     assert(from_lambda_prj(X3, L3, Z3) == k*P)
+    (X3, L3, Z3) = smu_double_add_glv_reg_tab(xP, lP, k, 4)
+    assert(from_lambda_prj(X3, L3, Z3) == k*P)
+    (X3, L3, Z3) = smu_double_add_glv_reg_tab(xP, lP, k, 5)
+    assert(from_lambda_prj(X3, L3, Z3) == k*P)
+    (X3, L3, Z3) = smu_double_add_glv_reg_tab(xP, lP, k, 6)
+    assert(from_lambda_prj(X3, L3, Z3) == k*P)
 
     (xP, lP) = psi_aff(xP, lP)
     assert(from_lambda_aff(xP, lP) == int(mu)*P)
@@ -455,5 +533,13 @@ mt = ma = mb = sq = 0
 print("GLV-reg-6-double-add: ", mt, ma, mb, sq)
 
 mt = ma = mb = sq = 0
-(X3, L3, Z3) = smu_double_add_glv_reg(xP, lP, k, 7)
-print("GLV-reg-7-double-add: ", mt, ma, mb, sq)
+(X3, L3, Z3) = smu_double_add_glv_reg_tab(xP, lP, k, 4)
+print("GLV-reg-4-double-add-tab: ", mt, ma, mb, sq)
+
+mt = ma = mb = sq = 0
+(X3, L3, Z3) = smu_double_add_glv_reg_tab(xP, lP, k, 5)
+print("GLV-reg-5-double-add-tab: ", mt, ma, mb, sq)
+
+mt = ma = mb = sq = 0
+(X3, L3, Z3) = smu_double_add_glv_reg_tab(xP, lP, k, 6)
+print("GLV-reg-6-double-add-tab: ", mt, ma, mb, sq)
