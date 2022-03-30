@@ -332,13 +332,6 @@ def smu_double_add_glv_reg_tab(xP, lP, scalar, w = 4):
             (Xacc, Lacc, Zacc) = add_mix(xP1, lP1, one, xP2, lP2)
             T.append((Xacc / Zacc, Lacc / Zacc))
 
-    for i in range(2**(w-2)):
-        (xP1, lP1) = T1[i]
-        for j in range(2**(w-2)):
-            (xP2, lP2) = T2[j]
-            (Xacc, Lacc, Zacc) = add_mix(xP1, lP1, one, xP2, lP2+1)
-            T.append((Xacc / Zacc, Lacc / Zacc))
-
     _xP, _lP = psi_aff(xP, lP)
     (xP1, lP1, xP2, lP2) = (one, one, one, one)
 
@@ -354,16 +347,21 @@ def smu_double_add_glv_reg_tab(xP, lP, scalar, w = 4):
         for j in range(w-2):
             (Xq, Lq, Zq) = doubleb_prj(Xq, Lq, Zq)
 
-        k = 2**(w-2)*(abs(k1r[i])-1)/2 + (abs(k2r[i])-1)/2
         if k1r[i] > 0 and k2r[i] > 0:
+            k = 2**(w-2)*(abs(k1r[i])-1)/2 + (abs(k2r[i])-1)/2
             (xP1, lP1) = T[k]
         if k1r[i] < 0 and k2r[i] < 0:
+            k = 2**(w-2)*(abs(k1r[i])-1)/2 + (abs(k2r[i])-1)/2
             (xP1, lP1) = T[k]
             (xP1, lP1) = neg_aff(xP1, lP1)
-        if k1r[i] > 0 and k2r[i] < 0:
-            (xP1, lP1) = T[k+2**(2*w-4)]
         if k1r[i] < 0 and k2r[i] > 0:
-            (xP1, lP1) = T[k+2**(2*w-4)]
+            k = 2**(w-2)*(abs(k2r[i])-1)/2 + (abs(k1r[i])-1)/2
+            (xP1, lP1) = T[k]
+            (xP1, lP1) = psi_aff(xP1, lP1)
+        if k1r[i] > 0 and k2r[i] < 0:
+            k = 2**(w-2)*(abs(k2r[i])-1)/2 + (abs(k1r[i])-1)/2
+            (xP1, lP1) = T[k]
+            (xP1, lP1) = psi_aff(xP1, lP1)
             (xP1, lP1) = neg_aff(xP1, lP1)
         (Xq, Lq, Zq) = double_add(Xq, Lq, Zq, xP1, lP1)
 
