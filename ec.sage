@@ -267,6 +267,10 @@ def smu_double_add_glv_reg(xP, lP, scalar, w = 4):
         T.append((Xacc / Zacc, Lacc / Zacc))
         (Xacc, Lacc, Zacc) = add_mix(Xacc, Lacc, Zacc, x2, l2)
 
+    #Will convert table to affine coordinates using simultaneous inversion algorithm, so add costs here:
+    global mt, ma, mb, sq
+    mt += 5*(2**(w-2)-1) + 13
+
     _xP, _lP = psi_aff(xP, lP)
     (xP1, lP1, xP2, lP2) = (one, one, one, one)
 
@@ -325,12 +329,19 @@ def smu_double_add_glv_reg_tab(xP, lP, scalar, w = 4):
         T2.append(psi_aff(Xacc / Zacc, Lacc / Zacc))
         (Xacc, Lacc, Zacc) = add_mix(Xacc, Lacc, Zacc, x2, l2)
 
+    #Will convert table to affine coordinates using simultaneous inversion algorithm, so add costs here:
+    global mt, ma, mb, sq
+    mt += 5*(2**(w-2)-1) + 13
+
     for i in range(2**(w-2)):
         (xP1, lP1) = T1[i]
         for j in range(2**(w-2)):
             (xP2, lP2) = T2[j]
             (Xacc, Lacc, Zacc) = add_mix(xP1, lP1, one, xP2, lP2)
             T.append((Xacc / Zacc, Lacc / Zacc))
+
+    #Will convert table to affine coordinates using simultaneous inversion algorithm, so add costs here:
+    mt += 5*(2**(2*(w-2))-1) + 13
 
     _xP, _lP = psi_aff(xP, lP)
     (xP1, lP1, xP2, lP2) = (one, one, one, one)
