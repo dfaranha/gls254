@@ -87,6 +87,28 @@ def add_prj(Xp, Lp, Zp, Xq, Lq, Zq):
     Zpq = (A * B * Zq) * Zp
     return (Xpq, Lpq, Zpq)
 
+def add_psi(xP, lP):
+    global mt, ma, mb, sq
+    mt += 4
+    sq += 1.5
+    A = lP[1] + s
+    B = xP[1]^2 # 1 subfield square
+    Xpq = A * xP * A * (xP + xP[1]) # 4 subfield mults
+    Zpq = (A * B) # 1 subfield mult
+    Lpq = (A * (xP + xP[1]) + B)^2 + Zpq * (lP + 1) # 2 mults, 1 square
+    return (Xpq, Lpq, Zpq)
+
+def add_mix_mix(xP, lP, xQ, lQ):
+    global mt, ma, mb, sq
+    mt += 5
+    sq += 2
+    A = lP + lQ
+    B = (xP + xQ)^2
+    Xpq = A * xP * A * xQ
+    Lpq = (A * xQ + B)^2 + (A * B) * (lP + 1)
+    Zpq = (A * B)
+    return (Xpq, Lpq, Zpq)
+
 def add_mix(Xp, Lp, Zp, xQ, lQ):
     global mt, ma, mb, sq
     mt += 8
@@ -145,7 +167,7 @@ def neg_proj(Xp, Lp, Zp):
     return (Xp, Lp + Zp, Zp)
 
 def psi_aff(xP, lP):
-    return (xP[0] + xP[1] + xP[1]*s, lP[0] + lP[1] + (lP[1] + 1)*s)
+    return (xP + xP[1], lP + lP[1] + s)
 
 def curve_details(b):
     #Define a curve that E is a quadratic twist of
@@ -337,7 +359,10 @@ def smu_double_add_glv_reg_tab(xP, lP, scalar, w = 4):
         (xP1, lP1) = T1[i]
         for j in range(2**(w-2)):
             (xP2, lP2) = T2[j]
-            (Xacc, Lacc, Zacc) = add_mix(xP1, lP1, one, xP2, lP2)
+            if (i == j):
+                (Xacc, Lacc, Zacc) = add_psi(xP1, lP1)
+            else :
+                (Xacc, Lacc, Zacc) = add_mix_mix(xP1, lP1, xP2, lP2)
             T.append((Xacc / Zacc, Lacc / Zacc))
 
     #Will convert table to affine coordinates using simultaneous inversion algorithm, so add costs here:
@@ -478,6 +503,10 @@ for i in range(0, 10):
     assert(from_lambda_prj(X2, L2, Z2) == 2*P)
 
     # Test point addition formulas
+    (X3, L3, Z3) = add_mix_mix(xP, lP, xQ, lQ)
+    assert(from_lambda_prj(X3, L3, Z3) == P + Q)
+    (X3, L3, Z3) = add_psi(xP, lP)
+    assert(from_lambda_prj(X3, L3, Z3) == P + int(mu)*P)
     (X3, L3, Z3) = add_mix(xP, lP, one, xQ, lQ)
     assert(from_lambda_prj(X3, L3, Z3) == P + Q)
     (X3, L3, Z3) = add_prj(xP, lP, one, xQ, lQ, one)
