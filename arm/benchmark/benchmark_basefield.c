@@ -196,6 +196,7 @@ void benchmark_bf_addchain_lookup_inv() {
 	uint64_t num_runs = 2000;
 	uint64_t times[num_runs]; 
 	poly64x2_t sum = bf_rand_elem();
+	precomp_inv_tables();
 	
 	for(int i = 0; i < num_runs; i++) {
 		poly64x2_t a = bf_rand_elem();
@@ -212,16 +213,252 @@ void benchmark_bf_addchain_lookup_inv() {
 	printf("Median: %lf\n\n", median(times, num_runs));
 }
 
+void benchmark_bf_multisquare_loop_6() {
+	uint64_t num_runs = 2000;
+	uint64_t times[num_runs]; 
+	poly64x2_t sum = bf_rand_elem();
+	
+	for(int i = 0; i < num_runs; i++) {
+		poly64x2_t a = bf_rand_elem();
+		uint64_t start = read_pmccntr();
+		poly64x2_t c = bf_multisquare_loop(a, 6);
+		uint64_t end = read_pmccntr();
+		insert_sorted(end-start, times, i);
+		sum = bf_add(sum, c);
+	}
+	bf_print_hex_nl(sum);
+	printf("BENCHMARK bf_multisquare_loop_6\n");
+	printf("Number of iterations: %lu\n", num_runs);
+	printf("Average: %lf\n", average(times, num_runs));
+	printf("Median: %lf\n\n", median(times, num_runs));
+}
+
+void benchmark_bf_multisquare_lookup_6() {
+	uint64_t num_runs = 200;
+	uint64_t times[num_runs]; 
+	precomp_inv_table(6);
+	poly64x2_t sum = bf_rand_elem();
+	
+	for(int i = 0; i < num_runs; i++) {
+		poly64x2_t a = bf_rand_elem();
+		uint64_t start = read_pmccntr();
+		poly64x2_t c = bf_multisquare_lookup_6(a);
+		uint64_t end = read_pmccntr();
+		insert_sorted(end-start, times, i);
+		sum = bf_add(sum, c);
+	}
+	bf_print_hex_nl(sum);
+	printf("BENCHMARK bf_multisquare_lookup_6\n");
+	printf("Number of iterations: %lu\n", num_runs);
+	printf("Average: %lf\n", average(times, num_runs));
+	printf("Median: %lf\n\n", median(times, num_runs));
+}
+
+void benchmark_bf_multisquare_loop_12() {
+	uint64_t num_runs = 2000;
+	uint64_t times[num_runs]; 
+	poly64x2_t sum = bf_rand_elem();
+	
+	for(int i = 0; i < num_runs; i++) {
+		poly64x2_t a = bf_rand_elem();
+		uint64_t start = read_pmccntr();
+		poly64x2_t c = bf_multisquare_loop(a, 12);
+		uint64_t end = read_pmccntr();
+		insert_sorted(end-start, times, i);
+		sum = bf_add(sum, c);
+	}
+	bf_print_hex_nl(sum);
+	printf("BENCHMARK bf_multisquare_loop_12\n");
+	printf("Number of iterations: %lu\n", num_runs);
+	printf("Average: %lf\n", average(times, num_runs));
+	printf("Median: %lf\n\n", median(times, num_runs));
+}
+
+void benchmark_bf_multisquare_lookup_12() {
+	uint64_t num_runs = 200;
+	uint64_t times[num_runs]; 
+	precomp_inv_table(12);
+	poly64x2_t sum = bf_rand_elem();
+	
+	for(int i = 0; i < num_runs; i++) {
+		poly64x2_t a = bf_rand_elem();
+		uint64_t start = read_pmccntr();
+		poly64x2_t c = bf_multisquare_lookup_12(a);
+		uint64_t end = read_pmccntr();
+		insert_sorted(end-start, times, i);
+		sum = bf_add(sum, c);
+	}
+	bf_print_hex_nl(sum);
+	printf("BENCHMARK bf_multisquare_lookup_12\n");
+	printf("Number of iterations: %lu\n", num_runs);
+	printf("Average: %lf\n", average(times, num_runs));
+	printf("Median: %lf\n\n", median(times, num_runs));
+}
+
+void benchmark_bf_multisquare_loop_18() {
+	uint64_t num_runs = 2000;
+	uint64_t times[num_runs]; 
+	poly64x2_t sum = bf_rand_elem();
+	
+	for(int i = 0; i < num_runs; i++) {
+		poly64x2_t a = bf_rand_elem();
+		uint64_t start = read_pmccntr();
+		poly64x2_t c = bf_multisquare_loop(a, 18);
+		uint64_t end = read_pmccntr();
+		insert_sorted(end-start, times, i);
+		sum = bf_add(sum, c);
+	}
+	bf_print_hex_nl(sum);
+	printf("BENCHMARK bf_multisquare_loop_18\n");
+	printf("Number of iterations: %lu\n", num_runs);
+	printf("Average: %lf\n", average(times, num_runs));
+	printf("Median: %lf\n\n", median(times, num_runs));
+}
+
+void benchmark_bf_multisquare_lookup_18() {
+	uint64_t num_runs = 200;
+	uint64_t times[num_runs]; 
+	precomp_inv_table(18);
+	poly64x2_t sum = bf_rand_elem();
+	
+	for(int i = 0; i < num_runs; i++) {
+		poly64x2_t a = bf_rand_elem();
+		uint64_t start = read_pmccntr();
+		poly64x2_t c = bf_multisquare_lookup_18(a);
+		uint64_t end = read_pmccntr();
+		insert_sorted(end-start, times, i);
+		sum = bf_add(sum, c);
+	}
+	bf_print_hex_nl(sum);
+	printf("BENCHMARK bf_multisquare_lookup_18\n");
+	printf("Number of iterations: %lu\n", num_runs);
+	printf("Average: %lf\n", average(times, num_runs));
+	printf("Median: %lf\n\n", median(times, num_runs));
+}
+
+void benchmark_bf_multisquare_loop_30() {
+	uint64_t num_runs = 2000;
+	uint64_t times[num_runs]; 
+	poly64x2_t sum = bf_rand_elem();
+	
+	for(int i = 0; i < num_runs; i++) {
+		poly64x2_t a = bf_rand_elem();
+		uint64_t start = read_pmccntr();
+		poly64x2_t c = bf_multisquare_loop(a, 30);
+		uint64_t end = read_pmccntr();
+		insert_sorted(end-start, times, i);
+		sum = bf_add(sum, c);
+	}
+	bf_print_hex_nl(sum);
+	printf("BENCHMARK bf_multisquare_loop_30\n");
+	printf("Number of iterations: %lu\n", num_runs);
+	printf("Average: %lf\n", average(times, num_runs));
+	printf("Median: %lf\n\n", median(times, num_runs));
+}
+
+void benchmark_bf_multisquare_lookup_30() {
+	uint64_t num_runs = 200;
+	uint64_t times[num_runs]; 
+	precomp_inv_table(30);
+	poly64x2_t sum = bf_rand_elem();
+	
+	for(int i = 0; i < num_runs; i++) {
+		poly64x2_t a = bf_rand_elem();
+		uint64_t start = read_pmccntr();
+		poly64x2_t c = bf_multisquare_lookup_30(a);
+		uint64_t end = read_pmccntr();
+		insert_sorted(end-start, times, i);
+		sum = bf_add(sum, c);
+	}
+	bf_print_hex_nl(sum);
+	printf("BENCHMARK bf_multisquare_lookup_30\n");
+	printf("Number of iterations: %lu\n", num_runs);
+	printf("Average: %lf\n", average(times, num_runs));
+	printf("Median: %lf\n\n", median(times, num_runs));
+}
+
+void benchmark_bf_multisquare_loop_48() {
+	uint64_t num_runs = 2000;
+	uint64_t times[num_runs]; 
+	poly64x2_t sum = bf_rand_elem();
+	
+	for(int i = 0; i < num_runs; i++) {
+		poly64x2_t a = bf_rand_elem();
+		uint64_t start = read_pmccntr();
+		poly64x2_t c = bf_multisquare_loop(a, 48);
+		uint64_t end = read_pmccntr();
+		insert_sorted(end-start, times, i);
+		sum = bf_add(sum, c);
+	}
+	bf_print_hex_nl(sum);
+	printf("BENCHMARK bf_multisquare_loop_48\n");
+	printf("Number of iterations: %lu\n", num_runs);
+	printf("Average: %lf\n", average(times, num_runs));
+	printf("Median: %lf\n\n", median(times, num_runs));
+}
+
+void benchmark_bf_multisquare_lookup_48() {
+	uint64_t num_runs = 200;
+	uint64_t times[num_runs]; 
+	precomp_inv_table(48);
+	poly64x2_t sum = bf_rand_elem();
+	
+	for(int i = 0; i < num_runs; i++) {
+		poly64x2_t a = bf_rand_elem();
+		uint64_t start = read_pmccntr();
+		poly64x2_t c = bf_multisquare_lookup_48(a);
+		uint64_t end = read_pmccntr();
+		insert_sorted(end-start, times, i);
+		sum = bf_add(sum, c);
+	}
+	bf_print_hex_nl(sum);
+	printf("BENCHMARK bf_multisquare_lookup_48\n");
+	printf("Number of iterations: %lu\n", num_runs);
+	printf("Average: %lf\n", average(times, num_runs));
+	printf("Median: %lf\n\n", median(times, num_runs));
+}
+
+void benchmark_bf_nonconst_inv() {
+	uint64_t num_runs = 2;
+	uint64_t times[num_runs]; 
+	poly64x2_t sum = bf_rand_elem();
+	
+	for(int i = 0; i < num_runs; i++) {
+		poly64x2_t a = bf_rand_elem();
+		uint64_t start = read_pmccntr();
+		poly64x2_t c = bf_nonconst_inv(a);
+		uint64_t end = read_pmccntr();
+		insert_sorted(end-start, times, i);
+		sum = bf_add(sum, c);
+	}
+	bf_print_hex_nl(sum);
+	printf("BENCHMARK bf_nonconst_inv\n");
+	printf("Number of iterations: %lu\n", num_runs);
+	printf("Average: %lf\n", average(times, num_runs));
+	printf("Median: %lf\n\n", median(times, num_runs));
+}
+
 void benchmark_bf_all() {
-	benchmark_bf_add();
+	/*benchmark_bf_add();
 	benchmark_bf_pmull32();
 	benchmark_bf_pmull64();
 	benchmark_bf_psquare();
 	benchmark_bf_red();
 	benchmark_bf_red_psquare_neon();
 	benchmark_bf_red_psquare_neonv2();
-	benchmark_bf_fermat_inv();
+	benchmark_bf_fermat_inv();*/
 	benchmark_bf_addchain_inv();
 	benchmark_bf_addchain_lookup_inv();
+	benchmark_bf_multisquare_loop_6();
+	benchmark_bf_multisquare_lookup_6();
+	benchmark_bf_multisquare_loop_12();
+	benchmark_bf_multisquare_lookup_12();
+	benchmark_bf_multisquare_loop_18();
+	benchmark_bf_multisquare_lookup_18();
+	benchmark_bf_multisquare_loop_30();
+	benchmark_bf_multisquare_lookup_30();
+	benchmark_bf_multisquare_loop_48();
+	benchmark_bf_multisquare_lookup_48();
+	//benchmark_bf_nonconst_inv();
 }
 

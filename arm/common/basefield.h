@@ -1,4 +1,5 @@
 #include <arm_neon.h>
+//#include <stdio.h>
 
 #ifndef BASEFIELD_H
 #define BASEFIELD_H
@@ -73,8 +74,8 @@ static inline poly64x2_t bf_red(poly64x2x2_t c) {
 	t0 = (poly64x2_t) vshrq_n_u64((uint64x2_t) t0, 63);
 	a = (poly64x2_t) veorq_u64((uint64x2_t) a, (uint64x2_t) t0);
 	t0[0] <<= 63;
-	t0 = vextq_p64(t0, t0, 1);
-	t0 = vzip2q_p64(t0, c.val[1]);
+	t0 = (poly64x2_t) vextq_u64((uint64x2_t) t0, (uint64x2_t) t0, 1);
+	t0 = (poly64x2_t) vzip2q_u64((uint64x2_t) t0, (uint64x2_t) c.val[1]);
 	a = (poly64x2_t) veorq_u64((uint64x2_t) a, (uint64x2_t) t0);
 	return a;
 }
@@ -141,5 +142,56 @@ poly64x2_t bf_fermat_inv(poly64x2_t a);
 poly64x2_t bf_addchain_inv(poly64x2_t a);
 
 poly64x2_t bf_addchain_lookup_inv(poly64x2_t a);
+
+void precomp_inv_table(uint64_t k);
+
+void precomp_inv_tables();
+
+poly64x2_t bf_multisquare_lookup_6(poly64x2_t a);
+
+poly64x2_t bf_multisquare_lookup_12(poly64x2_t a);
+
+poly64x2_t bf_multisquare_lookup_18(poly64x2_t a);
+
+poly64x2_t bf_multisquare_lookup_30(poly64x2_t a);
+
+poly64x2_t bf_multisquare_lookup_48(poly64x2_t a);
+
+poly64x2_t bf_nonconst_inv(poly64x2_t a);
+
+static inline poly64x2_t shift_right_carry(poly64x2_t a) {
+	poly64x2_t c = a;
+	c[0] /= 2;
+	if(c[1] % 2 == 1)
+		c[0] += pow2to63;
+	c[1] /= 2;
+	return c;
+}
+
+static inline uint64_t hasGreaterDeg(poly64x2_t u, poly64x2_t v) {
+	uint64_t lz_u_h, lz_u_l, lz_v_h, lz_v_l;
+	__asm (
+				"CLZ %[lz_u_h], %[in_u_h]\n\t"
+				"CLZ %[lz_u_l], %[in_u_l]\n\t"
+				"CLZ %[lz_v_h], %[in_v_h]\n\t"
+				"CLZ %[lz_v_l], %[in_v_l]\n\t"
+				: [lz_u_h] "=r" (lz_u_h), [lz_u_l] "=r" (lz_u_l), [lz_v_h] "=r" (lz_v_h), [lz_v_l] "=r" (lz_v_l)  
+				: [in_u_h] "r" (u[1]), [in_u_l] "r" (u[0]), [in_v_h] "r" (v[1]), [in_v_l] "r" (v[0])
+			);
+	uint64_t deg_u, deg_v;
+	if(lz_u_h == 64) {
+		deg_u = 63 - lz_u_l;
+	} else {
+		deg_u = 127 - lz_u_h;
+	}
+	if(lz_v_h == 64) {
+		deg_v = 63 - lz_v_l;
+	} else {
+		deg_v = 127 - lz_v_h;
+	}
+
+	//printf("deg(u) = %lu deg(v) = %lu\n", deg_u, deg_v);
+	return deg_u > deg_v;
+}
 
 #endif

@@ -232,7 +232,7 @@ poly64x2_t bf_red_neonv2(poly64x2x2_t c) {
 	a = (poly64x2_t) veorq_u64((uint64x2_t) a, (uint64x2_t) t0);
 	t0[0] <<= 63;
 	t0 = vextq_p64(t0, t0, 1);
-	t0 = vzip2q_p64(t0, c.val[1]);
+	t0 = (poly64x2_t) vzip2q_u64((uint64x2_t) t0, (uint64x2_t) c.val[1]);
 	a = (poly64x2_t) veorq_u64((uint64x2_t) a, (uint64x2_t) t0);
 	return a;
 }
@@ -392,6 +392,63 @@ poly64x2_t bf_addchain_inv(poly64x2_t a) {
 	return bf_red_psquare(bf_psquare(x_end));
 }
 
+//Infinite loops with gcc???
+//Algorithm 2.49
+poly64x2_t bf_nonconst_inv(poly64x2_t a) {
+	poly64x2_t f = {pow2to63 + 1, pow2to63};
+	poly64x2_t u = a;
+	poly64x2_t v = f;
+	poly64x2_t g1 = {1, 0};
+	poly64x2_t g2 = {0, 0};
+	int uIsOne = (u[0] == 1 && u[1] == 0);
+	int vIsOne = 0;
+	//int i = 0;
+	while(!uIsOne && !vIsOne) {
+		//printf("i = %d\n", i);
+		//i++;
+		//printf("u ");
+		//bf_print_hex_nl(u);
+		//printf("v ");
+		//bf_print_hex_nl(v);
+		while(!(u[0] == 0 && u[1] == 0) && u[0] % 2 == 0) {
+			//printf("u[0] = %lu divisible by z\n", u[0]);
+			u = shift_right_carry(u);
+			if(g1[0] % 2 == 0) {
+				g1 = shift_right_carry(g1);
+			} else {
+				g1 = bf_add(g1, f);
+				g1 = shift_right_carry(g1);
+			}
+		}
+		while(!(v[0] == 0 && v[1] == 0) && v[0] % 2 == 0) {
+			//printf("v[0] = %lu divisible by z\n", v[0]);
+			v = shift_right_carry(v);
+			if(g2[0] % 2 == 0) {
+				g2 = shift_right_carry(g2);
+			} else {
+				g2 = bf_add(g2, f);
+				g2 = shift_right_carry(g2);
+			}
+		}
+
+		uint64_t greaterDeg = hasGreaterDeg(u, v);
+		//printf("greater deg: %lu\n", greaterDeg);
+		if(greaterDeg) {
+			u = bf_add(u, v);
+			g1 = bf_add(g1, g2);
+		} else {
+			v = bf_add(u,v);
+			g2 = bf_add(g1, g2);
+		}
+
+		uIsOne = (u[0] == 1 && u[1] == 0);
+		vIsOne = (v[0] == 1 && v[1] == 0);
+	}
+
+	if(uIsOne) return g1;
+	return g2;
+}
+
 //Need multisquaring by 6, 12, 18, 30, 48, will use precomp approach
 //from "2 is the fastest prime".
 //For fixed k, need table of dim 32x16
@@ -450,9 +507,9 @@ void precomp_inv_tables() {
 		return;
 	}
 
-	precomp_inv_table(6);
-	precomp_inv_table(12);
-	precomp_inv_table(18);
+	// precomp_inv_table(6);
+	// precomp_inv_table(12);
+	//precomp_inv_table(18);
 	precomp_inv_table(30);
 	precomp_inv_table(48);
 
@@ -525,13 +582,13 @@ poly64x2_t bf_addchain_lookup_inv(poly64x2_t a) {
 	a = bf_red_psquare(bf_psquare(bf_red_psquare(bf_psquare(bf_red_psquare(bf_psquare(t1))))));
 	//7*2^3 = 56
 	a = bf_red(bf_pmull(t1, a)); //56 + 7 = 2^6 - 1
-	t1 = bf_red(bf_pmull(bf_multisquare_lookup_6(a), a));
+	t1 = bf_red(bf_pmull(bf_multisquare_loop(a, 6), a));
 	//(2^6 -1)*2^6 + 2^6 - 1 = 2^12 - 1
-	t1 = bf_red(bf_pmull(bf_multisquare_lookup_12(t1), t1));
+	t1 = bf_red(bf_pmull(bf_multisquare_loop(t1, 12), t1));
 	//(2^12-1)*2^12 + 2^12 - 1 = 2^24 - 1
-	poly64x2_t t2 = bf_multisquare_lookup_6(t1); //(2^24-1)*2^6 = 2^30 -2^6
+	poly64x2_t t2 = bf_multisquare_loop(t1, 6); //(2^24-1)*2^6 = 2^30 -2^6
 	a = bf_red(bf_pmull(a, t2)); //(2^30-2^6) + 2^6 - 1 = 2^30 - 1
-	t1 = bf_red(bf_pmull(bf_multisquare_lookup_18(t2), t1));
+	t1 = bf_red(bf_pmull(bf_multisquare_loop(t2, 18), t1));
 	//(2^30 - 2^6)*2^18 + 2^24 - 1 = 2^48 - 1
 	t1 = bf_red(bf_pmull(bf_multisquare_lookup_48(t1), t1));
 	//(2^48-1)*2^48 +2^48 - 1 = 2^96 -1

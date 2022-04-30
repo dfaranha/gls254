@@ -134,7 +134,7 @@ ef_intrl_elem ef_intrl_inv(ef_intrl_elem a) {
 	r0.val[1] = (poly64x2_t) veorq_u64((uint64x2_t) r0.val[1], (uint64x2_t) r1.val[1]);
 
 	//t^-1
-	t = bf_inv(bf_red_lazy(r0));
+	t = bf_addchain_lookup_inv(bf_red_lazy(r0));
 
 	//c1 = a1*t^-1
 	r1.val[0] = (poly64x2_t) vreinterpretq_u64_p128(vmull_p64(t[0], t2[0])); //t[0] * a1[0]
