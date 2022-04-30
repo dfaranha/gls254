@@ -13,10 +13,10 @@ int main() {
 
 	nice(-30);
 	// benchmark_bf_all();
-	// benchmark_ef_all();
-	// benchmark_ef_intrl_all();
-	//benchmark_ec_all();
-	benchmark_ec_scalarmull_all();
+	//benchmark_ef_all();
+	//benchmark_ef_intrl_all();
+	benchmark_ec_all();
+	//benchmark_ec_scalarmull_all();
 
 	dispose_components();
 	return 0;

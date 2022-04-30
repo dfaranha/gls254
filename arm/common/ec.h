@@ -33,7 +33,11 @@ void ec_print_hex_laffine(ec_point_laffine P);
 
 ec_point_lproj ec_laffine_to_lproj(ec_point_laffine P);
 
+void ec_laffine_to_lproj_ptr(ec_point_laffine *P, ec_point_lproj *R);
+
 ec_point_laffine ec_lproj_to_laffine(ec_point_lproj P);
+
+void ec_lproj_to_laffine_ptr(ec_point_lproj *P, ec_point_laffine *R);
 
 uint64_t ec_is_on_curve(ec_point_lproj P);
 
@@ -65,23 +69,37 @@ ec_point_lproj ec_add(ec_point_lproj P1, ec_point_lproj P2);
 
 ec_point_lproj ec_add_unchecked(ec_point_lproj P1, ec_point_lproj P2);
 
+void ec_add_unchecked_ptr(ec_point_lproj *P, ec_point_lproj *Q, ec_point_lproj *R);
+
 ec_point_lproj ec_add_mixed(ec_point_laffine P, ec_point_lproj Q);
 
 ec_point_lproj ec_add_mixed_unchecked(ec_point_laffine P, ec_point_lproj Q);
 
+void ec_add_mixed_unchecked_ptr(ec_point_laffine *P, ec_point_lproj *Q, ec_point_lproj *R);
+
 ec_point_lproj ec_add_laffine_unchecked(ec_point_laffine P, ec_point_laffine Q);
+
+void ec_add_laffine_unchecked_ptr(ec_point_laffine *P, ec_point_laffine *Q, ec_point_lproj *R);
 
 ec_point_lproj ec_double(ec_point_lproj P);
 
+void ec_double_ptr(ec_point_lproj *P, ec_point_lproj *R);
+
 ec_point_lproj ec_double_mixed(ec_point_laffine P);
+
+void ec_double_mixed_ptr(ec_point_laffine *P, ec_point_lproj *R);
 
 ec_point_lproj ec_double_alt(ec_point_lproj P);
 
 ec_point_lproj ec_double_then_add(ec_point_laffine P, ec_point_lproj Q);
 
+void ec_double_then_add_ptr(ec_point_laffine *P, ec_point_lproj *Q, ec_point_lproj *R);
+
 ec_point_lproj ec_double_then_add_nonatomic(ec_point_laffine P, ec_point_lproj Q);
 
 ec_point_lproj ec_double_then_addtwo(ec_point_laffine P1, ec_point_laffine P2, ec_point_lproj Q);
+
+void ec_double_then_addtwo_ptr(ec_point_laffine *P1, ec_point_laffine *P2, ec_point_lproj *Q, ec_point_lproj *R);
 
 ec_point_lproj ec_double_then_addtwo_nonatomic(ec_point_laffine P1, ec_point_laffine P2, ec_point_lproj Q);
 
@@ -104,6 +122,27 @@ static inline ec_point_laffine ec_endo_laffine(ec_point_laffine P) {
 	P.l.val[1][0] ^= t[0];
 
 	return P;
+}
+
+static inline void ec_endo_laffine_ptr(ec_point_laffine *P, ec_point_laffine *R) {
+	/*P.x.val[0] = bf_add(P.x.val[0], P.x.val[1]);
+	P.l.val[0] = bf_add(P.l.val[0], P.l.val[1]);
+	P.l.val[1] = bf_add(P.l.val[1], (poly64x2_t) {1,0});*/
+
+	//x_1u + (x0+x1)
+	poly64x2_t t = vextq_p64(P->x.val[0], P->x.val[0], 1);
+	R->x = P->x;
+	R->x.val[0][0] ^= t[0];
+	t = vextq_p64(P->x.val[1], P->x.val[1], 1);
+	R->x.val[1][0] ^= t[0];
+
+	//(l_1+1)u + (l0+l1)
+	R->l = P->l;
+	t[0] = 1;
+	t = vextq_p64(P->l.val[0], t, 1);
+	R->l.val[0] = (poly64x2_t) veorq_u64((uint64x2_t) P->l.val[0], (uint64x2_t) t);
+	t = vextq_p64(P->l.val[1], P->l.val[1], 1);
+	R->l.val[1][0] ^= t[0];
 }
 
 #endif

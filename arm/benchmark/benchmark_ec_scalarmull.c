@@ -216,6 +216,28 @@ void benchmark_ec_scalarmull_single_endo_w5_randaccess() {
 	printf("Median: %lf\n\n", median(times, num_runs));
 }
 
+void benchmark_ec_scalarmull_single_endo_w5_randaccess_ptr() {
+	uint64_t num_runs = 2000;
+	uint64_t times[num_runs];
+	ec_point_lproj sum = ec_rand_point_lproj();
+
+	for(int i = 0; i < num_runs; i++) {
+		uint64x2x2_t k = ec_rand_scalar();
+		ec_point_laffine P = ec_rand_point_laffine();
+		uint64_t start = read_pmccntr();
+		ec_point_laffine R;
+		ec_scalarmull_single_endo_w5_randaccess_ptr(&P, k, &R);
+		uint64_t end = read_pmccntr();
+		insert_sorted(end-start, times, i);
+		sum = ec_add_mixed(R, sum);
+	}
+	ec_print_hex(sum);
+	printf("BENCHMARK benchmark_ec_scalarmull_single_endo_w5_randaccess_ptr\n");
+	printf("Number of iterations: %lu\n", num_runs);
+	printf("Average: %lf\n", average(times, num_runs));
+	printf("Median: %lf\n\n", median(times, num_runs));
+}
+
 void benchmark_ec_scalarmull_single_endo_w5_randaccess_time() {
 	uint64_t num_runs = 2000;
 	unsigned long long start, end, nsec = 0;
@@ -301,6 +323,73 @@ void benchmark_ec_scalarmull_single_endo_w4_table2D() {
 	printf("Median: %lf\n\n", median(times, num_runs));
 }
 
+void benchmark_ec_scalarmull_single_endo_w4_table2D_ptr() {
+	uint64_t num_runs = 2000;
+	uint64_t times[num_runs];
+	ec_point_lproj sum = ec_rand_point_lproj();
+
+	for(int i = 0; i < num_runs; i++) {
+		uint64x2x2_t k = ec_rand_scalar();
+		ec_point_laffine P = ec_rand_point_laffine();
+		uint64_t start = read_pmccntr();
+		ec_point_laffine R;
+		ec_scalarmull_single_endo_w4_table2D_ptr(&P, k, &R);
+		uint64_t end = read_pmccntr();
+		insert_sorted(end-start, times, i);
+		sum = ec_add_mixed(R, sum);
+	}
+	ec_print_hex(sum);
+	printf("BENCHMARK benchmark_ec_scalarmull_single_endo_w4_table2D_ptr\n");
+	printf("Number of iterations: %lu\n", num_runs);
+	printf("Average: %lf\n", average(times, num_runs));
+	printf("Median: %lf\n\n", median(times, num_runs));
+}
+
+void benchmark_ec_precompute_w4_table2D() {
+	uint64_t num_runs = 2000;
+	uint64_t times[num_runs];
+	ec_point_lproj sum = ec_rand_point_lproj();
+	ec_point_laffine table[16];
+
+	for(int i = 0; i < num_runs; i++) {
+		ec_point_laffine P = ec_rand_point_laffine();
+		uint64_t start = read_pmccntr();
+		ec_precompute_w4_table2D(P, table);
+		uint64_t end = read_pmccntr();
+		insert_sorted(end-start, times, i);
+		sum = ec_add_mixed(table[i % 16], sum);
+	}
+	ec_print_hex(sum);
+	printf("BENCHMARK benchmark_ec_precompute_w4_table2D\n");
+	printf("Number of iterations: %lu\n", num_runs);
+	printf("Average: %lf\n", average(times, num_runs));
+	printf("Median: %lf\n\n", median(times, num_runs));
+}
+
+void benchmark_ec_lookup_from_w4_table2D() {
+	uint64_t num_runs = 2000;
+	uint64_t times[num_runs];
+	ec_point_lproj sum = ec_rand_point_lproj();
+	ec_point_laffine table[16];
+	ec_point_laffine P = ec_rand_point_laffine();
+	ec_precompute_w4_table2D(P, table);
+	ec_split_scalar decomp;
+	signed char k1[] = {0};
+
+	for(int i = 0; i < num_runs; i++) {
+		uint64_t start = read_pmccntr();
+		ec_lookup_from_w4_table2D(decomp, k1, k1, table, 0);
+		uint64_t end = read_pmccntr();
+		insert_sorted(end-start, times, i);
+		sum = ec_add_mixed(table[i % 16], sum);
+	}
+	ec_print_hex(sum);
+	printf("BENCHMARK benchmark_ec_lookup_from_w4_table2D\n");
+	printf("Number of iterations: %lu\n", num_runs);
+	printf("Average: %lf\n", average(times, num_runs));
+	printf("Median: %lf\n\n", median(times, num_runs));
+}
+
 void benchmark_ec_scalarmull_all() {
 	/*benchmark_ec_linaer_pass_w5();
 	benchmark_csel_asm();
@@ -311,8 +400,12 @@ void benchmark_ec_scalarmull_all() {
 	benchmark_ec_scalarmull_single_endo_w3_randaccess();
 	benchmark_ec_scalarmull_single_endo_w4_randaccess();*/
 	benchmark_ec_scalarmull_single_endo_w5_randaccess();
+	benchmark_ec_scalarmull_single_endo_w5_randaccess_ptr();
 	/*benchmark_ec_scalarmull_single_endo_w5_randaccess_time();
 	benchmark_ec_scalarmull_single_endo_w6_randaccess();
 	benchmark_ec_scalarmull_double();*/
 	benchmark_ec_scalarmull_single_endo_w4_table2D();
+	benchmark_ec_scalarmull_single_endo_w4_table2D_ptr();
+	benchmark_ec_precompute_w4_table2D();
+	benchmark_ec_lookup_from_w4_table2D();
 }
