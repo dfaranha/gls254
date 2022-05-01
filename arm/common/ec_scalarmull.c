@@ -987,8 +987,8 @@ void ec_precompute_w4_table2D_ptr(ec_point_laffine *P, ec_point_laffine table[])
 	ec_double_mixed_ptr(P, &P2);
 	ec_laffine_to_lproj_ptr(P, &tmp_table_proj[0]);
 	ec_add_mixed_unchecked_ptr(P, &P2, &tmp_table_proj[1]);
-	ec_add_unchecked_ptr(&tmp_table_proj[1], &P2, &tmp_table_proj[2]);
-	ec_add_unchecked_ptr(&tmp_table_proj[2], &P2, &tmp_table_proj[3]);
+	ec_double_then_add_ptr(P, &P2, &tmp_table_proj[2]);
+	ec_double_then_add_ptr(P, &tmp_table_proj[1], &tmp_table_proj[3]);
 	inv_inputs[0] = tmp_table_proj[1].z;
 	inv_inputs[1] = tmp_table_proj[2].z;
 	inv_inputs[2] = tmp_table_proj[3].z;
@@ -1094,6 +1094,76 @@ void ec_scalarmull_single_endo_w4_table2D_ptr(ec_point_laffine *P, uint64x2x2_t 
 	CSEL(c1, con, Q, Q_add_neg, new_ptr, typeof(ec_point_lproj));
 
 	ec_point_laffine P2 = ec_create_point_laffine(P->x, P->l);
+	P2.l.val[0][0] ^= 1-decomp.k2_sign;
+	Q_add_neg = ec_add_mixed_unchecked(ec_endo_laffine(P2), Q);
+	CSEL(c2, con, Q, Q_add_neg, new_ptr, typeof(ec_point_lproj));
+
+	ec_lproj_to_laffine_ptr(&Q, R);
+}
+
+void ec_lookup_from_w4_table2D_bulk_ptr(ec_split_scalar *decomp, signed char rec_k1[], signed char rec_k2[], ec_point_laffine table[], int i1, int i2, ec_point_laffine *P1, ec_point_laffine *P2) {
+	//Code to find correct scalar values, as we can't redefine P as -P for negative k1 or k2. But we can, different points!!
+	//Val comp is 2's complement conversion, but why the zero?
+	uint64x2x2_t lookup_data1 = ec_get_lookup_data_w4_table2D(rec_k1[i1], rec_k2[i1], decomp);
+	uint64x2x2_t lookup_data2 = ec_get_lookup_data_w4_table2D(rec_k1[i2], rec_k2[i2], decomp);
+
+	lin_pass_w4_table2D_bulk(P1, P2, table, (uint64_t) lookup_data1.val[0][0], (uint64_t) lookup_data2.val[0][0]);
+
+	ec_cond_endo(P1, lookup_data1.val[1][0]);
+	ec_cond_endo(P2, lookup_data2.val[1][0]);
+
+	//Cond neg
+	P1->l.val[0][0] ^= lookup_data1.val[1][1];
+	P2->l.val[0][0] ^= lookup_data2.val[1][1];
+}
+
+void ec_scalarmull_single_endo_w4_table2D_bulk_ptr(ec_point_laffine *P, uint64x2x2_t k, ec_point_laffine *R) {
+	uint64_t new_ptr, con = 1;
+	int l = 44;
+
+	ec_split_scalar decomp = ec_scalar_decomp(k);
+
+	uint64_t c1 = 1-(decomp.k1[0]&1);
+	decomp.k1[0] = decomp.k1[0]+c1;
+
+	uint64_t c2 = 1-(decomp.k2[0]&1);
+	decomp.k2[0] = decomp.k2[0]+c2;
+
+	signed char rec_k1[l];
+	signed char rec_k2[l];
+
+	reg_rec(decomp.k1, 4, rec_k1, l-1);
+	reg_rec(decomp.k2, 4, rec_k2, l-1);
+
+	ec_point_laffine table[16];
+	ec_precompute_w4_table2D_ptr(P, table);
+	
+	ec_point_laffine P1, P2, Plast;
+	ec_lookup_from_w4_table2D_bulk_ptr(&decomp, rec_k1, rec_k2, table, l-1, 0, &P1, &Plast);
+	//next = ec_lookup_from_w4_table2D(decomp, rec_k1, rec_k2, table, l-1);
+	ec_point_lproj Q, Qtmp1, Qtmp2;
+	ec_laffine_to_lproj_ptr(&P1, &Q);
+
+	for(int i=l-2; i > 0; i -= 2) {
+		ec_lookup_from_w4_table2D_bulk_ptr(&decomp, rec_k1, rec_k2, table, i, i-1, &P1, &P2);
+		ec_double_ptr(&Q, &Qtmp1);
+		ec_double_ptr(&Qtmp1, &Qtmp2);
+		ec_double_then_add_ptr(&P1, &Qtmp2, &Q);
+		ec_double_ptr(&Q, &Qtmp1);
+		ec_double_ptr(&Qtmp1, &Qtmp2);
+		ec_double_then_add_ptr(&P2, &Qtmp2, &Q);
+	}
+	ec_double_ptr(&Q, &Qtmp1);
+	ec_double_ptr(&Qtmp1, &Qtmp2);
+	ec_double_then_add_ptr(&Plast, &Qtmp2, &Q); //Preparing for complete formula here
+
+	//Logic here with the xor is also strange
+	P1 = ec_create_point_laffine(P->x, P->l);
+	P1.l.val[0][0] ^= 1-decomp.k1_sign;
+	ec_point_lproj Q_add_neg = ec_add_mixed_unchecked(P1, Q);
+	CSEL(c1, con, Q, Q_add_neg, new_ptr, typeof(ec_point_lproj));
+
+	P2 = ec_create_point_laffine(P->x, P->l);
 	P2.l.val[0][0] ^= 1-decomp.k2_sign;
 	Q_add_neg = ec_add_mixed_unchecked(ec_endo_laffine(P2), Q);
 	CSEL(c2, con, Q, Q_add_neg, new_ptr, typeof(ec_point_lproj));
