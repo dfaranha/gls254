@@ -108,4 +108,9 @@ static inline void ec_cond_endo(ec_point_laffine *P, uint64_t cond) {
 	P->l.val[1][0] ^= cond; 
 }
 
+#define all1s 18446744073709551615U //2^64 - 1
+
+extern void lin_pass_w4_table2D_bulk_neon();
+void lin_pass_w4_table2D_bulk_neon1(ec_point_laffine *P1, ec_point_laffine *P2, ec_point_laffine table[], uint64_t i1, uint64_t i2); 
+
 #endif

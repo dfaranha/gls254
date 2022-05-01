@@ -10,25 +10,47 @@
 
 int main() {
 	init_components();
+
+	ef_intrl_elem PX = ef_intrl_interleave(ef_create_elem(bf_create_elem(6574758758697437213U, 9029938885770167062U), bf_create_elem(2238988517843169761U, 2100850367268144132U)));
+	ef_intrl_elem PL = ef_intrl_interleave(ef_create_elem(bf_create_elem(6503207926092968936U, 3219845272070329794U), bf_create_elem(10930336994397273494U, 8947327516344479714U)));
+	ef_intrl_elem PZ = ef_intrl_interleave(ef_create_elem(bf_create_elem(1, 0), bf_create_elem(0, 0)));
+	ec_point_laffine P = ec_lproj_to_laffine(ec_create_point_lproj(PX, PL, PZ)); //P = 12345 * GEN
+
+	ec_point_laffine table[16];
+	ec_precompute_w4_table2D_ptr(&P, table);
+
+	ef_intrl_elem zero = (ef_intrl_elem) {{{0, 0}, {0, 0}}};
+	ef_intrl_elem a = (ef_intrl_elem) {{{pow2to63 + 1, pow2to63 + 1}, {pow2to63 + 1, pow2to63 + 1}}};
+	ec_point_laffine P1 = ec_create_point_laffine(zero, zero);
+	ec_point_laffine P2 = ec_create_point_laffine(zero, zero);
+	uint64_t index1 = 15;
+	uint64_t index2 = 1;
+	bf_print_hex_nl(table[index1].x.val[0]);
+	bf_print_hex_nl(table[index1].x.val[1]);
+	bf_print_hex_nl(table[index1].l.val[0]);
+	bf_print_hex_nl(table[index1].l.val[1]);
+	printf("\n");
+	bf_print_hex_nl(table[index2].x.val[0]);
+	bf_print_hex_nl(table[index2].x.val[1]);
+	bf_print_hex_nl(table[index2].l.val[0]);
+	bf_print_hex_nl(table[index2].l.val[1]);
+	printf("\n");
+	printf("\n");
+
+	lin_pass_w4_table2D_bulk_neon(&P1, &P2, table, index1, index2);
+	bf_print_hex_nl(P1.x.val[0]);
+	bf_print_hex_nl(P1.x.val[1]);
+	bf_print_hex_nl(P1.l.val[0]);
+	bf_print_hex_nl(P1.l.val[1]);
+
+	printf("\n");
+	bf_print_hex_nl(P2.x.val[0]);
+	bf_print_hex_nl(P2.x.val[1]);
+	bf_print_hex_nl(P2.l.val[0]);
+	bf_print_hex_nl(P2.l.val[1]);
 	
-	int w = 5;
-	int l = 33;
-	
-	uint64x2x2_t k = (uint64x2x2_t) SUBGROUP_ORDER;
-	k.val[0][0]--;
-	ec_split_scalar decomp = ec_scalar_decomp(k);
-	decomp.k1[0]++;
-	decomp.k2[0]++;
-	
-	signed char rec_k1[l];
-	signed char rec_k2[l];
-	reg_rec(decomp.k1, w, rec_k1, l-1);
-	reg_rec(decomp.k2, w, rec_k2, l-1);
-	
-	printf("k1 sign: %lu\n", decomp.k1_sign);
-	ec_print_rec(rec_k1, l);
-	printf("k2 sign: %lu\n", decomp.k2_sign);
-	ec_print_rec(rec_k2, l);
+	//ec_print_hex_laffine(P1);
+	//ec_print_hex_laffine(P2);
 	
 	dispose_components();
 	return 0;

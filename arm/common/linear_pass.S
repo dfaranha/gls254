@@ -6,6 +6,7 @@
 .global csel_asm
 .global lin_pass_w4_table2D
 .global lin_pass_w4_table2D_bulk
+.global lin_pass_w4_table2D_bulk_neon
 
 lin_pass_w5:
 	// Save
@@ -1406,7 +1407,7 @@ lin_pass_w4_table2D_bulk:
 	csel x27, x11, x27, EQ
 	csel x28, x12, x28, EQ
 
-	add x1, x1, #64
+	add x2, x2, #64
 
 	// Iteration i=1
 	ldp x5, x6, [x2]
@@ -1436,7 +1437,7 @@ lin_pass_w4_table2D_bulk:
 	csel x27, x11, x27, EQ
 	csel x28, x12, x28, EQ
 
-	add x1, x1, #64
+	add x2, x2, #64
 
 	// Iteration i=2
 	ldp x5, x6, [x2]
@@ -1466,7 +1467,7 @@ lin_pass_w4_table2D_bulk:
 	csel x27, x11, x27, EQ
 	csel x28, x12, x28, EQ
 
-	add x1, x1, #64
+	add x2, x2, #64
 
 	// Iteration i=3
 	ldp x5, x6, [x2]
@@ -1496,7 +1497,7 @@ lin_pass_w4_table2D_bulk:
 	csel x27, x11, x27, EQ
 	csel x28, x12, x28, EQ
 
-	add x1, x1, #64
+	add x2, x2, #64
 
 	// Iteration i=4
 	ldp x5, x6, [x2]
@@ -1526,7 +1527,7 @@ lin_pass_w4_table2D_bulk:
 	csel x27, x11, x27, EQ
 	csel x28, x12, x28, EQ
 
-	add x1, x1, #64
+	add x2, x2, #64
 
 	// Iteration i=5
 	ldp x5, x6, [x2]
@@ -1556,7 +1557,7 @@ lin_pass_w4_table2D_bulk:
 	csel x27, x11, x27, EQ
 	csel x28, x12, x28, EQ
 
-	add x1, x1, #64
+	add x2, x2, #64
 
 	// Iteration i=6
 	ldp x5, x6, [x2]
@@ -1586,7 +1587,7 @@ lin_pass_w4_table2D_bulk:
 	csel x27, x11, x27, EQ
 	csel x28, x12, x28, EQ
 
-	add x1, x1, #64
+	add x2, x2, #64
 
 	// Iteration i=7
 	ldp x5, x6, [x2]
@@ -1616,7 +1617,7 @@ lin_pass_w4_table2D_bulk:
 	csel x27, x11, x27, EQ
 	csel x28, x12, x28, EQ
 
-	add x1, x1, #64
+	add x2, x2, #64
 
 	// Iteration i=8
 	ldp x5, x6, [x2]
@@ -1646,7 +1647,7 @@ lin_pass_w4_table2D_bulk:
 	csel x27, x11, x27, EQ
 	csel x28, x12, x28, EQ
 
-	add x1, x1, #64
+	add x2, x2, #64
 
 	// Iteration i=9
 	ldp x5, x6, [x2]
@@ -1676,7 +1677,7 @@ lin_pass_w4_table2D_bulk:
 	csel x27, x11, x27, EQ
 	csel x28, x12, x28, EQ
 
-	add x1, x1, #64
+	add x2, x2, #64
 
 	// Iteration i=10
 	ldp x5, x6, [x2]
@@ -1706,7 +1707,7 @@ lin_pass_w4_table2D_bulk:
 	csel x27, x11, x27, EQ
 	csel x28, x12, x28, EQ
 
-	add x1, x1, #64
+	add x2, x2, #64
 
 	// Iteration i=11
 	ldp x5, x6, [x2]
@@ -1736,7 +1737,7 @@ lin_pass_w4_table2D_bulk:
 	csel x27, x11, x27, EQ
 	csel x28, x12, x28, EQ
 
-	add x1, x1, #64
+	add x2, x2, #64
 
 	// Iteration i=12
 	ldp x5, x6, [x2]
@@ -1766,7 +1767,7 @@ lin_pass_w4_table2D_bulk:
 	csel x27, x11, x27, EQ
 	csel x28, x12, x28, EQ
 
-	add x1, x1, #64
+	add x2, x2, #64
 
 	// Iteration i=13
 	ldp x5, x6, [x2]
@@ -1796,7 +1797,7 @@ lin_pass_w4_table2D_bulk:
 	csel x27, x11, x27, EQ
 	csel x28, x12, x28, EQ
 
-	add x1, x1, #64
+	add x2, x2, #64
 
 	// Iteration i=14
 	ldp x5, x6, [x2]
@@ -1826,7 +1827,7 @@ lin_pass_w4_table2D_bulk:
 	csel x27, x11, x27, EQ
 	csel x28, x12, x28, EQ
 
-	add x1, x1, #64
+	add x2, x2, #64
 
 	// Iteration i=15
 	ldp x5, x6, [x2]
@@ -1873,4 +1874,333 @@ lin_pass_w4_table2D_bulk:
 	ldp x23, x24, [SP], #16
 	ldp x21, x22, [SP], #16
 	ldp x19, x20, [SP], #16
+	ret
+
+//x0: P1 pointer
+//x1: P2 pointer
+//x2: table pointer
+//x3: index1
+//x4: index2
+//x5: used to store i
+//v16 to v19: table entry
+//v20 to v23: P1 output copy regs
+//v24 to v27: P2 output copy regs
+//v28: i vector
+//v29: index1 vector
+//v30: index2 vector
+//v31: mask
+lin_pass_w4_table2D_bulk_neon:
+	//Initialize index vectors
+	eor v28.16b, v28.16b, v28.16b
+	dup v29.2d, x3
+	dup v30.2d, x4
+	mov x5, #0
+
+	//i=0
+	ld1 {v16.16b, v17.16b, v18.16b, v19.16b}, [x2]
+
+	cmeq v31.2d, v28.2d, v29.2d
+	bit v20.16b, v16.16b, v31.16b
+	bit v21.16b, v17.16b, v31.16b
+	bit v22.16b, v18.16b, v31.16b
+	bit v23.16b, v19.16b, v31.16b
+
+	cmeq v31.2d, v28.2d, v30.2d
+	bit v24.16b, v16.16b, v31.16b
+	bit v25.16b, v17.16b, v31.16b
+	bit v26.16b, v18.16b, v31.16b
+	bit v27.16b, v19.16b, v31.16b
+
+	add x2, x2, #64
+	add x5, x5, #1
+	dup v28.2d, x5
+
+	//i=1
+	ld1 {v16.16b, v17.16b, v18.16b, v19.16b}, [x2]
+
+	cmeq v31.2d, v28.2d, v29.2d
+	bit v20.16b, v16.16b, v31.16b
+	bit v21.16b, v17.16b, v31.16b
+	bit v22.16b, v18.16b, v31.16b
+	bit v23.16b, v19.16b, v31.16b
+
+	cmeq v31.2d, v28.2d, v30.2d
+	bit v24.16b, v16.16b, v31.16b
+	bit v25.16b, v17.16b, v31.16b
+	bit v26.16b, v18.16b, v31.16b
+	bit v27.16b, v19.16b, v31.16b
+
+	add x2, x2, #64
+	add x5, x5, #1
+	dup v28.2d, x5
+
+	//i=2
+	ld1 {v16.16b, v17.16b, v18.16b, v19.16b}, [x2]
+
+	cmeq v31.2d, v28.2d, v29.2d
+	bit v20.16b, v16.16b, v31.16b
+	bit v21.16b, v17.16b, v31.16b
+	bit v22.16b, v18.16b, v31.16b
+	bit v23.16b, v19.16b, v31.16b
+
+	cmeq v31.2d, v28.2d, v30.2d
+	bit v24.16b, v16.16b, v31.16b
+	bit v25.16b, v17.16b, v31.16b
+	bit v26.16b, v18.16b, v31.16b
+	bit v27.16b, v19.16b, v31.16b
+
+	add x2, x2, #64
+	add x5, x5, #1
+	dup v28.2d, x5
+
+	//i=3
+	ld1 {v16.16b, v17.16b, v18.16b, v19.16b}, [x2]
+
+	cmeq v31.2d, v28.2d, v29.2d
+	bit v20.16b, v16.16b, v31.16b
+	bit v21.16b, v17.16b, v31.16b
+	bit v22.16b, v18.16b, v31.16b
+	bit v23.16b, v19.16b, v31.16b
+
+	cmeq v31.2d, v28.2d, v30.2d
+	bit v24.16b, v16.16b, v31.16b
+	bit v25.16b, v17.16b, v31.16b
+	bit v26.16b, v18.16b, v31.16b
+	bit v27.16b, v19.16b, v31.16b
+
+	add x2, x2, #64
+	add x5, x5, #1
+	dup v28.2d, x5
+
+	//i=4
+	ld1 {v16.16b, v17.16b, v18.16b, v19.16b}, [x2]
+
+	cmeq v31.2d, v28.2d, v29.2d
+	bit v20.16b, v16.16b, v31.16b
+	bit v21.16b, v17.16b, v31.16b
+	bit v22.16b, v18.16b, v31.16b
+	bit v23.16b, v19.16b, v31.16b
+
+	cmeq v31.2d, v28.2d, v30.2d
+	bit v24.16b, v16.16b, v31.16b
+	bit v25.16b, v17.16b, v31.16b
+	bit v26.16b, v18.16b, v31.16b
+	bit v27.16b, v19.16b, v31.16b
+
+	add x2, x2, #64
+	add x5, x5, #1
+	dup v28.2d, x5
+
+	//i=5
+	ld1 {v16.16b, v17.16b, v18.16b, v19.16b}, [x2]
+
+	cmeq v31.2d, v28.2d, v29.2d
+	bit v20.16b, v16.16b, v31.16b
+	bit v21.16b, v17.16b, v31.16b
+	bit v22.16b, v18.16b, v31.16b
+	bit v23.16b, v19.16b, v31.16b
+
+	cmeq v31.2d, v28.2d, v30.2d
+	bit v24.16b, v16.16b, v31.16b
+	bit v25.16b, v17.16b, v31.16b
+	bit v26.16b, v18.16b, v31.16b
+	bit v27.16b, v19.16b, v31.16b
+
+	add x2, x2, #64
+	add x5, x5, #1
+	dup v28.2d, x5
+
+	//i=6
+	ld1 {v16.16b, v17.16b, v18.16b, v19.16b}, [x2]
+
+	cmeq v31.2d, v28.2d, v29.2d
+	bit v20.16b, v16.16b, v31.16b
+	bit v21.16b, v17.16b, v31.16b
+	bit v22.16b, v18.16b, v31.16b
+	bit v23.16b, v19.16b, v31.16b
+
+	cmeq v31.2d, v28.2d, v30.2d
+	bit v24.16b, v16.16b, v31.16b
+	bit v25.16b, v17.16b, v31.16b
+	bit v26.16b, v18.16b, v31.16b
+	bit v27.16b, v19.16b, v31.16b
+
+	add x2, x2, #64
+	add x5, x5, #1
+	dup v28.2d, x5
+
+	//i=7
+	ld1 {v16.16b, v17.16b, v18.16b, v19.16b}, [x2]
+
+	cmeq v31.2d, v28.2d, v29.2d
+	bit v20.16b, v16.16b, v31.16b
+	bit v21.16b, v17.16b, v31.16b
+	bit v22.16b, v18.16b, v31.16b
+	bit v23.16b, v19.16b, v31.16b
+
+	cmeq v31.2d, v28.2d, v30.2d
+	bit v24.16b, v16.16b, v31.16b
+	bit v25.16b, v17.16b, v31.16b
+	bit v26.16b, v18.16b, v31.16b
+	bit v27.16b, v19.16b, v31.16b
+
+	add x2, x2, #64
+	add x5, x5, #1
+	dup v28.2d, x5
+
+	//i=8
+	ld1 {v16.16b, v17.16b, v18.16b, v19.16b}, [x2]
+
+	cmeq v31.2d, v28.2d, v29.2d
+	bit v20.16b, v16.16b, v31.16b
+	bit v21.16b, v17.16b, v31.16b
+	bit v22.16b, v18.16b, v31.16b
+	bit v23.16b, v19.16b, v31.16b
+
+	cmeq v31.2d, v28.2d, v30.2d
+	bit v24.16b, v16.16b, v31.16b
+	bit v25.16b, v17.16b, v31.16b
+	bit v26.16b, v18.16b, v31.16b
+	bit v27.16b, v19.16b, v31.16b
+
+	add x2, x2, #64
+	add x5, x5, #1
+	dup v28.2d, x5
+
+	//i=9
+	ld1 {v16.16b, v17.16b, v18.16b, v19.16b}, [x2]
+
+	cmeq v31.2d, v28.2d, v29.2d
+	bit v20.16b, v16.16b, v31.16b
+	bit v21.16b, v17.16b, v31.16b
+	bit v22.16b, v18.16b, v31.16b
+	bit v23.16b, v19.16b, v31.16b
+
+	cmeq v31.2d, v28.2d, v30.2d
+	bit v24.16b, v16.16b, v31.16b
+	bit v25.16b, v17.16b, v31.16b
+	bit v26.16b, v18.16b, v31.16b
+	bit v27.16b, v19.16b, v31.16b
+
+	add x2, x2, #64
+	add x5, x5, #1
+	dup v28.2d, x5
+
+	//i=10
+	ld1 {v16.16b, v17.16b, v18.16b, v19.16b}, [x2]
+
+	cmeq v31.2d, v28.2d, v29.2d
+	bit v20.16b, v16.16b, v31.16b
+	bit v21.16b, v17.16b, v31.16b
+	bit v22.16b, v18.16b, v31.16b
+	bit v23.16b, v19.16b, v31.16b
+
+	cmeq v31.2d, v28.2d, v30.2d
+	bit v24.16b, v16.16b, v31.16b
+	bit v25.16b, v17.16b, v31.16b
+	bit v26.16b, v18.16b, v31.16b
+	bit v27.16b, v19.16b, v31.16b
+
+	add x2, x2, #64
+	add x5, x5, #1
+	dup v28.2d, x5
+
+	//i=11
+	ld1 {v16.16b, v17.16b, v18.16b, v19.16b}, [x2]
+
+	cmeq v31.2d, v28.2d, v29.2d
+	bit v20.16b, v16.16b, v31.16b
+	bit v21.16b, v17.16b, v31.16b
+	bit v22.16b, v18.16b, v31.16b
+	bit v23.16b, v19.16b, v31.16b
+
+	cmeq v31.2d, v28.2d, v30.2d
+	bit v24.16b, v16.16b, v31.16b
+	bit v25.16b, v17.16b, v31.16b
+	bit v26.16b, v18.16b, v31.16b
+	bit v27.16b, v19.16b, v31.16b
+
+	add x2, x2, #64
+	add x5, x5, #1
+	dup v28.2d, x5
+
+	//i=12
+	ld1 {v16.16b, v17.16b, v18.16b, v19.16b}, [x2]
+
+	cmeq v31.2d, v28.2d, v29.2d
+	bit v20.16b, v16.16b, v31.16b
+	bit v21.16b, v17.16b, v31.16b
+	bit v22.16b, v18.16b, v31.16b
+	bit v23.16b, v19.16b, v31.16b
+
+	cmeq v31.2d, v28.2d, v30.2d
+	bit v24.16b, v16.16b, v31.16b
+	bit v25.16b, v17.16b, v31.16b
+	bit v26.16b, v18.16b, v31.16b
+	bit v27.16b, v19.16b, v31.16b
+
+	add x2, x2, #64
+	add x5, x5, #1
+	dup v28.2d, x5
+
+	//i=13
+	ld1 {v16.16b, v17.16b, v18.16b, v19.16b}, [x2]
+
+	cmeq v31.2d, v28.2d, v29.2d
+	bit v20.16b, v16.16b, v31.16b
+	bit v21.16b, v17.16b, v31.16b
+	bit v22.16b, v18.16b, v31.16b
+	bit v23.16b, v19.16b, v31.16b
+
+	cmeq v31.2d, v28.2d, v30.2d
+	bit v24.16b, v16.16b, v31.16b
+	bit v25.16b, v17.16b, v31.16b
+	bit v26.16b, v18.16b, v31.16b
+	bit v27.16b, v19.16b, v31.16b
+
+	add x2, x2, #64
+	add x5, x5, #1
+	dup v28.2d, x5
+
+	//i=14
+	ld1 {v16.16b, v17.16b, v18.16b, v19.16b}, [x2]
+
+	cmeq v31.2d, v28.2d, v29.2d
+	bit v20.16b, v16.16b, v31.16b
+	bit v21.16b, v17.16b, v31.16b
+	bit v22.16b, v18.16b, v31.16b
+	bit v23.16b, v19.16b, v31.16b
+
+	cmeq v31.2d, v28.2d, v30.2d
+	bit v24.16b, v16.16b, v31.16b
+	bit v25.16b, v17.16b, v31.16b
+	bit v26.16b, v18.16b, v31.16b
+	bit v27.16b, v19.16b, v31.16b
+
+	add x2, x2, #64
+	add x5, x5, #1
+	dup v28.2d, x5
+
+	//i=15
+	ld1 {v16.16b, v17.16b, v18.16b, v19.16b}, [x2]
+
+	cmeq v31.2d, v28.2d, v29.2d
+	bit v20.16b, v16.16b, v31.16b
+	bit v21.16b, v17.16b, v31.16b
+	bit v22.16b, v18.16b, v31.16b
+	bit v23.16b, v19.16b, v31.16b
+
+	cmeq v31.2d, v28.2d, v30.2d
+	bit v24.16b, v16.16b, v31.16b
+	bit v25.16b, v17.16b, v31.16b
+	bit v26.16b, v18.16b, v31.16b
+	bit v27.16b, v19.16b, v31.16b
+
+	add x2, x2, #64
+	add x5, x5, #1
+	dup v28.2d, x5
+
+	st1 {v20.16b, v21.16b, v22.16b, v23.16b}, [x0]
+	//st1 {v28.16b, v29.16b, v30.16b, v31.16b}, [x0]
+	st1 {v24.16b, v25.16b, v26.16b, v27.16b}, [x1]
 	ret

@@ -1101,13 +1101,49 @@ void ec_scalarmull_single_endo_w4_table2D_ptr(ec_point_laffine *P, uint64x2x2_t 
 	ec_lproj_to_laffine_ptr(&Q, R);
 }
 
+void lin_pass_w4_table2D_bulk_neon1(ec_point_laffine *P1, ec_point_laffine *P2, ec_point_laffine table[], uint64_t i1, uint64_t i2) {
+	poly64x2_t mask;
+	poly64x2_t x0, x1, l0, l1;
+	poly64x2_t P1_x0, P1_x1, P1_l0, P1_l1;
+	poly64x2_t P2_x0, P2_x1, P2_l0, P2_l1;
+
+	for(int i = 0; i < 16; i++) {
+		x0 = vld1q_p64((poly64_t*)  &(table[i].x.val[0]));
+		x1 = vld1q_p64((poly64_t*)  &(table[i].x.val[1]));
+		l0 = vld1q_p64((poly64_t*)  &(table[i].l.val[0]));
+		l1 = vld1q_p64((poly64_t*)  &(table[i].l.val[1]));
+		
+		mask = vdupq_n_p64((poly64_t) all1s * (i1 == i));
+		P1_x0 = vbslq_p64(mask, x0, P1_x0);
+		P1_x1 = vbslq_p64(mask, x1, P1_x1);
+		P1_l0 = vbslq_p64(mask, l0, P1_l0);
+		P1_l1 = vbslq_p64(mask, l1, P1_l1);
+
+		mask = vdupq_n_p64((poly64_t) all1s * (i2 == i));
+		P2_x0 = vbslq_p64(mask, x0, P2_x0);
+		P2_x1 = vbslq_p64(mask, x1, P2_x1);
+		P2_l0 = vbslq_p64(mask, l0, P2_l0);
+		P2_l1 = vbslq_p64(mask, l1, P2_l1);
+	}
+
+	vst1q_p64((poly64_t*) &(P1->x.val[0]), P1_x0);
+	vst1q_p64((poly64_t*)  &(P1->x.val[1]), P1_x1);
+	vst1q_p64((poly64_t*)  &(P1->l.val[0]), P1_l0);
+	vst1q_p64((poly64_t*)  &(P1->l.val[1]), P1_l1);
+
+	vst1q_p64((poly64_t*)  &(P2->x.val[0]), P2_x0);
+	vst1q_p64((poly64_t*)  &(P1->x.val[1]), P2_x1);
+	vst1q_p64((poly64_t*)  &(P2->l.val[0]), P2_l0);
+	vst1q_p64((poly64_t*)  &(P2->l.val[1]), P2_l1);
+}
+
 void ec_lookup_from_w4_table2D_bulk_ptr(ec_split_scalar *decomp, signed char rec_k1[], signed char rec_k2[], ec_point_laffine table[], int i1, int i2, ec_point_laffine *P1, ec_point_laffine *P2) {
 	//Code to find correct scalar values, as we can't redefine P as -P for negative k1 or k2. But we can, different points!!
 	//Val comp is 2's complement conversion, but why the zero?
 	uint64x2x2_t lookup_data1 = ec_get_lookup_data_w4_table2D(rec_k1[i1], rec_k2[i1], decomp);
 	uint64x2x2_t lookup_data2 = ec_get_lookup_data_w4_table2D(rec_k1[i2], rec_k2[i2], decomp);
 
-	lin_pass_w4_table2D_bulk(P1, P2, table, (uint64_t) lookup_data1.val[0][0], (uint64_t) lookup_data2.val[0][0]);
+	lin_pass_w4_table2D_bulk_neon(P1, P2, table, (uint64_t) lookup_data1.val[0][0], (uint64_t) lookup_data2.val[0][0]);
 
 	ec_cond_endo(P1, lookup_data1.val[1][0]);
 	ec_cond_endo(P2, lookup_data2.val[1][0]);
