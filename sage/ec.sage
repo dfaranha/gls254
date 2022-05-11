@@ -148,10 +148,6 @@ def double_add_add(Xq, Lq, Zq, xP1, lP1, xP2, lP2):
     I = U * G * Zq^2
     J = (lP1 + lP2 + 1)*I + T*(U+G)^2
 
-    (Xc, Lc, Zc) = double_add(Xq, Lq, Zq, xP1, lP1)
-    assert H == Xc
-    assert I == Zc
-    assert J == lP2 * Zc + Lc
     K = xP2 * I
     L = (H + K)^2
     M = H * J
@@ -307,7 +303,7 @@ def smu_double_add_glv_reg(xP, lP, scalar, w = 4):
 
     for i in range(l - 2, -1, -1):
         for j in range(w-2):
-            (Xq, Lq, Zq) = doubleb_prj(Xq, Lq, Zq)
+            (Xq, Lq, Zq) = double_prj(Xq, Lq, Zq)
         (xP1, lP1) = T[(abs(k1r[i])-1)/2]
         (xP2, lP2) = T[(abs(k2r[i])-1)/2]
         (xP2, lP2) = psi_aff(xP2, lP2)
@@ -381,7 +377,7 @@ def smu_double_add_glv_reg_tab(xP, lP, scalar, w = 4):
 
     for i in range(l - 2, -1, -1):
         for j in range(w-2):
-            (Xq, Lq, Zq) = doubleb_prj(Xq, Lq, Zq)
+            (Xq, Lq, Zq) = double_prj(Xq, Lq, Zq)
 
         if k1r[i] > 0 and k2r[i] > 0:
             k = 2**(w-2)*(abs(k1r[i])-1)/2 + (abs(k2r[i])-1)/2
@@ -409,6 +405,36 @@ def smu_double_add_glv_reg_tab(xP, lP, scalar, w = 4):
         (Xq, Lq, Zq) = add_mix(Xq, Lq, Zq, mxP, mlP)
 
     return (Xq, Lq, Zq)
+
+def smu_double_add_glv_reg_tab_precomp(xP, lP, w=4):
+    T1 = []
+    T2 = []
+    T  = []
+    (x2, l2) = double_aff(xP, lP)
+    (Xacc, Lacc, Zacc) = (xP, lP, one)
+    for i in range(2**(w-2)):
+        T1.append((Xacc / Zacc, Lacc / Zacc))
+        T2.append(psi_aff(Xacc / Zacc, Lacc / Zacc))
+        (Xacc, Lacc, Zacc) = add_mix(Xacc, Lacc, Zacc, x2, l2)
+
+    #Will convert table to affine coordinates using simultaneous inversion algorithm, so add costs here:
+    global mt, ma, mb, sq
+    mt += 5*(2**(w-2)-1) + 13
+
+    for i in range(2**(w-2)):
+        (xP1, lP1) = T1[i]
+        for j in range(2**(w-2)):
+            (xP2, lP2) = T2[j]
+            if (i == j):
+                (Xacc, Lacc, Zacc) = add_psi(xP1, lP1)
+            else :
+                (Xacc, Lacc, Zacc) = add_mix_mix(xP1, lP1, xP2, lP2)
+            T.append((Xacc / Zacc, Lacc / Zacc))
+
+    #Will convert table to affine coordinates using simultaneous inversion algorithm, so add costs here:
+    mt += 5*(2**(2*(w-2))-1) + 13
+    return T1, T2, T
+
 
 #Input must be odd
 #Modified alg 6 from "Exponent Recoding and Regular Exponentiation Algorithms"
@@ -457,20 +483,7 @@ regular_recode_test()
 mt = ma = mb = sq = 0
 _, _, _, mu = curve_details(b)
 
-print("looking for exception")
-for i in range(1, 1, 1):
-    print(i)
-    P = randrange(r)*P
-    (xP, lP) = to_lambda_aff(P)
-    k = r - 1
-    (X3, L3, Z3) = smu_double_add_glv_reg(xP, lP, k)
-    valid = from_lambda_prj(X3, L3, Z3) == k*P
-    if not valid:
-        print(P)
-    assert valid
-print("done")
-
-for i in range(0, 10):
+for i in range(0, 1):
     k = randrange(r)
 
     # Pick a random point
@@ -546,17 +559,17 @@ for i in range(0, 10):
 # Benchmarks by operation counts
 print("Operation counts as (muls, mul_a, mul_b, sqrs)")
 
-mt = ma = mb = sq = 0
-(X3, L3, Z3) = smu_double_add(xP, lP, k)
-print("Double-add       : ", mt, ma, mb, sq)
+# mt = ma = mb = sq = 0
+# (X3, L3, Z3) = smu_double_add(xP, lP, k)
+# print("Double-add       : ", mt, ma, mb, sq)
 
-mt = ma = mb = sq = 0
-(X3, L3, Z3) = smu_double_always_add(xP, lP, k)
-print("Double-add-always: ", mt, ma, mb, sq)
+# mt = ma = mb = sq = 0
+# (X3, L3, Z3) = smu_double_always_add(xP, lP, k)
+# print("Double-add-always: ", mt, ma, mb, sq)
 
-mt = ma = mb = sq = 0
-(X3, L3, Z3) = smu_double_add_glv(xP, lP, k)
-print("GLV-double-add: ", mt, ma, mb, sq)
+# mt = ma = mb = sq = 0
+# (X3, L3, Z3) = smu_double_add_glv(xP, lP, k)
+# print("GLV-double-add: ", mt, ma, mb, sq)
 
 mt = ma = mb = sq = 0
 (X3, L3, Z3) = smu_double_add_glv_reg(xP, lP, k, 4)
@@ -571,6 +584,10 @@ mt = ma = mb = sq = 0
 print("GLV-reg-6-double-add: ", mt, ma, mb, sq)
 
 mt = ma = mb = sq = 0
+(X3, L3, Z3) = smu_double_add_glv_reg_tab(xP, lP, k, 3)
+print("GLV-reg-3-double-add-tab: ", mt, ma, mb, sq)
+
+mt = ma = mb = sq = 0
 (X3, L3, Z3) = smu_double_add_glv_reg_tab(xP, lP, k, 4)
 print("GLV-reg-4-double-add-tab: ", mt, ma, mb, sq)
 
@@ -581,3 +598,7 @@ print("GLV-reg-5-double-add-tab: ", mt, ma, mb, sq)
 mt = ma = mb = sq = 0
 (X3, L3, Z3) = smu_double_add_glv_reg_tab(xP, lP, k, 6)
 print("GLV-reg-6-double-add-tab: ", mt, ma, mb, sq)
+
+mt = ma = mb = sq = 0
+(T1, T2, T) = smu_double_add_glv_reg_tab_precomp(xP, lP, 4)
+print("GLV-reg-4-double-add-tab_precomp: ", mt, ma, mb, sq)
