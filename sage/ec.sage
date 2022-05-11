@@ -120,6 +120,20 @@ def add_mix_mix(xP, lP, xQ, lQ):
     Zpq = (A * B)
     return (Xpq, Lpq, Zpq)
 
+def add_sub_mix_mix(xP, lP, xQ, lQ):
+    global mt, ma, mb, sq
+    mt += 6
+    sq += 4
+    A = lP + lQ
+    B = (xP + xQ)^2
+    Xpq = A^2 * (xP * xQ)
+    Zpq = (A * B)
+    Lpq = (A * xQ + B)^2 + Zpq * (lP + 1)
+    Xpmq = Xpq + xP*xQ
+    Lpmq = Lpq + xQ^2 + B*(lP + 1)
+    Zpmq = Zpq + B
+    return (Xpq, Lpq, Zpq, Xpmq, Lpmq, Zpmq)
+
 def double_add(Xq, Lq, Zq, xP, lP):
     global mt, ma, mb, sq
     mt += 10
@@ -344,22 +358,24 @@ def smu_double_add_glv_reg_tab(xP, lP, scalar, w = 4):
     (Xacc, Lacc, Zacc) = (xP, lP, one)
     for i in range(2**(w-2)):
         T1.append((Xacc / Zacc, Lacc / Zacc))
-        T2.append(psi_aff(Xacc / Zacc, Lacc / Zacc))
         (Xacc, Lacc, Zacc) = add_mix(Xacc, Lacc, Zacc, x2, l2)
 
     #Will convert table to affine coordinates using simultaneous inversion algorithm, so add costs here:
     global mt, ma, mb, sq
     mt += 5*(2**(w-2)-1) + 13
 
+    T = [None] * (2**(w-2)) * (2**(w-2))
     for i in range(2**(w-2)):
         (xP1, lP1) = T1[i]
-        for j in range(2**(w-2)):
-            (xP2, lP2) = T2[j]
-            if (i == j):
-                (Xacc, Lacc, Zacc) = add_psi(xP1, lP1)
-            else :
-                (Xacc, Lacc, Zacc) = add_mix_mix(xP1, lP1, xP2, lP2)
-            T.append((Xacc / Zacc, Lacc / Zacc))
+        (xP2, lP2) = psi_aff(xP1, lP1)
+        (Xacc, Lacc, Zacc) = add_mix_mix(xP1, lP1, xP2, lP2)
+        T[2**(w-2)*i+i] = (Xacc / Zacc, Lacc / Zacc)
+        for j in range(i+1, 2**(w-2)):
+            (xP2, lP2) = T1[j]
+            (xP2, lP2) = psi_aff(xP2, lP2)
+            (X3, L3, Z3, X4, L4, Z4) = add_sub_mix_mix(xP1, lP1, xP2, lP2)
+            T[2**(w-2)*i+j] = (X3 / Z3, L3 / Z3)
+            T[2**(w-2)*j+i] = psi_aff(X4 / Z4, L4 / Z4)
 
     #Will convert table to affine coordinates using simultaneous inversion algorithm, so add costs here:
     mt += 5*(2**(2*(w-2))-1) + 13
@@ -368,7 +384,8 @@ def smu_double_add_glv_reg_tab(xP, lP, scalar, w = 4):
     (xP1, lP1, xP2, lP2) = (one, one, one, one)
 
     (xP1, lP1) = T1[(abs(k1r[l-1])-1)/2]
-    (xP2, lP2) = T2[(abs(k2r[l-1])-1)/2]
+    (xP2, lP2) = T1[(abs(k2r[l-1])-1)/2]
+    (xP2, lP2) = psi_aff(xP2, lP2)
     if k1r[l-1] < 0:
         (xP1, lP1) = neg_aff(xP1, lP1)
     if k2r[l-1] < 0:
@@ -414,26 +431,28 @@ def smu_double_add_glv_reg_tab_precomp(xP, lP, w=4):
     (Xacc, Lacc, Zacc) = (xP, lP, one)
     for i in range(2**(w-2)):
         T1.append((Xacc / Zacc, Lacc / Zacc))
-        T2.append(psi_aff(Xacc / Zacc, Lacc / Zacc))
         (Xacc, Lacc, Zacc) = add_mix(Xacc, Lacc, Zacc, x2, l2)
 
     #Will convert table to affine coordinates using simultaneous inversion algorithm, so add costs here:
     global mt, ma, mb, sq
     mt += 5*(2**(w-2)-1) + 13
 
+    T = [None] * (2**(w-2)) * (2**(w-2))
     for i in range(2**(w-2)):
         (xP1, lP1) = T1[i]
-        for j in range(2**(w-2)):
-            (xP2, lP2) = T2[j]
-            if (i == j):
-                (Xacc, Lacc, Zacc) = add_psi(xP1, lP1)
-            else :
-                (Xacc, Lacc, Zacc) = add_mix_mix(xP1, lP1, xP2, lP2)
-            T.append((Xacc / Zacc, Lacc / Zacc))
+        (xP2, lP2) = psi_aff(xP1, lP1)
+        (Xacc, Lacc, Zacc) = add_mix_mix(xP1, lP1, xP2, lP2)
+        T[2**(w-2)*i+i] = (Xacc / Zacc, Lacc / Zacc)
+        for j in range(i+1, 2**(w-2)):
+            (xP2, lP2) = T1[j]
+            (xP2, lP2) = psi_aff(xP2, lP2)
+            (X3, L3, Z3, X4, L4, Z4) = add_sub_mix_mix(xP1, lP1, xP2, lP2)
+            T[2**(w-2)*i+j] = (X3 / Z3, L3 / Z3)
+            T[2**(w-2)*j+i] = psi_aff(X4 / Z4, L4 / Z4)
 
     #Will convert table to affine coordinates using simultaneous inversion algorithm, so add costs here:
     mt += 5*(2**(2*(w-2))-1) + 13
-    return T1, T2, T
+    return T1, T
 
 
 #Input must be odd
@@ -522,6 +541,9 @@ for i in range(0, 1):
     assert(from_lambda_prj(X3, L3, Z3) == P + Q)
     (X3, L3, Z3) = add_mix_mix(xP, lP, xQ, lQ)
     assert(from_lambda_prj(X3, L3, Z3) == P + Q)
+    (X3, L3, Z3, X4, L4, Z4) = add_sub_mix_mix(xP, lP, xQ, lQ)
+    assert(from_lambda_prj(X3, L3, Z3) == P + Q)
+    assert(from_lambda_prj(X4, L4, Z4) == P - Q)
     (X3, L3, Z3) = add_psi(xP, lP)
     assert(from_lambda_prj(X3, L3, Z3) == P + int(mu)*P)
 
@@ -600,5 +622,5 @@ mt = ma = mb = sq = 0
 print("GLV-reg-6-double-add-tab: ", mt, ma, mb, sq)
 
 mt = ma = mb = sq = 0
-(T1, T2, T) = smu_double_add_glv_reg_tab_precomp(xP, lP, 4)
+(T1, T) = smu_double_add_glv_reg_tab_precomp(xP, lP, 4)
 print("GLV-reg-4-double-add-tab_precomp: ", mt, ma, mb, sq)
