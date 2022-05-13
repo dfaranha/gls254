@@ -1,3 +1,4 @@
+#include "basefield.h"
 #include "extensionfield_interleaved.h"
 
 #ifndef EC_H
@@ -60,9 +61,21 @@ static inline ec_point_lproj ec_neg(ec_point_lproj P) {
 	return P;
 }
 
+static inline void ec_neg_ptr(ec_point_lproj *P, ec_point_lproj *R) {
+	R->x = P->x;
+	R->l = ef_intrl_add(P->l, P->z);
+	R->z = P->z;
+}
+
 static inline ec_point_laffine ec_neg_laffine(ec_point_laffine P) {
 	P.l.val[0][0] ^= 1;
 	return P;
+}
+
+static inline void ec_neg_laffine_ptr(ec_point_laffine *P, ec_point_laffine *R) {
+	R->x = P->x;
+	R->l = P->l;
+	R->l.val[0][0] ^= 1;
 }
 
 ec_point_lproj ec_add(ec_point_lproj P1, ec_point_lproj P2);
@@ -80,6 +93,10 @@ void ec_add_mixed_unchecked_ptr(ec_point_laffine *P, ec_point_lproj *Q, ec_point
 ec_point_lproj ec_add_laffine_unchecked(ec_point_laffine P, ec_point_laffine Q);
 
 void ec_add_laffine_unchecked_ptr(ec_point_laffine *P, ec_point_laffine *Q, ec_point_lproj *R);
+
+void ec_add_sub_laffine_unchecked_ptr(ec_point_laffine *P, ec_point_laffine *Q, ec_point_lproj *Radd, ec_point_lproj *Rsub);
+
+void ec_add_endo_laffine_unchecked_ptr(ec_point_laffine *P, ec_point_lproj *R);
 
 ec_point_lproj ec_double(ec_point_lproj P);
 

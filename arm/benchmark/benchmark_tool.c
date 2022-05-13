@@ -5,6 +5,7 @@
 inline uint64_t read_pmccntr() {
 		uint64_t val;
 		asm volatile("mrs %0, pmccntr_el0" : "=r"(val));
+		//asm volatile("mrs %0, pmevcntr0_el0" : "=r"(val));
 		return val;
 }
 

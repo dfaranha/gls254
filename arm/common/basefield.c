@@ -83,7 +83,8 @@ void bf_print_unred_expr_nl(poly64x2x2_t p) {
 }
 
 void bf_print_hex(poly64x2_t p) {
-	printf("%016lx||%016lx", p[1], p[0]);
+	poly64x2_t red = bf_red_from_lazy(p);
+	printf("%016lx||%016lx", red[1], red[0]);
 }
 
 void bf_print_hex_nl(poly64x2_t p) {

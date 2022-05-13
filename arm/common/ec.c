@@ -168,17 +168,7 @@ ec_point_lproj ec_add(ec_point_lproj P, ec_point_lproj Q) {
 		return ec_double(P);
 	}
 
-	ef_intrl_elem u = ef_intrl_add(ef_intrl_mull(P.l, Q.z), ef_intrl_mull(Q.l, P.z)); // U = L_P * Z_Q + L_Q * Z_P
-	ef_intrl_elem w1 = ef_intrl_mull(P.x, Q.z); //W1 = X_P * Z_Q
-	ef_intrl_elem w2 = ef_intrl_mull(Q.x, P.z); //W2 = X_Q * Z_P
-	ef_intrl_elem v = ef_intrl_square(ef_intrl_add(w1, w2)); //V = (X_P * Z_Q + X_Q * Z_P)^2
-	ef_intrl_elem w3 = ef_intrl_mull(u, w2); //W3 = U * X_Q * Z_P
-	ef_intrl_elem w4 = ef_intrl_mull(u, ef_intrl_mull(v, Q.z)); //W4 = U * V * Z_Q
-	ec_point_lproj R;
-	R.x = ef_intrl_mull(u, ef_intrl_mull(w1, w3));
-	R.l = ef_intrl_add(ef_intrl_square(ef_intrl_add(w3, v)), ef_intrl_mull(w4, ef_intrl_add(P.l, P.z)));
-	R.z = ef_intrl_mull(w4, P.z);
-	return R;
+	return ec_add_unchecked(P, Q);
 }
 
 ec_point_lproj ec_add_unchecked(ec_point_lproj P, ec_point_lproj Q) {
@@ -218,16 +208,7 @@ ec_point_lproj ec_add_mixed(ec_point_laffine P, ec_point_lproj Q) {
 		return ec_double(Q);
 	}
 
-	ef_intrl_elem E = ef_intrl_add(ef_intrl_mull(P.l, Q.z), Q.l); //A = L_P * Z_Q + L_Q
-	ef_intrl_elem F = ef_intrl_mull(P.x, Q.z); //X_P * Z_Q
-	ef_intrl_elem G = ef_intrl_square(ef_intrl_add(F, Q.x)); //B = (X_P * Z_Q + X_Q)^2
-	ef_intrl_elem H = ef_intrl_mull(E, Q.x); //A * Q.x
-	//P.l.val[0] = bf_add(P.l.val[0], (poly64x2_t) {1, 0});
-	ec_point_lproj R;
-	R.x = ef_intrl_mull(ef_intrl_mull(E, F), H); //A * (X_P * Z_Q) * A * Q.x
-	R.z = ef_intrl_mull(ef_intrl_mull(E, G), Q.z); //A * B * Z_Q
-	R.l = ef_intrl_add(ef_intrl_square(ef_intrl_add(G, H)), ef_intrl_mull(R.z, ef_intrl_add(P.l, (ef_intrl_elem) {{{1, 0}, {0, 0}}}))); //(G+H)^2 + R.z + R.z * (P.l + 1)
-	return R;
+	return ec_add_mixed_unchecked(P, Q);
 }
 
 ec_point_lproj ec_add_mixed_unchecked(ec_point_laffine P, ec_point_lproj Q) {
@@ -275,6 +256,53 @@ void ec_add_laffine_unchecked_ptr(ec_point_laffine *P, ec_point_laffine *Q, ec_p
 	R->z = ef_intrl_mull(E, F); //A * B * Z_Q
 	R->l = ef_intrl_add(ef_intrl_square(ef_intrl_add(F, G)), ef_intrl_mull(R->z, ef_intrl_add(P->l, (ef_intrl_elem) {{{1, 0}, {0, 0}}}))); //(G+H)^2 + R.z + R.z * (P.l + 1)
 }
+
+void ec_add_sub_laffine_unchecked_ptr(ec_point_laffine *P, ec_point_laffine *Q, ec_point_lproj *Radd, ec_point_lproj *Rsub) {
+	ef_intrl_elem E = ef_intrl_add(P->l, Q->l); //A = L_P + L_Q
+	ef_intrl_elem F = ef_intrl_square(ef_intrl_add(P->x, Q->x)); //B = (X_P + X_Q)^2
+	ef_intrl_elem G = ef_intrl_mull(P->x, Q->x); //X_P * X_Q
+	ef_intrl_elem lPplusOne = ef_intrl_add(P->l, (ef_intrl_elem) {{{1, 0}, {0, 0}}});
+	Radd->x = ef_intrl_mull(ef_intrl_square(E), G); //A² * (X_P * X_Q)
+	Radd->z = ef_intrl_mull(E, F);
+	Radd->l = ef_intrl_add(ef_intrl_square(ef_intrl_add(ef_intrl_mull(E, Q->x), F)), ef_intrl_mull(Radd->z, lPplusOne));
+	Rsub->x = ef_intrl_add(Radd->x, G);
+	Rsub->l = ef_intrl_add(ef_intrl_add(Radd->l, ef_intrl_square(Q->x)), ef_intrl_mull(F, lPplusOne));
+	Rsub->z = ef_intrl_add(Radd->z, F);
+}
+
+//Computes P + psi(P)
+void ec_add_endo_laffine_unchecked_ptr(ec_point_laffine *P, ec_point_lproj *R) {
+	//E = l + l + l1+u = l1+ u = {l1, 1}
+	//F = (x + x + x1)² = x1² = {x1²,0}
+	//G = E*x = (l1+u)(x0+x1u) = {(x0l1+x1) + (x1l1+ x0+x1)u
+	//H = E * x1 = {x1*l1, x1}
+	//R->x = G * (G+H) = E * x * (E*x + E*x1) = E * x * E * (x+x1)
+	//R->z = E*F = (l1+u)*x1² = x1²l1+x1²u = {x1² * l1, x1²}
+	//R->l = (G+H+F)² + R->z *(l+1)
+	poly64x2x2_t x_nonintrl = ef_intrl_disentangle(P->x);
+	poly64x2x2_t l_nonintrl = ef_intrl_disentangle(P->l);
+	poly64x2x2_t G_nonintrl;
+	G_nonintrl.val[0] = bf_add(bf_red_lazy(bf_pmull(x_nonintrl.val[0], l_nonintrl.val[1])), x_nonintrl.val[1]);
+	poly64x2_t x1l1 = bf_red_lazy(bf_pmull(x_nonintrl.val[1], l_nonintrl.val[1]));
+	G_nonintrl.val[1] = bf_add(bf_add(x1l1, x_nonintrl.val[0]), x_nonintrl.val[1]);
+	ef_intrl_elem G = ef_intrl_interleave(G_nonintrl);
+	poly64x2x2_t H_nonintrl;
+	H_nonintrl.val[0] = x1l1;
+	H_nonintrl.val[1] = x_nonintrl.val[1];
+	ef_intrl_elem H = ef_intrl_interleave(H_nonintrl);
+	
+	R->x = ef_intrl_mull(G, ef_intrl_add(G, H));
+	poly64x2x2_t Rz_nonintrl;
+	Rz_nonintrl.val[1] = bf_red_psquare(bf_psquare(x_nonintrl.val[1]));
+	Rz_nonintrl.val[0] = bf_red_lazy(bf_pmull(Rz_nonintrl.val[1], l_nonintrl.val[1]));
+	
+	//G = G+F in interleaved form
+	G.val[0][0] ^= Rz_nonintrl.val[1][0];
+	G.val[1][0] ^= Rz_nonintrl.val[1][1];
+	
+	R->z = ef_intrl_interleave(Rz_nonintrl);
+	R->l = ef_intrl_add(ef_intrl_square(ef_intrl_add(G,H)), ef_intrl_mull(R->z, ef_intrl_add(P->l, (ef_intrl_elem) {{{1, 0}, {0, 0}}})));
+}	
 
 /*
  * I think I have found a proof for why we don't need to check that P = -P here.

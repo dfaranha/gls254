@@ -16,13 +16,13 @@ int main() {
 	
 	test_ctr *ctr = init_ctr();
 
-	//benchmark_tool_tests(ctr);
-	//util_tests(ctr);
-	//basefield_tests(ctr);
-	//extensionfield_tests(ctr);
-	//extensionfield_interleaved_tests(ctr);
+	benchmark_tool_tests(ctr);
+	util_tests(ctr);
+	basefield_tests(ctr);
+	extensionfield_tests(ctr);
+	extensionfield_interleaved_tests(ctr);
 	ec_tests(ctr);
-	//ec_scalarmull_tests(ctr);
+	ec_scalarmull_tests(ctr);
 
 	print_results(ctr);
 	

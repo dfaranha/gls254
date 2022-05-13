@@ -425,6 +425,9 @@ void ec_scalarmull_single_endo_w5_randaccess_ptr(ec_point_laffine *P, uint64x2x2
 	ec_point_lproj Q, Q1, Q2;
 	ec_add_laffine_unchecked_ptr(&P1, &P2, &Q);
 
+	// printf("Initial: \n");
+	// ec_print_hex_laffine(ec_lproj_to_laffine(Q));
+
 	for(int i=l-2; i>=0; i--) {
 		ec_double_ptr(&Q, &Q1);
 		ec_double_ptr(&Q1, &Q2);
@@ -453,6 +456,7 @@ void ec_scalarmull_single_endo_w5_randaccess_ptr(ec_point_laffine *P, uint64x2x2
 		CSEL(k2_sign, con, P2, P2_neg, new_ptr, typeof(ec_point_laffine));
 
 		ec_double_then_addtwo_ptr(&P1, &P2, &Q1, &Q);
+		//ec_print_hex_laffine(ec_lproj_to_laffine(Q));
 	}
 
 	P1 = ec_create_point_laffine(P->x, P->l);
@@ -853,134 +857,9 @@ ec_split_scalar ec_scalar_decomp(uint64x2x2_t k) {
 	return result;
 }
 
-void ec_precompute_w4_table2D(ec_point_laffine P, ec_point_laffine table[]) {
-	//Note to self: Memory management seems weird, everything on stack?
-	
+void ec_precompute_w4_table2D_nonopt_ptr(ec_point_laffine *P, ec_point_laffine table[]) {
 	ef_intrl_elem inv_inputs[16];
 	ef_intrl_elem inv_outputs[16];
-	
-	//Compute iP
-	//ec_point_laffine tmp_table[4];
-	//precompute_w4(P, tmp_table);
-	
-	ec_point_lproj tmp_table_proj[4];
-	ec_point_lproj P2 = ec_double_mixed(P);
-	tmp_table_proj[0] = ec_laffine_to_lproj(P);
-	tmp_table_proj[1] = ec_add_mixed_unchecked(P, P2);
-	tmp_table_proj[2] = ec_add_unchecked(tmp_table_proj[1], P2);
-	tmp_table_proj[3] = ec_add_unchecked(tmp_table_proj[2], P2);
-	inv_inputs[0] = tmp_table_proj[1].z;
-	inv_inputs[1] = tmp_table_proj[2].z;
-	inv_inputs[2] = tmp_table_proj[3].z;
-	
-	//Converting table to affine
-	ef_intrl_sim_inv(inv_inputs, inv_outputs, 3);
-	ec_point_laffine tmp_table[4];
-	tmp_table[0] = P;
-	for (int i = 1; i < 4; i++) {
-		tmp_table[i] = (ec_point_laffine) {ef_intrl_mull(tmp_table_proj[i].x, inv_outputs[i-1]), ef_intrl_mull(tmp_table_proj[i].l, inv_outputs[i-1])};
-	}
-	
-	//Computing table in projective coords
-	ec_point_lproj table_proj[16];
-	for (int j = 0; j < 4; j++) {
-		ec_point_laffine jpoint = ec_endo_laffine(tmp_table[j]);
-		for (int i = 0; i < 4; i++) {
-			int index = 4*i + j;
-			table_proj[index] = ec_add_laffine_unchecked(tmp_table[i], jpoint);
-			inv_inputs[index] = table_proj[index].z;
-		}
-	}
-	
-	//Converting table to affine
-	ef_intrl_sim_inv(inv_inputs, inv_outputs, 16);
-	for (int i = 0; i < 16; i++) {
-		table[i] = (ec_point_laffine) {ef_intrl_mull(table_proj[i].x, inv_outputs[i]), ef_intrl_mull(table_proj[i].l, inv_outputs[i])};
-	}
-}
-
-ec_point_laffine ec_lookup_from_w4_table2D(ec_split_scalar decomp, signed char rec_k1[], signed char rec_k2[], ec_point_laffine table[], int i) {
-	uint64_t zero = 0;
-	uint64_t new_ptr, con = 1;
-	
-	//Code to find correct scalar values, as we can't redefine P as -P for negative k1 or k2. But we can, different points!!
-	//Val comp is 2's complement conversion, but why the zero?
-	signed char k1_digit = rec_k1[i];
-	uint64_t k1_digit_sign = ((unsigned char)k1_digit >> 7);
-	signed char k1_val = (k1_digit^(zero - k1_digit_sign))+k1_digit_sign; //why zero
-	uint64_t k1_sign = k1_digit_sign^decomp.k1_sign;
-
-	signed char k2_digit = rec_k2[i];
-	uint64_t k2_digit_sign = ((unsigned char)k2_digit >> 7);
-	signed char k2_val = (k2_digit^(zero - k2_digit_sign))+k2_digit_sign;
-	uint64_t k2_sign = k2_digit_sign^decomp.k2_sign;
-	
-	uint64_t sign_xor = k1_sign ^ k2_sign;
-	uint64_t normal_index = 4*(k1_val/2)+(k2_val/2); //redundancy to round down
-	uint64_t swap_index = 4*(k2_val/2)+(k1_val/2);
-	uint64_t index = sign_xor * swap_index + (1-sign_xor) * normal_index;
-
-	ec_point_laffine next;
-	lin_pass_w4_table2D(&next, table, index);
-
-	ec_point_laffine next_endo = ec_endo_laffine(next);
-	CSEL(sign_xor, con, next, next_endo, new_ptr, typeof(ec_point_laffine));
-	next.l.val[0][0] ^= k2_sign;
-	
-	return next;
-}
-
-ec_point_laffine ec_scalarmull_single_endo_w4_table2D(ec_point_laffine P, uint64x2x2_t k) {
-	uint64_t new_ptr, con = 1;
-	int l = 44;
-
-	ec_split_scalar decomp = ec_scalar_decomp(k);
-
-	uint64_t c1 = 1-(decomp.k1[0]&1);
-	decomp.k1[0] = decomp.k1[0]+c1;
-
-	uint64_t c2 = 1-(decomp.k2[0]&1);
-	decomp.k2[0] = decomp.k2[0]+c2;
-
-	signed char rec_k1[l];
-	signed char rec_k2[l];
-
-	reg_rec(decomp.k1, 4, rec_k1, l-1);
-	reg_rec(decomp.k2, 4, rec_k2, l-1);
-
-	ec_point_laffine table[16];
-	ec_precompute_w4_table2D(P, table);
-	
-	ec_point_laffine next = ec_lookup_from_w4_table2D(decomp, rec_k1, rec_k2, table, l-1);
-	ec_point_lproj Q = ec_laffine_to_lproj(next);
-
-	for(int i=l-2; i>=0; i--) {
-		Q = ec_double(ec_double(Q));
-		next = ec_lookup_from_w4_table2D(decomp, rec_k1, rec_k2, table, i);
-		Q = ec_double_then_add(next, Q);
-	}
-	//Logic here with the xor is also strange
-	ec_point_laffine P1 = ec_create_point_laffine(P.x, P.l);
-	P1.l.val[0][0] ^= 1-decomp.k1_sign;
-	ec_point_lproj Q_add_neg = ec_add_mixed_unchecked(P1, Q);
-	CSEL(c1, con, Q, Q_add_neg, new_ptr, typeof(ec_point_lproj));
-
-	ec_point_laffine P2 = ec_create_point_laffine(P.x, P.l);
-	P2.l.val[0][0] ^= 1-decomp.k2_sign;
-	Q_add_neg = ec_add_mixed_unchecked(ec_endo_laffine(P2), Q);
-	CSEL(c2, con, Q, Q_add_neg, new_ptr, typeof(ec_point_lproj));
-
-	return ec_lproj_to_laffine(Q);
-}
-
-void ec_precompute_w4_table2D_ptr(ec_point_laffine *P, ec_point_laffine table[]) {
-	//Note to self: Memory management seems weird, everything on stack?
-	ef_intrl_elem inv_inputs[16];
-	ef_intrl_elem inv_outputs[16];
-	
-	//Compute iP
-	//ec_point_laffine tmp_table[4];
-	//precompute_w4(P, tmp_table);
 	
 	ec_point_lproj tmp_table_proj[4];
 	ec_point_lproj P2;
@@ -1019,38 +898,68 @@ void ec_precompute_w4_table2D_ptr(ec_point_laffine *P, ec_point_laffine table[])
 	}
 }
 
+void ec_precompute_w4_table2D_ptr(ec_point_laffine *P, ec_point_laffine table[]) {
+	ef_intrl_elem inv_inputs[16];
+	ef_intrl_elem inv_outputs[16];
+	
+	ec_point_lproj tmp_table_proj[4];
+	ec_point_lproj P2;
+	ec_double_mixed_ptr(P, &P2);
+	ec_laffine_to_lproj_ptr(P, &tmp_table_proj[0]);
+	ec_add_mixed_unchecked_ptr(P, &P2, &tmp_table_proj[1]);
+	ec_double_then_add_ptr(P, &P2, &tmp_table_proj[2]);
+	ec_double_then_add_ptr(P, &tmp_table_proj[1], &tmp_table_proj[3]);
+	inv_inputs[0] = tmp_table_proj[1].z;
+	inv_inputs[1] = tmp_table_proj[2].z;
+	inv_inputs[2] = tmp_table_proj[3].z;
+	
+	//Converting table to affine
+	ef_intrl_sim_inv(inv_inputs, inv_outputs, 3);
+	ec_point_laffine tmp_table[4];
+	tmp_table[0] = *P;
+	for (int i = 1; i < 4; i++) {
+		tmp_table[i] = (ec_point_laffine) {ef_intrl_mull(tmp_table_proj[i].x, inv_outputs[i-1]), ef_intrl_mull(tmp_table_proj[i].l, inv_outputs[i-1])};
+	}
+	
+	//Computing table in projective coords
+	ec_point_lproj table_proj[16];
+	for(int i = 0; i < 4; i++) {
+		int index = 5*i;
+		ec_add_endo_laffine_unchecked_ptr(&tmp_table[i], &table_proj[index]);
+		inv_inputs[index] = table_proj[index].z;
+	}
+	for(int j = 1; j < 4; j++) {
+		ec_point_laffine jEndoP = ec_endo_laffine(tmp_table[j]);
+		for(int i = 0; i < j; i++) {
+			int indexij = 4*i+j;
+			int indexji = 4*j+i;
+			ec_add_sub_laffine_unchecked_ptr(&tmp_table[i], &jEndoP, &table_proj[indexij], &table_proj[indexji]);
+			inv_inputs[indexij] = table_proj[indexij].z;
+			inv_inputs[indexji] = table_proj[indexji].z;
+		}
+	}
+	
+	//Converting table to affine
+	ef_intrl_sim_inv(inv_inputs, inv_outputs, 16);
+	for (int i = 0; i < 16; i++) {
+		table[i] = (ec_point_laffine) {ef_intrl_mull(table_proj[i].x, inv_outputs[i]), ef_intrl_mull(table_proj[i].l, inv_outputs[i])};
+	}
+
+	for(int j = 1; j < 4; j++) {
+		for(int i = 0; i < j; i++) {
+			int indexji = 4*j+i;
+			ec_cond_endo(&table[indexji], 1);
+		}
+	}
+}
+
 void ec_lookup_from_w4_table2D_ptr(ec_split_scalar *decomp, signed char rec_k1[], signed char rec_k2[], ec_point_laffine table[], int i, ec_point_laffine *next) {
-	uint64_t zero = 0;
-	uint64_t new_ptr, con = 1;
+	uint64x2x2_t lookup_data = ec_get_lookup_data_table2D(rec_k1[i], rec_k2[i], decomp, 4);
+	lin_pass_w4_table2D(next, table, lookup_data.val[0][0]);
 	
-	//Code to find correct scalar values, as we can't redefine P as -P for negative k1 or k2. But we can, different points!!
-	//Val comp is 2's complement conversion, but why the zero?
-	signed char k1_digit = rec_k1[i];
-	uint64_t k1_digit_sign = ((unsigned char)k1_digit >> 7);
-	signed char k1_val = (k1_digit^(zero - k1_digit_sign))+k1_digit_sign; //why zero
-	uint64_t k1_sign = k1_digit_sign^decomp->k1_sign;
-
-	signed char k2_digit = rec_k2[i];
-	uint64_t k2_digit_sign = ((unsigned char)k2_digit >> 7);
-	signed char k2_val = (k2_digit^(zero - k2_digit_sign))+k2_digit_sign;
-	uint64_t k2_sign = k2_digit_sign^decomp->k2_sign;
-	
-	uint64_t sign_xor = k1_sign ^ k2_sign;
-	uint64_t normal_index = 4*(k1_val/2)+(k2_val/2); //redundancy to round down
-	uint64_t swap_index = 4*(k2_val/2)+(k1_val/2);
-	uint64_t index = sign_xor * swap_index + (1-sign_xor) * normal_index;
-
-	lin_pass_w4_table2D(next, table, index);
-
-	//Cond endo
-	next->x.val[0][0] ^= next->x.val[1][0]*sign_xor;
-	next->x.val[0][1] ^= next->x.val[1][1]*sign_xor;
-	next->l.val[0][0] ^= next->l.val[1][0]*sign_xor;
-	next->l.val[0][1] ^= next->l.val[1][1]*sign_xor;
-	next->l.val[1][0] ^= sign_xor; 
-
+	ec_cond_endo(next, lookup_data.val[1][0]);
 	//Cond neg
-	next->l.val[0][0] ^= k2_sign;
+	next->l.val[0][0] ^= lookup_data.val[1][1];
 }
 
 void ec_scalarmull_single_endo_w4_table2D_ptr(ec_point_laffine *P, uint64x2x2_t k, ec_point_laffine *R) {
@@ -1072,13 +981,15 @@ void ec_scalarmull_single_endo_w4_table2D_ptr(ec_point_laffine *P, uint64x2x2_t 
 	reg_rec(decomp.k2, 4, rec_k2, l-1);
 
 	ec_point_laffine table[16];
-	ec_precompute_w4_table2D_ptr(P, table);
+	ec_precompute_w4_table2D_nonopt_ptr(P, table);
 	
 	ec_point_laffine next;
 	ec_lookup_from_w4_table2D_ptr(&decomp, rec_k1, rec_k2, table, l-1, &next);
 	//next = ec_lookup_from_w4_table2D(decomp, rec_k1, rec_k2, table, l-1);
 	ec_point_lproj Q, Qtmp1, Qtmp2;
 	ec_laffine_to_lproj_ptr(&next, &Q);
+	// printf("Initial: \n");
+	// ec_print_hex_laffine(ec_lproj_to_laffine(Q));
 
 	for(int i=l-2; i>=0; i--) {
 		ec_double_ptr(&Q, &Qtmp1);
@@ -1086,64 +997,31 @@ void ec_scalarmull_single_endo_w4_table2D_ptr(ec_point_laffine *P, uint64x2x2_t 
 		ec_lookup_from_w4_table2D_ptr(&decomp, rec_k1, rec_k2, table, i, &next);
 		//next = ec_lookup_from_w4_table2D(decomp, rec_k1, rec_k2, table, i);
 		ec_double_then_add_ptr(&next, &Qtmp2, &Q);
+		// ec_print_hex_laffine(ec_lproj_to_laffine(Q));
 	}
 	//Logic here with the xor is also strange
 	ec_point_laffine P1 = ec_create_point_laffine(P->x, P->l);
 	P1.l.val[0][0] ^= 1-decomp.k1_sign;
-	ec_point_lproj Q_add_neg = ec_add_mixed_unchecked(P1, Q);
+	ec_point_lproj Q_add_neg;
+	ec_add_mixed_unchecked_ptr(&P1, &Q, &Q_add_neg);
 	CSEL(c1, con, Q, Q_add_neg, new_ptr, typeof(ec_point_lproj));
 
 	ec_point_laffine P2 = ec_create_point_laffine(P->x, P->l);
 	P2.l.val[0][0] ^= 1-decomp.k2_sign;
-	Q_add_neg = ec_add_mixed_unchecked(ec_endo_laffine(P2), Q);
+	ec_point_laffine psiP2 = ec_endo_laffine(P2);
+	ec_add_mixed_unchecked_ptr(&psiP2, &Q, &Q_add_neg);
 	CSEL(c2, con, Q, Q_add_neg, new_ptr, typeof(ec_point_lproj));
 
-	ec_lproj_to_laffine_ptr(&Q, R);
-}
-
-void lin_pass_w4_table2D_bulk_neon1(ec_point_laffine *P1, ec_point_laffine *P2, ec_point_laffine table[], uint64_t i1, uint64_t i2) {
-	poly64x2_t mask;
-	poly64x2_t x0, x1, l0, l1;
-	poly64x2_t P1_x0, P1_x1, P1_l0, P1_l1;
-	poly64x2_t P2_x0, P2_x1, P2_l0, P2_l1;
-
-	for(int i = 0; i < 16; i++) {
-		x0 = vld1q_p64((poly64_t*)  &(table[i].x.val[0]));
-		x1 = vld1q_p64((poly64_t*)  &(table[i].x.val[1]));
-		l0 = vld1q_p64((poly64_t*)  &(table[i].l.val[0]));
-		l1 = vld1q_p64((poly64_t*)  &(table[i].l.val[1]));
-		
-		mask = vdupq_n_p64((poly64_t) all1s * (i1 == i));
-		P1_x0 = vbslq_p64(mask, x0, P1_x0);
-		P1_x1 = vbslq_p64(mask, x1, P1_x1);
-		P1_l0 = vbslq_p64(mask, l0, P1_l0);
-		P1_l1 = vbslq_p64(mask, l1, P1_l1);
-
-		mask = vdupq_n_p64((poly64_t) all1s * (i2 == i));
-		P2_x0 = vbslq_p64(mask, x0, P2_x0);
-		P2_x1 = vbslq_p64(mask, x1, P2_x1);
-		P2_l0 = vbslq_p64(mask, l0, P2_l0);
-		P2_l1 = vbslq_p64(mask, l1, P2_l1);
-	}
-
-	vst1q_p64((poly64_t*) &(P1->x.val[0]), P1_x0);
-	vst1q_p64((poly64_t*)  &(P1->x.val[1]), P1_x1);
-	vst1q_p64((poly64_t*)  &(P1->l.val[0]), P1_l0);
-	vst1q_p64((poly64_t*)  &(P1->l.val[1]), P1_l1);
-
-	vst1q_p64((poly64_t*)  &(P2->x.val[0]), P2_x0);
-	vst1q_p64((poly64_t*)  &(P1->x.val[1]), P2_x1);
-	vst1q_p64((poly64_t*)  &(P2->l.val[0]), P2_l0);
-	vst1q_p64((poly64_t*)  &(P2->l.val[1]), P2_l1);
+	ec_lproj_to_laffine_ptr(&Q, R); //Remember that this must use a constant time div
 }
 
 void ec_lookup_from_w4_table2D_bulk_ptr(ec_split_scalar *decomp, signed char rec_k1[], signed char rec_k2[], ec_point_laffine table[], int i1, int i2, ec_point_laffine *P1, ec_point_laffine *P2) {
 	//Code to find correct scalar values, as we can't redefine P as -P for negative k1 or k2. But we can, different points!!
 	//Val comp is 2's complement conversion, but why the zero?
-	uint64x2x2_t lookup_data1 = ec_get_lookup_data_w4_table2D(rec_k1[i1], rec_k2[i1], decomp);
-	uint64x2x2_t lookup_data2 = ec_get_lookup_data_w4_table2D(rec_k1[i2], rec_k2[i2], decomp);
+	uint64x2x2_t lookup_data1 = ec_get_lookup_data_table2D(rec_k1[i1], rec_k2[i1], decomp, 4);
+	uint64x2x2_t lookup_data2 = ec_get_lookup_data_table2D(rec_k1[i2], rec_k2[i2], decomp, 4);
 
-	lin_pass_w4_table2D_bulk_neon(P1, P2, table, (uint64_t) lookup_data1.val[0][0], (uint64_t) lookup_data2.val[0][0]);
+	lin_pass_w4_table2D_bulk(P1, P2, table, (uint64_t) lookup_data1.val[0][0], (uint64_t) lookup_data2.val[0][0]);
 
 	ec_cond_endo(P1, lookup_data1.val[1][0]);
 	ec_cond_endo(P2, lookup_data2.val[1][0]);
@@ -1176,7 +1054,7 @@ void ec_scalarmull_single_endo_w4_table2D_bulk_ptr(ec_point_laffine *P, uint64x2
 	
 	ec_point_laffine P1, P2, Plast;
 	ec_lookup_from_w4_table2D_bulk_ptr(&decomp, rec_k1, rec_k2, table, l-1, 0, &P1, &Plast);
-	//next = ec_lookup_from_w4_table2D(decomp, rec_k1, rec_k2, table, l-1);
+
 	ec_point_lproj Q, Qtmp1, Qtmp2;
 	ec_laffine_to_lproj_ptr(&P1, &Q);
 
@@ -1196,14 +1074,123 @@ void ec_scalarmull_single_endo_w4_table2D_bulk_ptr(ec_point_laffine *P, uint64x2
 	//Logic here with the xor is also strange
 	P1 = ec_create_point_laffine(P->x, P->l);
 	P1.l.val[0][0] ^= 1-decomp.k1_sign;
-	ec_point_lproj Q_add_neg = ec_add_mixed_unchecked(P1, Q);
+	ec_point_lproj Q_add_neg;
+	ec_add_mixed_unchecked_ptr(&P1, &Q, &Q_add_neg);
 	CSEL(c1, con, Q, Q_add_neg, new_ptr, typeof(ec_point_lproj));
 
 	P2 = ec_create_point_laffine(P->x, P->l);
 	P2.l.val[0][0] ^= 1-decomp.k2_sign;
-	Q_add_neg = ec_add_mixed_unchecked(ec_endo_laffine(P2), Q);
+	ec_point_laffine endoP2 = ec_endo_laffine(P2);
+	ec_add_mixed_unchecked_ptr(&endoP2, &Q, &Q_add_neg);
 	CSEL(c2, con, Q, Q_add_neg, new_ptr, typeof(ec_point_lproj));
 
 	ec_lproj_to_laffine_ptr(&Q, R);
 }
 
+void ec_precompute_w3_table2D_ptr(ec_point_laffine *P, ec_point_laffine table[]) {
+	ec_point_lproj P2_proj, P3_proj;
+	ec_double_mixed_ptr(P, &P2_proj);
+	ec_add_mixed_unchecked_ptr(P, &P2_proj, &P3_proj);
+	ef_intrl_elem z3Inv = ef_intrl_inv(P3_proj.z);
+	ec_point_laffine P3 = (ec_point_laffine) {ef_intrl_mull(P3_proj.x, z3Inv), ef_intrl_mull(P3_proj.l, z3Inv)};
+
+	ec_point_lproj table_proj[4];
+	ec_add_endo_laffine_unchecked_ptr(P, &table_proj[0]);
+	ec_add_endo_laffine_unchecked_ptr(&P3, &table_proj[3]);
+	ec_cond_endo(&P3, 1);
+	ec_add_sub_laffine_unchecked_ptr(P, &P3, &table_proj[1], &table_proj[2]);
+
+	ef_intrl_elem inv_inputs[4];
+	for(int i = 0; i < 4; i++) {
+		inv_inputs[i] = table_proj[i].z;
+	}
+	ef_intrl_elem inv_outputs[4];
+	ef_intrl_sim_inv(inv_inputs, inv_outputs, 4);
+	for (int i = 0; i < 4; i++) {
+		table[i] = (ec_point_laffine) {ef_intrl_mull(table_proj[i].x, inv_outputs[i]), ef_intrl_mull(table_proj[i].l, inv_outputs[i])};
+	}
+
+	ec_cond_endo(&table[2], 1);
+}
+
+void ec_lookup_from_w3_table2D_ptr(ec_split_scalar *decomp, signed char rec_k1[], signed char rec_k2[], ec_point_laffine table[], int i, ec_point_laffine *P1) {
+	uint64x2x2_t lookup_data = ec_get_lookup_data_table2D(rec_k1[i], rec_k2[i], decomp, 2);
+
+	lin_pass_w3_table2D(P1, table, lookup_data.val[0][0]);
+
+	ec_cond_endo(P1, lookup_data.val[1][0]);
+
+	//Cond neg
+	P1->l.val[0][0] ^= lookup_data.val[1][1];
+}
+
+void ec_lookup_from_w3_table2D_bulk_ptr(ec_split_scalar *decomp, signed char rec_k1[], signed char rec_k2[], ec_point_laffine table[], int i1, int i2, ec_point_laffine *P1, ec_point_laffine *P2) {
+	uint64x2x2_t lookup_data1 = ec_get_lookup_data_table2D(rec_k1[i1], rec_k2[i1], decomp, 2);
+	uint64x2x2_t lookup_data2 = ec_get_lookup_data_table2D(rec_k1[i2], rec_k2[i2], decomp, 2);
+
+	lin_pass_w3_table2D_bulk(P1, P2, table, lookup_data1.val[0][0], lookup_data2.val[0][0]);
+
+	ec_cond_endo(P1, lookup_data1.val[1][0]);
+	ec_cond_endo(P2, lookup_data2.val[1][0]);
+
+	//Cond neg
+	P1->l.val[0][0] ^= lookup_data1.val[1][1];
+	P2->l.val[0][0] ^= lookup_data2.val[1][1];
+}
+
+void ec_scalarmull_single_endo_w3_table2D_bulk_ptr(ec_point_laffine *P, uint64x2x2_t k, ec_point_laffine *R) {
+	uint64_t new_ptr, con = 1;
+	int w = 3;
+	int l = 65;
+
+	ec_split_scalar decomp = ec_scalar_decomp(k);
+
+	uint64_t c1 = 1-(decomp.k1[0]&1);
+	decomp.k1[0] = decomp.k1[0]+c1;
+
+	uint64_t c2 = 1-(decomp.k2[0]&1);
+	decomp.k2[0] = decomp.k2[0]+c2;
+
+	signed char rec_k1[l];
+	signed char rec_k2[l];
+
+	reg_rec(decomp.k1, w, rec_k1, l-1);
+	reg_rec(decomp.k2, w, rec_k2, l-1);
+
+	ec_point_laffine table[4];
+	ec_precompute_w3_table2D_ptr(P, table);
+	
+	ec_point_laffine P1, P2;
+	ec_lookup_from_w3_table2D_bulk_ptr(&decomp, rec_k1, rec_k2, table, l-1, l-2, &P1, &P2);
+
+	ec_point_lproj Q, Qtmp;
+	ec_laffine_to_lproj_ptr(&P1, &Q);
+
+	for(int i=l-2; i > 1; i -= 2) {
+		ec_double_ptr(&Q, &Qtmp);
+		ec_double_then_add_ptr(&P2, &Qtmp, &Q);
+		ec_lookup_from_w3_table2D_bulk_ptr(&decomp, rec_k1, rec_k2, table, i-1, i-2, &P1, &P2);
+		ec_double_ptr(&Q, &Qtmp);
+		ec_double_then_add_ptr(&P1, &Qtmp, &Q);
+	}
+	ec_double_ptr(&Q, &Qtmp);
+	ec_double_then_add_ptr(&P2, &Qtmp, &Q);
+	ec_lookup_from_w3_table2D_ptr(&decomp, rec_k1, rec_k2, table, 0, &P1);
+	ec_double_ptr(&Q, &Qtmp);
+	ec_double_then_add_ptr(&P1, &Qtmp, &Q); //Preparing for complete formula here
+
+	//Logic here with the xor is also strange
+	P1 = ec_create_point_laffine(P->x, P->l);
+	P1.l.val[0][0] ^= 1-decomp.k1_sign;
+	ec_point_lproj Q_add_neg;
+	ec_add_mixed_unchecked_ptr(&P1, &Q, &Q_add_neg);
+	CSEL(c1, con, Q, Q_add_neg, new_ptr, typeof(ec_point_lproj));
+
+	P2 = ec_create_point_laffine(P->x, P->l);
+	P2.l.val[0][0] ^= 1-decomp.k2_sign;
+	ec_point_laffine endoP2 = ec_endo_laffine(P2);
+	ec_add_mixed_unchecked_ptr(&endoP2, &Q, &Q_add_neg);
+	CSEL(c2, con, Q, Q_add_neg, new_ptr, typeof(ec_point_lproj));
+
+	ec_lproj_to_laffine_ptr(&Q, R); //Remember this needs to be constant time
+}

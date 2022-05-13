@@ -22,9 +22,22 @@ void ef_intrl_print_unred_expr(ef_intrl_elem_unred a);
 
 void ef_intrl_print_unred_expr_nl(ef_intrl_elem_unred a);
 
-ef_elem ef_intrl_disentangle(ef_intrl_elem a);
+static inline ef_elem ef_intrl_disentangle(ef_intrl_elem a) {
+	ef_elem res;
+	res.val[0] = (poly64x2_t) vzip1q_u64((uint64x2_t) a.val[0], a.val[1]);
+	res.val[1] = (poly64x2_t) vzip2q_u64((uint64x2_t) a.val[0], a.val[1]);
+	return res;
+}
 
-ef_intrl_elem ef_intrl_interleave(ef_elem a);
+//{{a[0][0], a[1][0]}, {a[0][1], a[1][1]}}
+static inline ef_intrl_elem ef_intrl_interleave(ef_elem a) {
+	ef_intrl_elem res;
+	poly64x2_t t = vextq_p64(a.val[0], a.val[0], 1); //t = {a[0][1], a[0][0]}
+	res.val[0] = vextq_p64(t, a.val[1], 1); //{a[0][0], a[1][0]}
+	res.val[1] = a.val[1]; //{a[1][0], a[1][1]}
+	res.val[1][0] = t[0]; //{a[0][1], a[1][1]}
+	return res;
+}
 
 poly64x2x2_t ef_intrl_disentangle_unred_lower(ef_intrl_elem_unred c);
 

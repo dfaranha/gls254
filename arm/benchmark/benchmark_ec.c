@@ -177,6 +177,50 @@ void benchmark_ec_add_laffine_unchecked_ptr() {
 	printf("Median: %lf\n\n", median(times, num_runs));
 }
 
+void benchmark_ec_add_sub_laffine_unchecked_ptr() {
+	uint64_t num_runs = 2000;
+	uint64_t times[num_runs];
+	ec_point_lproj sum = (ec_point_lproj) INFTY;
+
+	for(int i = 0; i < num_runs; i++) {
+		ec_point_laffine P = ec_rand_point_laffine();
+		ec_point_laffine Q = ec_rand_point_laffine();
+		uint64_t start = read_pmccntr();
+		ec_point_lproj Radd, Rsub;
+		ec_add_sub_laffine_unchecked_ptr(&P, &Q, &Radd, &Rsub);
+		uint64_t end = read_pmccntr();
+		insert_sorted(end-start, times, i);
+		sum = ec_add(sum, Radd);
+		sum = ec_add(sum, Rsub);
+	}
+	ec_print_hex(sum);
+	printf("BENCHMARK ec_add_sub_laffine_unchecked_ptr\n");
+	printf("Number of iterations: %lu\n", num_runs);
+	printf("Average: %lf\n", average(times, num_runs));
+	printf("Median: %lf\n\n", median(times, num_runs));
+}
+
+void benchmark_ec_add_endo_laffine_unchecked_ptr() {
+	uint64_t num_runs = 2000;
+	uint64_t times[num_runs];
+	ec_point_lproj sum = (ec_point_lproj) INFTY;
+
+	for(int i = 0; i < num_runs; i++) {
+		ec_point_laffine P = ec_rand_point_laffine();
+		uint64_t start = read_pmccntr();
+		ec_point_lproj R;
+		ec_add_endo_laffine_unchecked_ptr(&P, &R);
+		uint64_t end = read_pmccntr();
+		insert_sorted(end-start, times, i);
+		sum = ec_add(sum, R);
+	}
+	ec_print_hex(sum);
+	printf("BENCHMARK ec_add_endo_laffine_unchecked_ptr\n");
+	printf("Number of iterations: %lu\n", num_runs);
+	printf("Average: %lf\n", average(times, num_runs));
+	printf("Median: %lf\n\n", median(times, num_runs));
+}
+
 void benchmark_ec_double() {
 	uint64_t num_runs = 2000;
 	uint64_t times[num_runs];
@@ -412,21 +456,16 @@ void benchmark_ec_double_then_addtwo_nonatomic() {
 
 void benchmark_ec_all() {
 	//benchmark_ec_add();
-	benchmark_ec_add_unchecked();
 	benchmark_ec_add_unchecked_ptr();
 	//benchmark_ec_add_mixed();
-	benchmark_ec_add_mixed_unchecked();
 	benchmark_ec_add_mixed_unchecked_ptr();
-	benchmark_ec_add_laffine_unchecked();
 	benchmark_ec_add_laffine_unchecked_ptr();
-	benchmark_ec_double();
+	benchmark_ec_add_sub_laffine_unchecked_ptr();
+	benchmark_ec_add_endo_laffine_unchecked_ptr();
 	benchmark_ec_double_ptr();
-	benchmark_ec_double_mixed();
 	benchmark_ec_double_mixed_ptr();
 	//benchmark_ec_double_alt();
-	benchmark_ec_double_then_add();
 	benchmark_ec_double_then_add_ptr();
-	benchmark_ec_double_then_addtwo();
 	benchmark_ec_double_then_addtwo_ptr();
 	//benchmark_ec_double_then_add_nonatomic();
 	//benchmark_ec_double_then_addtwo_nonatomic();
