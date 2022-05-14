@@ -194,6 +194,9 @@ def neg_proj(Xp, Lp, Zp):
 def psi_aff(xP, lP):
     return (xP + xP[1], lP + lP[1] + s)
 
+def psi_proj(Xp, Lp, Zp):
+    return (Xp + Xp[1], Lp + Lp[1] + Zp[1] + Zp[0]*s, Zp + Zp[1])
+
 def curve_details(b):
     #Define a curve that E is a quadratic twist of
     q = ZZ(2^127)
@@ -564,6 +567,11 @@ for i in range(0, 1):
     assert(from_lambda_prj(X4, L4, Z4) == P - Q)
     (X3, L3, Z3) = add_psi(xP, lP)
     assert(from_lambda_prj(X3, L3, Z3) == P + int(mu)*P)
+
+    #Test projective endo:
+    (X3, L3, Z3) = psi_proj((s+1)*xP, (s+1)*lP, s+1)
+    (x4, l4) = psi_aff(xP, lP)
+    assert X3 / Z3 == x4 and L3 / Z3 == l4
 
     #Test atomic formulas:
     (X3, L3, Z3) = double_add(xQ, lQ, one, xP, lP)
