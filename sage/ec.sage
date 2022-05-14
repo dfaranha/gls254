@@ -134,6 +134,21 @@ def add_sub_mix_mix(xP, lP, xQ, lQ):
     Zpmq = Zpq + B
     return (Xpq, Lpq, Zpq, Xpmq, Lpmq, Zpmq)
 
+def add_sub_mix(xP, lP, xQ, lQ, zQ):
+    global mt, ma, mb, sq
+    mt += 12
+    sq += 5
+    A = lP * zQ + lQ
+    B = (xP*zQ + xQ)^2
+    C = ((xP*zQ) * xQ)
+    Xpq = A^2 * C
+    Zpq = A * B * zQ
+    Lpq = ((A*xQ) + B)^2 + Zpq*(lP + 1)
+    Xpmq = Xpq + C * zQ^2
+    Zpmq = Zpq + B * zQ^2
+    Lpmq = Lpq + (xQ*zQ)^2 + (B * zQ^2)*(lP+1)
+    return (Xpq, Lpq, Zpq, Xpmq, Lpmq, Zpmq)
+
 def double_add(Xq, Lq, Zq, xP, lP):
     global mt, ma, mb, sq
     mt += 10
@@ -542,6 +557,9 @@ for i in range(0, 1):
     (X3, L3, Z3) = add_mix_mix(xP, lP, xQ, lQ)
     assert(from_lambda_prj(X3, L3, Z3) == P + Q)
     (X3, L3, Z3, X4, L4, Z4) = add_sub_mix_mix(xP, lP, xQ, lQ)
+    assert(from_lambda_prj(X3, L3, Z3) == P + Q)
+    assert(from_lambda_prj(X4, L4, Z4) == P - Q)
+    (X3, L3, Z3, X4, L4, Z4) = add_sub_mix(xP, lP, xQ, lQ, one)
     assert(from_lambda_prj(X3, L3, Z3) == P + Q)
     assert(from_lambda_prj(X4, L4, Z4) == P - Q)
     (X3, L3, Z3) = add_psi(xP, lP)
