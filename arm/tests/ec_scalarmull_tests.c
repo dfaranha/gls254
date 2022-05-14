@@ -24,7 +24,6 @@ void ec_scalarmull_single_test_example(test_ctr *ctr) {
 	//Assert
 	uint64_t equal = ec_equal_point_laffine(actual, expected);
 	uint64_t on_curve = ec_is_on_curve_laffine(actual);
-	printf("%lu\n", on_curve);
 	assert_true(equal && on_curve, ctr, "ec: ec_scalar_mull_test_example FAILED");
 
 	uint64_t num_runs = 1;
@@ -572,7 +571,6 @@ void ec_scalarmull_test_lookup_from_w3_table2D_ptr(test_ctr *ctr) {
 	ec_point_laffine expected = ec_lproj_to_laffine(tmp);
 	ec_point_laffine actual;
 	ec_lookup_from_w3_table2D_ptr(&decomp, rec_k1, rec_k2, table, 0, &actual);
-	printf("%lu", ec_is_on_curve_laffine(actual));
 	uint64_t equal = ec_equal_point_laffine(expected, actual);
 	assert_true(equal, ctr, "ec_scalarmull_test_lookup_from_w3_table2D_ptr +i +j FAILED");
 

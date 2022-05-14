@@ -70,6 +70,8 @@ void ec_precompute_w4_table2D_nonopt_ptr(ec_point_laffine *P, ec_point_laffine t
 
 void ec_precompute_w4_table2D_ptr(ec_point_laffine *P, ec_point_laffine table[]);
 
+void ec_precompute_w3_table2D_nonopt_ptr(ec_point_laffine *P, ec_point_laffine table[]);
+
 void ec_precompute_w3_table2D_ptr(ec_point_laffine *P, ec_point_laffine table[]);
 
 void ec_lookup_from_w4_table2D_ptr(ec_split_scalar *decomp, signed char rec_k1[], signed char rec_k2[], ec_point_laffine table[], int i, ec_point_laffine *next);

@@ -61,10 +61,8 @@ static inline ec_point_lproj ec_neg(ec_point_lproj P) {
 	return P;
 }
 
-static inline void ec_neg_ptr(ec_point_lproj *P, ec_point_lproj *R) {
-	R->x = P->x;
-	R->l = ef_intrl_add(P->l, P->z);
-	R->z = P->z;
+static inline void ec_neg_mut(ec_point_lproj *P) {
+	P->l = ef_intrl_add(P->l, P->z);
 }
 
 static inline ec_point_laffine ec_neg_laffine(ec_point_laffine P) {
@@ -72,10 +70,8 @@ static inline ec_point_laffine ec_neg_laffine(ec_point_laffine P) {
 	return P;
 }
 
-static inline void ec_neg_laffine_ptr(ec_point_laffine *P, ec_point_laffine *R) {
-	R->x = P->x;
-	R->l = P->l;
-	R->l.val[0][0] ^= 1;
+static inline void ec_neg_laffine_mut(ec_point_laffine *P) {
+	P->l.val[0][0] ^= 1;
 }
 
 ec_point_lproj ec_add(ec_point_lproj P1, ec_point_lproj P2);
@@ -95,6 +91,8 @@ ec_point_lproj ec_add_laffine_unchecked(ec_point_laffine P, ec_point_laffine Q);
 void ec_add_laffine_unchecked_ptr(ec_point_laffine *P, ec_point_laffine *Q, ec_point_lproj *R);
 
 void ec_add_sub_laffine_unchecked_ptr(ec_point_laffine *P, ec_point_laffine *Q, ec_point_lproj *Radd, ec_point_lproj *Rsub);
+
+void ec_add_sub_mixed_unchecked_ptr(ec_point_laffine *P, ec_point_lproj *Q, ec_point_lproj *Radd, ec_point_lproj *Rsub);
 
 void ec_add_endo_laffine_unchecked_ptr(ec_point_laffine *P, ec_point_lproj *R);
 
@@ -160,6 +158,29 @@ static inline void ec_endo_laffine_ptr(ec_point_laffine *P, ec_point_laffine *R)
 	R->l.val[0] = (poly64x2_t) veorq_u64((uint64x2_t) P->l.val[0], (uint64x2_t) t);
 	t = vextq_p64(P->l.val[1], P->l.val[1], 1);
 	R->l.val[1][0] ^= t[0];
+}
+
+static inline ec_point_lproj ec_endo_lproj(ec_point_lproj P) {
+	ec_point_lproj R;
+	poly64x2_t t = vextq_p64(P.x.val[0], P.x.val[0], 1);
+	R.x = P.x;
+	R.x.val[0][0] ^= t[0];
+	t = vextq_p64(P.x.val[1], P.x.val[1], 1);
+	R.x.val[1][0] ^= t[0];
+
+	R.l.val[0] = vextq_p64(P.z.val[0], P.z.val[0], 1);
+	R.z = P.z;
+	R.z.val[0][0] ^= R.l.val[0][0];
+	R.l.val[1] = vextq_p64(P.z.val[1], P.z.val[1], 1);
+	R.z.val[1][0] ^= R.l.val[1][0];
+
+	t = vextq_p64(P.l.val[0], P.l.val[0], 1);
+	R.l = ef_intrl_add(R.l, P.l);
+	R.l.val[0][0] ^= t[0];
+	t = vextq_p64(P.l.val[1], P.l.val[1], 1);
+	R.l.val[1][0] ^= t[0];
+	
+	return R;
 }
 
 #endif

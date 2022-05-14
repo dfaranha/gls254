@@ -257,17 +257,36 @@ void ec_add_laffine_unchecked_ptr(ec_point_laffine *P, ec_point_laffine *Q, ec_p
 	R->l = ef_intrl_add(ef_intrl_square(ef_intrl_add(F, G)), ef_intrl_mull(R->z, ef_intrl_add(P->l, (ef_intrl_elem) {{{1, 0}, {0, 0}}}))); //(G+H)^2 + R.z + R.z * (P.l + 1)
 }
 
+//P+-Q
 void ec_add_sub_laffine_unchecked_ptr(ec_point_laffine *P, ec_point_laffine *Q, ec_point_lproj *Radd, ec_point_lproj *Rsub) {
 	ef_intrl_elem E = ef_intrl_add(P->l, Q->l); //A = L_P + L_Q
 	ef_intrl_elem F = ef_intrl_square(ef_intrl_add(P->x, Q->x)); //B = (X_P + X_Q)^2
 	ef_intrl_elem G = ef_intrl_mull(P->x, Q->x); //X_P * X_Q
-	ef_intrl_elem lPplusOne = ef_intrl_add(P->l, (ef_intrl_elem) {{{1, 0}, {0, 0}}});
+	ef_intrl_elem lPplusOne = P->l;
+	lPplusOne.val[0][0] ^= 1;
 	Radd->x = ef_intrl_mull(ef_intrl_square(E), G); //A² * (X_P * X_Q)
 	Radd->z = ef_intrl_mull(E, F);
 	Radd->l = ef_intrl_add(ef_intrl_square(ef_intrl_add(ef_intrl_mull(E, Q->x), F)), ef_intrl_mull(Radd->z, lPplusOne));
 	Rsub->x = ef_intrl_add(Radd->x, G);
 	Rsub->l = ef_intrl_add(ef_intrl_add(Radd->l, ef_intrl_square(Q->x)), ef_intrl_mull(F, lPplusOne));
 	Rsub->z = ef_intrl_add(Radd->z, F);
+}
+
+void ec_add_sub_mixed_unchecked_ptr(ec_point_laffine *P, ec_point_lproj *Q, ec_point_lproj *Radd, ec_point_lproj *Rsub) {
+	ef_intrl_elem E = ef_intrl_add(ef_intrl_mull(P->l, Q->z), Q->l); //A = L_P * Z_Q + L_Q
+	ef_intrl_elem xPzQ = ef_intrl_mull(P->x, Q->z);
+	ef_intrl_elem F = ef_intrl_square(ef_intrl_add(xPzQ, Q->x));
+	ef_intrl_elem G = ef_intrl_mull(xPzQ, Q->x);
+	ef_intrl_elem lPplusOne = P->l;
+	lPplusOne.val[0][0] ^= 1;
+	Radd->x = ef_intrl_mull(ef_intrl_square(E), G);
+	Radd->z = ef_intrl_mull(ef_intrl_mull(E, F), Q->z);
+	Radd->l = ef_intrl_add(ef_intrl_square(ef_intrl_add(ef_intrl_mull(E, Q->x), F)), ef_intrl_mull(Radd->z, lPplusOne));
+	ef_intrl_elem zQzQ = ef_intrl_square(Q->z);
+	Rsub->x = ef_intrl_add(Radd->x, ef_intrl_mull(G, zQzQ));
+	ef_intrl_elem H = ef_intrl_mull(zQzQ, F);
+	Rsub->z = ef_intrl_add(Radd->z, H);
+	Rsub->l = ef_intrl_add(ef_intrl_add(Radd->l, ef_intrl_square(ef_intrl_mull(Q->x, Q->z))), ef_intrl_mull(H, lPplusOne));
 }
 
 //Computes P + psi(P)
@@ -302,7 +321,7 @@ void ec_add_endo_laffine_unchecked_ptr(ec_point_laffine *P, ec_point_lproj *R) {
 	
 	R->z = ef_intrl_interleave(Rz_nonintrl);
 	R->l = ef_intrl_add(ef_intrl_square(ef_intrl_add(G,H)), ef_intrl_mull(R->z, ef_intrl_add(P->l, (ef_intrl_elem) {{{1, 0}, {0, 0}}})));
-}	
+}
 
 /*
  * I think I have found a proof for why we don't need to check that P = -P here.

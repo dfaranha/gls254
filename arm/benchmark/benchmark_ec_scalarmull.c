@@ -464,6 +464,27 @@ void benchmark_ec_precompute_w4_table2D_ptr() {
 	printf("Median: %lf\n\n", median(times, num_runs));
 }
 
+void benchmark_ec_precompute_w3_table2D_nonopt_ptr() {
+	uint64_t num_runs = 2000;
+	uint64_t times[num_runs];
+	ec_point_lproj sum = ec_rand_point_lproj();
+	ec_point_laffine table[16];
+
+	for(int i = 0; i < num_runs; i++) {
+		ec_point_laffine P = ec_rand_point_laffine();
+		uint64_t start = read_pmccntr();
+		ec_precompute_w3_table2D_nonopt_ptr(&P, table);
+		uint64_t end = read_pmccntr();
+		insert_sorted(end-start, times, i);
+		sum = ec_add_mixed(table[i % 16], sum);
+	}
+	ec_print_hex(sum);
+	printf("BENCHMARK benchmark_ec_precompute_w3_table2D_nonopt_ptr\n");
+	printf("Number of iterations: %lu\n", num_runs);
+	printf("Average: %lf\n", average(times, num_runs));
+	printf("Median: %lf\n\n", median(times, num_runs));
+}
+
 void benchmark_ec_precompute_w3_table2D_ptr() {
 	uint64_t num_runs = 2000;
 	uint64_t times[num_runs];
@@ -603,6 +624,7 @@ void benchmark_ec_scalarmull_all() {
 	benchmark_ec_lookup_w5();
 	benchmark_ec_precompute_w4_table2D_nonopt_ptr();
 	benchmark_ec_precompute_w4_table2D_ptr();
+	benchmark_ec_precompute_w3_table2D_nonopt_ptr();
 	benchmark_ec_precompute_w3_table2D_ptr();
 	benchmark_ec_lookup_from_w4_table2D_ptr();
 	benchmark_ec_lookup_from_w4_table2D_bulk_ptr();
