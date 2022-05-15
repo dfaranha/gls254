@@ -371,31 +371,31 @@ poly64x2_t bf_fermat_inv(poly64x2_t a) {
 //Means need 9 multiplications & 126 squarings using Itoh & Tsujii alg
 //In the end return (a^(2^126 -1))^2 = a^(2^127 -2) = a^-1 per Fermat
 poly64x2_t bf_addchain_inv(poly64x2_t a) {
-	poly64x2_t x_10 = bf_red_psquare(bf_psquare(a)); // 2
-	poly64x2_t x_11 = bf_red_lazy(bf_pmull(a, x_10)); //1 + 2 = 3
-	poly64x2_t x_110 = bf_red_psquare(bf_psquare(x_11)); //3*2 = 6
-	poly64x2_t x_111 = bf_red_lazy(bf_pmull(a, x_110)); //1 + 6 = 7
-	poly64x2_t x_111000 = bf_red_psquare(bf_psquare(bf_red_psquare(bf_psquare(bf_red_psquare(bf_psquare(x_111))))));
+	poly64x2_t x_10 = bf_square(a); // 2
+	poly64x2_t x_11 = bf_mull(a, x_10); //1 + 2 = 3
+	poly64x2_t x_110 = bf_square(x_11); //3*2 = 6
+	poly64x2_t x_111 = bf_mull(a, x_110); //1 + 6 = 7
+	poly64x2_t x_111000 = bf_square(bf_square(bf_square(x_111)));
 	//7*2^3 = 56
-	poly64x2_t x_111111 = bf_red_lazy(bf_pmull(x_111, x_111000)); //56 + 7 = 2^6 - 1
-	poly64x2_t x_x12 = bf_red_lazy(bf_pmull(bf_multisquare_loop(x_111111, 6), x_111111));
+	poly64x2_t x_111111 = bf_mull(x_111, x_111000); //56 + 7 = 2^6 - 1
+	poly64x2_t x_x12 = bf_mull(bf_multisquare_loop(x_111111, 6), x_111111);
 	//(2^6 -1)*2^6 + 2^6 - 1 = 2^12 - 1
-	poly64x2_t x_x24 = bf_red_lazy(bf_pmull(bf_multisquare_loop(x_x12, 12), x_x12));
+	poly64x2_t x_x24 = bf_mull(bf_multisquare_loop(x_x12, 12), x_x12);
 	//(2^12-1)*2^12 + 2^12 - 1 = 2^24 - 1
 	poly64x2_t x_i34 = bf_multisquare_loop(x_x24, 6); //(2^24-1)*2^6 = 2^30 -2^6
-	poly64x2_t x_x30 = bf_red_lazy(bf_pmull(x_111111, x_i34)); //(2^30-2^6) + 2^6 - 1 = 2^30 - 1
-	poly64x2_t x_x48 = bf_red_lazy(bf_pmull(bf_multisquare_loop(x_i34, 18), x_x24));
+	poly64x2_t x_x30 = bf_mull(x_111111, x_i34); //(2^30-2^6) + 2^6 - 1 = 2^30 - 1
+	poly64x2_t x_x48 = bf_mull(bf_multisquare_loop(x_i34, 18), x_x24);
 	//(2^30 - 2^6)*2^18 + 2^24 - 1 = 2^48 - 1
-	poly64x2_t x_x96 = bf_red_lazy(bf_pmull(bf_multisquare_loop(x_x48, 48), x_x48));
+	poly64x2_t x_x96 = bf_mull(bf_multisquare_loop(x_x48, 48), x_x48);
 	//(2^48-1)*2^48 +2^48 - 1 = 2^96 -1
-	poly64x2_t x_end = bf_red_lazy(bf_pmull(bf_multisquare_loop(x_x96, 30), x_x30));
+	poly64x2_t x_end = bf_mull(bf_multisquare_loop(x_x96, 30), x_x30);
 	//(2^96-1)*2^30 + 2^30 - 1 = 2^126 - 1
-	return bf_red_psquare(bf_psquare(x_end));
+	return bf_square(x_end);
 }
 
 //Infinite loops with gcc???
 //Algorithm 2.49
-poly64x2_t bf_nonconst_inv(poly64x2_t a) {
+poly64x2_t bf_binarygcd_inv(poly64x2_t a) {
 	poly64x2_t f = {pow2to63 + 1, pow2to63};
 	poly64x2_t u = a;
 	poly64x2_t v = f;
@@ -576,26 +576,26 @@ poly64x2_t bf_multisquare_lookup_48(poly64x2_t a) {
 }
 
 poly64x2_t bf_addchain_lookup_inv(poly64x2_t a) {
-	poly64x2_t t1 = bf_red_psquare(bf_psquare(a)); // 2
-	t1 = bf_red(bf_pmull(a, t1)); //1 + 2 = 3
-	t1 = bf_red_psquare(bf_psquare(t1)); //3*2 = 6
-	t1 = bf_red(bf_pmull(a, t1)); //1 + 6 = 7
-	a = bf_red_psquare(bf_psquare(bf_red_psquare(bf_psquare(bf_red_psquare(bf_psquare(t1))))));
+	poly64x2_t t1 = bf_square(a); // 2
+	t1 = bf_mull(a, t1); //1 + 2 = 3
+	t1 = bf_square(t1); //3*2 = 6
+	t1 = bf_mull(a, t1); //1 + 6 = 7
+	a = bf_square(bf_square(bf_square(t1)));
 	//7*2^3 = 56
-	a = bf_red(bf_pmull(t1, a)); //56 + 7 = 2^6 - 1
-	t1 = bf_red(bf_pmull(bf_multisquare_loop(a, 6), a));
+	a = bf_mull(t1, a); //56 + 7 = 2^6 - 1
+	t1 = bf_mull(bf_multisquare_loop(a, 6), a);
 	//(2^6 -1)*2^6 + 2^6 - 1 = 2^12 - 1
-	t1 = bf_red(bf_pmull(bf_multisquare_loop(t1, 12), t1));
+	t1 = bf_mull(bf_multisquare_loop(t1, 12), t1);
 	//(2^12-1)*2^12 + 2^12 - 1 = 2^24 - 1
 	poly64x2_t t2 = bf_multisquare_loop(t1, 6); //(2^24-1)*2^6 = 2^30 -2^6
-	a = bf_red(bf_pmull(a, t2)); //(2^30-2^6) + 2^6 - 1 = 2^30 - 1
-	t1 = bf_red(bf_pmull(bf_multisquare_loop(t2, 18), t1));
+	a = bf_mull(a, t2); //(2^30-2^6) + 2^6 - 1 = 2^30 - 1
+	t1 = bf_mull(bf_multisquare_loop(t2, 18), t1);
 	//(2^30 - 2^6)*2^18 + 2^24 - 1 = 2^48 - 1
-	t1 = bf_red(bf_pmull(bf_multisquare_lookup_48(t1), t1));
+	t1 = bf_mull(bf_multisquare_lookup_48(t1), t1);
 	//(2^48-1)*2^48 +2^48 - 1 = 2^96 -1
-	a = bf_red(bf_pmull(bf_multisquare_lookup_30(t1), a));
+	a = bf_mull(bf_multisquare_lookup_30(t1), a);
 	//(2^96-1)*2^30 + 2^30 - 1 = 2^126 - 1
-	return bf_red_psquare(bf_psquare(a));
+	return bf_square(a);
 }
 
 poly64x2_t bf_red_lazy1(poly64x2x2_t c) {

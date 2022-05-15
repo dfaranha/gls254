@@ -50,7 +50,6 @@ static inline poly64x2x2_t bf_pmull(poly64x2_t a, poly64x2_t b) {
 	r.val[1] = (poly64x2_t) veorq_u64((uint64x2_t) r.val[1], (uint64x2_t) t1);
 
 	return r;
-
 }
 
 static inline poly64x2x2_t bf_psquare(poly64x2_t a) {
@@ -108,6 +107,46 @@ poly64x2_t bf_red_lazy1(poly64x2x2_t c);
 
 poly64x2_t bf_red_from_lazy(poly64x2_t a);
 
+static inline poly64x2_t bf_square(poly64x2_t a) {
+	poly64x2_t c0 = (poly64x2_t) vreinterpretq_u64_p128(vmull_p64(a[0], a[0]));
+	poly64x2_t c1 = (poly64x2_t) vreinterpretq_u64_p128(vmull_p64(a[1], a[1]));
+	
+	poly64x2_t t;
+	t[0] = 0;
+	t = vextq_p64(c1, t, 1);
+	c1[0] ^= t[0];
+	t = vextq_p64(t, c1, 1);
+	c0 = (poly64x2_t) veorq_u64((uint64x2_t) c0, (uint64x2_t) t);
+	c1 = (poly64x2_t) vshlq_n_u64((uint64x2_t) c1, 1);
+	return (poly64x2_t) veorq_u64((uint64x2_t) c0, (uint64x2_t) c1);
+}
+
+static inline poly64x2_t bf_mull(poly64x2_t a, poly64x2_t b) {
+	poly64x2_t t0, t1;
+	poly64x2_t z = {0,0};
+
+	poly64x2_t r0 = (poly64x2_t) vreinterpretq_u64_p128(vmull_p64(a[0], b[0]));
+	poly64x2_t r1 = (poly64x2_t) vreinterpretq_u64_p128(vmull_high_p64(a, b));
+	t0 = vextq_p64(b, b, 1);
+	t1 = (poly64x2_t) vreinterpretq_u64_p128(vmull_p64(a[0], t0[0]));
+	t0 = (poly64x2_t) vreinterpretq_u64_p128(vmull_high_p64(a, t0));
+	t0 = (poly64x2_t) veorq_u64((uint64x2_t) t0, (uint64x2_t) t1);
+	t1 = vextq_p64(z, t0, 1);
+	r0 = (poly64x2_t) veorq_u64((uint64x2_t) r0, (uint64x2_t) t1);
+	t1 = vextq_p64(t0, z, 1);
+	r1 = (poly64x2_t) veorq_u64((uint64x2_t) r1, (uint64x2_t) t1);
+
+	t0[0] = 0;
+	t1[0] = r1[0] >> 63;
+	t0 = vextq_p64(r1, t0, 1);
+	r1[0] ^= t0[0];
+	t1[0] ^= r1[0];
+	t0 = vextq_p64(t0, t1, 1);
+	r0 = (poly64x2_t) veorq_u64((uint64x2_t) r0, (uint64x2_t) t0);
+	r1 = (poly64x2_t) vshlq_n_u64((uint64x2_t) r1, 1);
+	return (poly64x2_t) veorq_u64((uint64x2_t) r0, (uint64x2_t) r1);
+}
+
 static inline poly64x2_t bf_multisquare_loop(poly64x2_t a, uint64_t n) {
 	for(int i = 0; i < n; i++) {
 		a = bf_red_psquare(bf_psquare(a));
@@ -156,8 +195,6 @@ poly64x2_t bf_multisquare_lookup_18(poly64x2_t a);
 poly64x2_t bf_multisquare_lookup_30(poly64x2_t a);
 
 poly64x2_t bf_multisquare_lookup_48(poly64x2_t a);
-
-poly64x2_t bf_nonconst_inv(poly64x2_t a);
 
 static inline poly64x2_t shift_right_carry(poly64x2_t a) {
 	poly64x2_t c = a;
