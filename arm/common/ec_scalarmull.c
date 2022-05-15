@@ -425,9 +425,6 @@ void ec_scalarmull_single_endo_w5_randaccess_ptr(ec_point_laffine *P, uint64x2x2
 	ec_point_lproj Q, Q1, Q2;
 	ec_add_laffine_unchecked_ptr(&P1, &P2, &Q);
 
-	// printf("Initial: \n");
-	// ec_print_hex_laffine(ec_lproj_to_laffine(Q));
-
 	for(int i=l-2; i>=0; i--) {
 		ec_double_ptr(&Q, &Q1);
 		ec_double_ptr(&Q1, &Q2);
@@ -1052,13 +1049,15 @@ void ec_scalarmull_single_endo_w4_table2D_bulk_ptr(ec_point_laffine *P, uint64x2
 	ec_point_laffine table[16];
 	ec_precompute_w4_table2D_ptr(P, table);
 	
-	ec_point_laffine P1, P2, Plast;
-	ec_lookup_from_w4_table2D_bulk_ptr(&decomp, rec_k1, rec_k2, table, l-1, 0, &P1, &Plast);
+	ec_point_laffine P1, P2;
+	ec_lookup_from_w4_table2D_bulk_ptr(&decomp, rec_k1, rec_k2, table, l-1, l-2, &P1, &P2);
 
 	ec_point_lproj Q, Qtmp1, Qtmp2;
-	ec_laffine_to_lproj_ptr(&P1, &Q);
+	ec_double_mixed_ptr(&P1, &Qtmp1);
+	ec_double_ptr(&Qtmp1, &Qtmp2);
+	ec_double_then_add_ptr(&P2, &Qtmp2, &Q);
 
-	for(int i=l-2; i > 0; i -= 2) {
+	for(int i=l-3; i > 1; i -= 2) {
 		ec_lookup_from_w4_table2D_bulk_ptr(&decomp, rec_k1, rec_k2, table, i, i-1, &P1, &P2);
 		ec_double_ptr(&Q, &Qtmp1);
 		ec_double_ptr(&Qtmp1, &Qtmp2);
@@ -1067,9 +1066,13 @@ void ec_scalarmull_single_endo_w4_table2D_bulk_ptr(ec_point_laffine *P, uint64x2
 		ec_double_ptr(&Qtmp1, &Qtmp2);
 		ec_double_then_add_ptr(&P2, &Qtmp2, &Q);
 	}
+	ec_lookup_from_w4_table2D_bulk_ptr(&decomp, rec_k1, rec_k2, table, 1, 0, &P1, &P2);
 	ec_double_ptr(&Q, &Qtmp1);
 	ec_double_ptr(&Qtmp1, &Qtmp2);
-	ec_double_then_add_ptr(&Plast, &Qtmp2, &Q); //Preparing for complete formula here
+	ec_double_then_add_ptr(&P1, &Qtmp2, &Q);
+	ec_double_ptr(&Q, &Qtmp1);
+	ec_double_ptr(&Qtmp1, &Qtmp2);
+	ec_double_then_add_ptr(&P2, &Qtmp2, &Q); //Preparing for complete formula here
 
 	//Logic here with the xor is also strange
 	P1 = ec_create_point_laffine(P->x, P->l);
@@ -1143,31 +1146,6 @@ void ec_precompute_w3_table2D_ptr(ec_point_laffine *P, ec_point_laffine table[])
 	}
 }
 
-void ec_lookup_from_w3_table2D_ptr(ec_split_scalar *decomp, signed char rec_k1[], signed char rec_k2[], ec_point_laffine table[], int i, ec_point_laffine *P1) {
-	uint64x2x2_t lookup_data = ec_get_lookup_data_table2D(rec_k1[i], rec_k2[i], decomp, 2);
-
-	lin_pass_w3_table2D(P1, table, lookup_data.val[0][0]);
-
-	ec_cond_endo(P1, lookup_data.val[1][0]);
-
-	//Cond neg
-	P1->l.val[0][0] ^= lookup_data.val[1][1];
-}
-
-void ec_lookup_from_w3_table2D_bulk_ptr(ec_split_scalar *decomp, signed char rec_k1[], signed char rec_k2[], ec_point_laffine table[], int i1, int i2, ec_point_laffine *P1, ec_point_laffine *P2) {
-	uint64x2x2_t lookup_data1 = ec_get_lookup_data_table2D(rec_k1[i1], rec_k2[i1], decomp, 2);
-	uint64x2x2_t lookup_data2 = ec_get_lookup_data_table2D(rec_k1[i2], rec_k2[i2], decomp, 2);
-
-	lin_pass_w3_table2D_bulk(P1, P2, table, lookup_data1.val[0][0], lookup_data2.val[0][0]);
-
-	ec_cond_endo(P1, lookup_data1.val[1][0]);
-	ec_cond_endo(P2, lookup_data2.val[1][0]);
-
-	//Cond neg
-	P1->l.val[0][0] ^= lookup_data1.val[1][1];
-	P2->l.val[0][0] ^= lookup_data2.val[1][1];
-}
-
 void ec_scalarmull_single_endo_w3_table2D_bulk_ptr(ec_point_laffine *P, uint64x2x2_t k, ec_point_laffine *R) {
 	uint64_t new_ptr, con = 1;
 	int w = 3;
@@ -1194,17 +1172,15 @@ void ec_scalarmull_single_endo_w3_table2D_bulk_ptr(ec_point_laffine *P, uint64x2
 	ec_lookup_from_w3_table2D_bulk_ptr(&decomp, rec_k1, rec_k2, table, l-1, l-2, &P1, &P2);
 
 	ec_point_lproj Q, Qtmp;
-	ec_laffine_to_lproj_ptr(&P1, &Q);
-
-	for(int i=l-2; i > 1; i -= 2) {
-		ec_double_ptr(&Q, &Qtmp);
-		ec_double_then_add_ptr(&P2, &Qtmp, &Q);
-		ec_lookup_from_w3_table2D_bulk_ptr(&decomp, rec_k1, rec_k2, table, i-1, i-2, &P1, &P2);
+	ec_double_mixed_ptr(&P1, &Qtmp);
+	ec_double_then_add_ptr(&P2, &Qtmp, &Q);
+	for(int i=l-3; i > 0; i -= 2) {
+		ec_lookup_from_w3_table2D_bulk_ptr(&decomp, rec_k1, rec_k2, table, i, i-1, &P1, &P2);
 		ec_double_ptr(&Q, &Qtmp);
 		ec_double_then_add_ptr(&P1, &Qtmp, &Q);
+		ec_double_ptr(&Q, &Qtmp);
+		ec_double_then_add_ptr(&P2, &Qtmp, &Q);
 	}
-	ec_double_ptr(&Q, &Qtmp);
-	ec_double_then_add_ptr(&P2, &Qtmp, &Q);
 	ec_lookup_from_w3_table2D_ptr(&decomp, rec_k1, rec_k2, table, 0, &P1);
 	ec_double_ptr(&Q, &Qtmp);
 	ec_double_then_add_ptr(&P1, &Qtmp, &Q); //Preparing for complete formula here

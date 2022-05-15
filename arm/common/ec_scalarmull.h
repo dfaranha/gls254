@@ -78,10 +78,6 @@ void ec_lookup_from_w4_table2D_ptr(ec_split_scalar *decomp, signed char rec_k1[]
 
 void ec_lookup_from_w4_table2D_bulk_ptr(ec_split_scalar *decomp, signed char rec_k1[], signed char rec_k2[], ec_point_laffine table[], int i1, int i2, ec_point_laffine *P1, ec_point_laffine *P2);
 
-void ec_lookup_from_w3_table2D_ptr(ec_split_scalar *decomp, signed char rec_k1[], signed char rec_k2[], ec_point_laffine table[], int i, ec_point_laffine *P1);
-
-void ec_lookup_from_w3_table2D_bulk_ptr(ec_split_scalar *decomp, signed char rec_k1[], signed char rec_k2[], ec_point_laffine table[], int i1, int i2, ec_point_laffine *P1, ec_point_laffine *P2);
-
 void reg_rec(uint64x2_t k, uint64_t w, signed char* rec, uint64_t l);
 
 void ec_print_rec(signed char *rec, uint64_t l);
@@ -118,6 +114,31 @@ static inline void ec_cond_endo(ec_point_laffine *P, uint64_t cond) {
 	P->l.val[0][0] ^= P->l.val[0][1]*cond;
 	P->l.val[1][0] ^= P->l.val[1][1]*cond;
 	P->l.val[0][1] ^= cond; 
+}
+
+static inline void ec_lookup_from_w3_table2D_ptr(ec_split_scalar *decomp, signed char rec_k1[], signed char rec_k2[], ec_point_laffine table[], int i, ec_point_laffine *P1) {
+	uint64x2x2_t lookup_data = ec_get_lookup_data_table2D(rec_k1[i], rec_k2[i], decomp, 2);
+
+	lin_pass_w3_table2D(P1, table, lookup_data.val[0][0]);
+
+	ec_cond_endo(P1, lookup_data.val[1][0]);
+
+	//Cond neg
+	P1->l.val[0][0] ^= lookup_data.val[1][1];
+}
+
+static inline void ec_lookup_from_w3_table2D_bulk_ptr(ec_split_scalar *decomp, signed char rec_k1[], signed char rec_k2[], ec_point_laffine table[], int i1, int i2, ec_point_laffine *P1, ec_point_laffine *P2) {
+	uint64x2x2_t lookup_data1 = ec_get_lookup_data_table2D(rec_k1[i1], rec_k2[i1], decomp, 2);
+	uint64x2x2_t lookup_data2 = ec_get_lookup_data_table2D(rec_k1[i2], rec_k2[i2], decomp, 2);
+
+	lin_pass_w3_table2D_bulk(P1, P2, table, lookup_data1.val[0][0], lookup_data2.val[0][0]);
+
+	ec_cond_endo(P1, lookup_data1.val[1][0]);
+	ec_cond_endo(P2, lookup_data2.val[1][0]);
+
+	//Cond neg
+	P1->l.val[0][0] ^= lookup_data1.val[1][1];
+	P2->l.val[0][0] ^= lookup_data2.val[1][1];
 }
 
 #define all1s 18446744073709551615U //2^64 - 1
