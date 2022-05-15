@@ -104,7 +104,7 @@ ec_point_lproj ec_double_mixed(ec_point_laffine P);
 
 void ec_double_mixed_ptr(ec_point_laffine *P, ec_point_lproj *R);
 
-ec_point_lproj ec_double_alt(ec_point_lproj P);
+void ec_double_alt_ptr(ec_point_lproj *P, ec_point_lproj *R);
 
 ec_point_lproj ec_double_then_add(ec_point_laffine P, ec_point_lproj Q);
 

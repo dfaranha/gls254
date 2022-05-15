@@ -194,6 +194,20 @@ void ef_intrl_mull_A_test_crosscheck_ef_rnd(test_ctr *ctr) {
 	assert_true(correct, ctr, "ef_intrl_mull_A_test_crosscheck_ef_rnd FAILED");
 }
 
+void ef_intrl_mull_B_test_crosscheck_mull_rnd(test_ctr *ctr) {
+	//Arrange
+	ef_intrl_elem Bnew = (ef_intrl_elem) {{{134217729, 0}, {0, 0}}}; //z^27 + 1
+	ef_intrl_elem a = ef_intrl_rand_elem();
+
+	//Act
+	ef_intrl_elem expected = ef_intrl_mull(a, Bnew);
+	ef_intrl_elem actual = ef_intrl_mull_B(a);
+
+	//Assert
+	uint64_t correct = ef_intrl_equal(expected, actual);
+	assert_true(correct, ctr, "ef_intrl_mull_B_test_crosscheck_mull_rnd FAILED");
+}
+
 void ef_intrl_mull_test_example(test_ctr *ctr) {
 	//Arrange
 	poly64x2_t a0 = {9223372036854775809U, 9223372036854775808U}; 
@@ -557,6 +571,7 @@ void extensionfield_interleaved_tests(test_ctr *ctr) {
 	ef_intrl_square_test_freshmans_dream_rnd(ctr);
 	
 	ef_intrl_mull_A_test_crosscheck_ef_rnd(ctr);
+	ef_intrl_mull_B_test_crosscheck_mull_rnd(ctr);
 	
 	ef_intrl_mull_test_example(ctr);
 	ef_intrl_mull_test_associative(ctr);

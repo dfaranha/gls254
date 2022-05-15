@@ -158,6 +158,23 @@ static inline void ef_intrl_mull_A_ptr(ef_intrl_elem *a, ef_intrl_elem *res) {
 	res->val[1] = (poly64x2_t) veorq_u64((uint64x2_t) a->val[1], (uint64x2_t) t);
 }
 
+static inline ef_intrl_elem ef_intrl_mull_B(ef_intrl_elem a) {
+	ef_intrl_elem r;
+	poly64x2_t bot0 = (poly64x2_t) vshlq_n_u64((uint64x2_t) a.val[0], 27);
+	poly64x2_t top0 = (poly64x2_t) vshrq_n_u64((uint64x2_t) a.val[0], 37);
+	poly64x2_t bot1 = (poly64x2_t) vshlq_n_u64((uint64x2_t) a.val[1], 27);
+	poly64x2_t top1 = (poly64x2_t) vshrq_n_u64((uint64x2_t) a.val[1], 37);
+	r.val[1] = (poly64x2_t) veorq_u64((uint64x2_t) a.val[1], bot1);
+	r.val[1] = (poly64x2_t) veorq_u64((uint64x2_t) r.val[1], (uint64x2_t) top0);
+	r.val[1] = (poly64x2_t) veorq_u64((uint64x2_t) r.val[1], (uint64x2_t) top1);
+	r.val[0] = (poly64x2_t) veorq_u64((uint64x2_t) a.val[0], (uint64x2_t) bot0);
+	top1 = (poly64x2_t) vshlq_n_u64((uint64x2_t) top1, 1);
+	r.val[0] = (poly64x2_t) veorq_u64((uint64x2_t) r.val[0], (uint64x2_t) top1);
+	return r;
+	//r.val[1][0] = a.val[1][0] ^ (a.val[1][0] << 27) ^ top0 ^ top1;
+	//r.val[0][0] = a.val[0][0] ^ (a.val[0][0] << 27) ^ (top1 << 1);
+}
+
 static inline ef_intrl_elem ef_intrl_mull(ef_intrl_elem a, ef_intrl_elem b) {
 	ef_intrl_elem_unred c;
 	poly64x2_t t0, t1;
