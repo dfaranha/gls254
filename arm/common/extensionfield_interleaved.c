@@ -82,7 +82,7 @@ uint64_t ef_intrl_equal(ef_intrl_elem a, ef_intrl_elem b) {
 	return equal_poly64x2x2(a_red, b_red);
 }
 
-ef_intrl_elem ef_intrl_inv(ef_intrl_elem a) {
+ef_intrl_elem ef_intrl_inv(ef_intrl_elem a, int in_const_time) {
 	ef_intrl_elem_unred c;
 	poly64x2x2_t r0, r1;
 	poly64x2_t t, t0, t1, t2, t3, t4, t5;
@@ -115,7 +115,11 @@ ef_intrl_elem ef_intrl_inv(ef_intrl_elem a) {
 	r0.val[1] = (poly64x2_t) veorq_u64((uint64x2_t) r0.val[1], (uint64x2_t) r1.val[1]);
 
 	//t^-1
-	t = bf_addchain_lookup_inv(bf_red_lazy(r0));
+	if (in_const_time) {
+		t = bf_addchain_inv(bf_red_lazy(r0));
+	} else {
+		t = bf_addchain_lookup_inv(bf_red_lazy(r0));
+	}
 
 	//c1 = a1*t^-1
 	r1.val[0] = (poly64x2_t) vreinterpretq_u64_p128(vmull_p64(t[0], t2[0])); //t[0] * a1[0]
@@ -148,13 +152,13 @@ ef_intrl_elem ef_intrl_inv(ef_intrl_elem a) {
 	return ef_intrl_red(c);
 }
 
-void ef_intrl_sim_inv(ef_intrl_elem inputs[], ef_intrl_elem outputs[], uint64_t len) {
+void ef_intrl_sim_inv(ef_intrl_elem inputs[], ef_intrl_elem outputs[], uint64_t len, int in_const_time) {
 	ef_intrl_elem c[len];
 	c[0] = inputs[0];
 	for(int i = 1; i < len; i++) {
 		c[i] = ef_intrl_mull(c[i-1], inputs[i]);
 	}
-	ef_intrl_elem u = ef_intrl_inv(c[len-1]); //(a0 * a1 * ... * ak)^-1
+	ef_intrl_elem u = ef_intrl_inv(c[len-1], in_const_time); //(a0 * a1 * ... * ak)^-1
 	for(int i = len-1; i >= 1; i--) {
 		outputs[i] = ef_intrl_mull(u, c[i-1]); //(a0 * a1 * ... ai-1 * ai)^-1 * (a0 * a1 * ... * ai-1) = ai^-1
 		u = ef_intrl_mull(u, inputs[i]);

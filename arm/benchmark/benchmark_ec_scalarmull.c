@@ -27,8 +27,8 @@ void benchmark_ec_linaer_pass_w5() {
 		lin_pass_w5(&P1, &P2, &table, index1, index2);
 		uint64_t end = read_pmccntr();
 		insert_sorted(end-start, times, i);
-		sum = ec_lproj_to_laffine(ec_add_laffine_unchecked(P1, sum));
-		sum = ec_lproj_to_laffine(ec_add_laffine_unchecked(P2, sum));
+		sum = ec_lproj_to_laffine(ec_add_laffine_unchecked(P1, sum), 0);
+		sum = ec_lproj_to_laffine(ec_add_laffine_unchecked(P2, sum), 0);
 	}
 	ec_print_hex_laffine(sum);
 	printf("BENCHMARK benchmark_ec_linaer_pass_w5\n");
@@ -52,7 +52,7 @@ void benchmark_csel_asm() {
 		csel_asm(rand_num, con, &P, &P_neg);
 		uint64_t end = read_pmccntr();
 		insert_sorted(end-start, times, i);
-		sum = ec_lproj_to_laffine(ec_add_laffine_unchecked(P, sum));
+		sum = ec_lproj_to_laffine(ec_add_laffine_unchecked(P, sum), 0);
 	}
 	ec_print_hex_laffine(sum);
 	printf("BENCHMARK benchmark_csel_asm\n");
@@ -76,7 +76,7 @@ void benchmark_csel_inline_asm() {
 		CSEL(rand_num, con, P, P_neg, new_ptr, typeof(ec_point_laffine));
 		uint64_t end = read_pmccntr();
 		insert_sorted(end-start, times, i);
-		sum = ec_lproj_to_laffine(ec_add_laffine_unchecked(P, sum));
+		sum = ec_lproj_to_laffine(ec_add_laffine_unchecked(P, sum), 0);
 	}
 	ec_print_hex_laffine(sum);
 	printf("BENCHMARK benchmark_csel_inline_asm\n");
@@ -102,7 +102,7 @@ void benchmark_cmov() {
 		CMOV(tmp, rand_num, cond, P, P_neg, old_ptr, new_ptr, typeof(ec_point_laffine));
 		uint64_t end = read_pmccntr();
 		insert_sorted(end-start, times, i);
-		sum = ec_lproj_to_laffine(ec_add_laffine_unchecked(P, sum));
+		sum = ec_lproj_to_laffine(ec_add_laffine_unchecked(P, sum), 0);
 	}
 	ec_print_hex_laffine(sum);
 	printf("BENCHMARK benchmark_cmov\n");
@@ -256,6 +256,27 @@ void benchmark_ec_scalarmull_single_endo_w5_randaccess_time() {
 	printf("BENCHMARK benchmark_ec_scalarmull_single_endo_w5_randaccess_time\n");
 	printf("Number of iterations: %lu\n", num_runs);
 	printf("Average time: %8lld\n\n", nsec/num_runs);
+}
+
+void benchmark_precompute_w5_nonopt_ptr() {
+	uint64_t num_runs = 2000;
+	uint64_t times[num_runs];
+	ec_point_lproj sum = ec_rand_point_lproj();
+	ec_point_laffine table[8];
+
+	for(int i = 0; i < num_runs; i++) {
+		ec_point_laffine P = ec_rand_point_laffine();
+		uint64_t start = read_pmccntr();
+		precompute_w5_nonopt_ptr(&P, table);
+		uint64_t end = read_pmccntr();
+		insert_sorted(end-start, times, i);
+		sum = ec_add_mixed(table[i % 8], sum);
+	}
+	ec_print_hex(sum);
+	printf("BENCHMARK benchmark_precompute_w5_nonopt_ptr\n");
+	printf("Number of iterations: %lu\n", num_runs);
+	printf("Average: %lf\n", average(times, num_runs));
+	printf("Median: %lf\n\n", median(times, num_runs));
 }
 
 void benchmark_precompute_w5_ptr() {
@@ -620,6 +641,7 @@ void benchmark_ec_scalarmull_all() {
 	benchmark_ec_scalarmull_single_endo_w4_table2D_ptr();
 	benchmark_ec_scalarmull_single_endo_w4_table2D_bulk_ptr();
 	benchmark_ec_scalarmull_single_endo_w3_table2D_bulk_ptr();
+	benchmark_precompute_w5_nonopt_ptr();
 	benchmark_precompute_w5_ptr();
 	benchmark_ec_lookup_w5();
 	benchmark_ec_precompute_w4_table2D_nonopt_ptr();

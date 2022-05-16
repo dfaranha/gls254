@@ -62,6 +62,8 @@ void precompute_w4(ec_point_laffine P, ec_point_laffine* table);
 
 void precompute_w5(ec_point_laffine P, ec_point_laffine* table);
 
+void precompute_w5_nonopt_ptr(ec_point_laffine *P, ec_point_laffine table[]);
+
 void precompute_w5_ptr(ec_point_laffine *P, ec_point_laffine* table);
 
 void precompute_w6(ec_point_laffine P, ec_point_laffine* table);

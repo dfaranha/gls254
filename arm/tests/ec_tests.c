@@ -814,7 +814,7 @@ void ec_endo_lproj_test_crosscheck_laffine_rnd(test_ctr *ctr) {
 	for(int i = 0; i < 5; i++) {
 		//Arrange
 		ec_point_lproj P = ec_rand_point_lproj();
-		ec_point_laffine expected = ec_endo_laffine(ec_lproj_to_laffine(P));
+		ec_point_laffine expected = ec_endo_laffine(ec_lproj_to_laffine(P, 0));
 		
 		//Act
 		ec_point_lproj actual = ec_endo_lproj(P);
@@ -828,6 +828,30 @@ void ec_endo_lproj_test_crosscheck_laffine_rnd(test_ctr *ctr) {
 		}
 	}
 	assert_true(correct, ctr, "ec: ec_endo_lproj_test_crosscheck_laffine_rnd FAILED");
+}
+
+void ec_triple_mixed_test_crosscheck_rnd(test_ctr *ctr) {
+	uint64_t correct = 1;
+	for(int i = 0; i < 5; i++) {
+		//Arrange
+		ec_point_laffine P = ec_rand_point_laffine();
+		ec_point_lproj P2, expected;
+		ec_double_mixed_ptr(&P, &P2);
+		ec_add_mixed_unchecked_ptr(&P, &P2, &expected);
+		
+		//Act
+		ec_point_lproj actual;
+		ec_triple_mixed_ptr(&P, &actual);
+
+		//Assert
+		correct = ec_equal_point_lproj(expected, actual);
+		if(!correct) {
+			printf("P: \n");
+			ec_print_hex_laffine(P);
+			break;
+		}
+	}
+	assert_true(correct, ctr, "ec: ec_triple_mixed_test_crosscheck_rnd FAILED");
 }
 
 void ec_tests(test_ctr *ctr) {
@@ -884,4 +908,6 @@ void ec_tests(test_ctr *ctr) {
 	ec_add_endo_laffine_unchecked_ptr_test_rnd(ctr);
 
 	ec_endo_lproj_test_crosscheck_laffine_rnd(ctr);
+
+	ec_triple_mixed_test_crosscheck_rnd(ctr);
 }

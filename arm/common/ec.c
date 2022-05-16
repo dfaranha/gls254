@@ -34,16 +34,16 @@ void ec_laffine_to_lproj_ptr(ec_point_laffine *P, ec_point_lproj *R) {
 }
 
 //Leads to undefined behavior for P == INFTY
-ec_point_laffine ec_lproj_to_laffine(ec_point_lproj P) {
-	ef_intrl_elem Z_inv = ef_intrl_inv(P.z);
+ec_point_laffine ec_lproj_to_laffine(ec_point_lproj P, int in_const_time) {
+	ef_intrl_elem Z_inv = ef_intrl_inv(P.z, in_const_time);
 	ec_point_laffine R;
 	R.x = ef_intrl_mull(P.x, Z_inv);
 	R.l = ef_intrl_mull(P.l, Z_inv);
 	return R;
 }
 
-void ec_lproj_to_laffine_ptr(ec_point_lproj *P, ec_point_laffine *R) {
-	ef_intrl_elem Z_inv = ef_intrl_inv(P->z);
+void ec_lproj_to_laffine_ptr(ec_point_lproj *P, ec_point_laffine *R, int in_const_time) {
+	ef_intrl_elem Z_inv = ef_intrl_inv(P->z, in_const_time);
 	R->x = ef_intrl_mull(P->x, Z_inv);
 	R->l = ef_intrl_mull(P->l, Z_inv);
 }
@@ -95,8 +95,8 @@ uint64_t ec_equal_point_lproj(ec_point_lproj P, ec_point_lproj Q) {
 	if(ec_is_on_curve(P) && ec_is_on_curve(Q) && ef_intrl_equal(P.z, zero) && ef_intrl_equal(Q.z, zero)) {
 		return 1;
 	}
-	ec_point_laffine P_affine = ec_lproj_to_laffine(P);
-	ec_point_laffine Q_affine = ec_lproj_to_laffine(Q);
+	ec_point_laffine P_affine = ec_lproj_to_laffine(P, 0);
+	ec_point_laffine Q_affine = ec_lproj_to_laffine(Q, 0);
 	return ef_intrl_equal(P_affine.x, Q_affine.x) && ef_intrl_equal(P_affine.l, Q_affine.l);
 }
 
@@ -105,7 +105,7 @@ uint64_t ec_equal_point_mixed(ec_point_laffine P, ec_point_lproj Q) {
 	if(ef_intrl_equal(Q.z, zero)) {
 		return 0;
 	}
-	ec_point_laffine Q_affine = ec_lproj_to_laffine(Q);
+	ec_point_laffine Q_affine = ec_lproj_to_laffine(Q, 0);
 	return ef_intrl_equal(P.x, Q_affine.x) && ef_intrl_equal(P.l, Q_affine.l);
 }
 
@@ -150,7 +150,7 @@ ec_point_lproj ec_rand_point_lproj() {
 
 ec_point_laffine ec_rand_point_laffine() {
 	ec_point_lproj P = ec_rand_point_lproj();
-	return ec_lproj_to_laffine(P);
+	return ec_lproj_to_laffine(P, 0);
 }
 
 // Non constant implementation.
@@ -465,4 +465,14 @@ void ec_double_then_addtwo_ptr(ec_point_laffine *P1, ec_point_laffine *P2, ec_po
 
 ec_point_lproj ec_double_then_addtwo_nonatomic(ec_point_laffine P1, ec_point_laffine P2, ec_point_lproj Q) {
 	return ec_add_mixed_unchecked(P2, ec_add_mixed_unchecked(P1, ec_double(Q)));
+}
+
+void ec_triple_mixed_ptr(ec_point_laffine *P, ec_point_lproj *R) {
+	ef_intrl_elem T = ef_intrl_add(ef_intrl_square(P->l), ef_intrl_add(P->l, (ef_intrl_elem) A));
+	ef_intrl_elem U = ef_intrl_add(ef_intrl_square(ef_intrl_add(P->x, T)), T);
+	R->x = ef_intrl_mull(P->x, ef_intrl_square(U));
+	R->z = ef_intrl_mull(ef_intrl_add(T, U), U);
+	ef_intrl_elem lP_plus_1 = P->l;
+	lP_plus_1.val[0][0] ^= 1;
+	R->l = ef_intrl_add(ef_intrl_mull(ef_intrl_square(T), T), ef_intrl_mull(R->z, lP_plus_1));
 }

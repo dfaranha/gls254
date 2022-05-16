@@ -102,7 +102,7 @@ ec_point_laffine ec_scalarmull_single_endo(ec_point_laffine P, uint64x2x2_t k) {
 			digitval[0] >>= 1;
 		}
 	}
-	return ec_lproj_to_laffine(R);
+	return ec_lproj_to_laffine(R, 1);
 }
 
 ec_point_laffine ec_scalarmull_single_endo_w3_randaccess(ec_point_laffine P, uint64x2x2_t k) {
@@ -190,7 +190,7 @@ ec_point_laffine ec_scalarmull_single_endo_w3_randaccess(ec_point_laffine P, uin
 	Q_add_neg = ec_add_mixed(ec_endo_laffine(P2), Q);
 	CSEL(c2, con, Q, Q_add_neg, new_ptr, typeof(ec_point_lproj));
 
-	return ec_lproj_to_laffine(Q);
+	return ec_lproj_to_laffine(Q, 1);
 }
 
 ec_point_laffine ec_scalarmull_single_endo_w4_randaccess(ec_point_laffine P, uint64x2x2_t k) {
@@ -279,7 +279,7 @@ ec_point_laffine ec_scalarmull_single_endo_w4_randaccess(ec_point_laffine P, uin
 	Q_add_neg = ec_add_mixed_unchecked(ec_endo_laffine(P2), Q);
 	CSEL(c2, con, Q, Q_add_neg, new_ptr, typeof(ec_point_lproj));
 
-	return ec_lproj_to_laffine(Q);
+	return ec_lproj_to_laffine(Q, 1);
 }
 
 ec_point_laffine ec_scalarmull_single_endo_w5_randaccess(ec_point_laffine P, uint64x2x2_t k) {
@@ -372,7 +372,7 @@ ec_point_laffine ec_scalarmull_single_endo_w5_randaccess(ec_point_laffine P, uin
 	Q_add_neg = ec_add_mixed_unchecked(ec_endo_laffine(P2), Q);
 	CSEL(c2, con, Q, Q_add_neg, new_ptr, typeof(ec_point_lproj));
 
-	return ec_lproj_to_laffine(Q);
+	return ec_lproj_to_laffine(Q, 1);
 }
 
 void ec_scalarmull_single_endo_w5_randaccess_ptr(ec_point_laffine *P, uint64x2x2_t k, ec_point_laffine *R) {
@@ -466,7 +466,7 @@ void ec_scalarmull_single_endo_w5_randaccess_ptr(ec_point_laffine *P, uint64x2x2
 	Q_add_neg = ec_add_mixed_unchecked(ec_endo_laffine(P2), Q);
 	CSEL(c2, con, Q, Q_add_neg, new_ptr, typeof(ec_point_lproj));
 
-	ec_lproj_to_laffine_ptr(&Q, R);
+	ec_lproj_to_laffine_ptr(&Q, R, 1);
 }
 
 ec_point_laffine ec_scalarmull_single_endo_w6_randaccess(ec_point_laffine P, uint64x2x2_t k) {
@@ -556,14 +556,14 @@ ec_point_laffine ec_scalarmull_single_endo_w6_randaccess(ec_point_laffine P, uin
 	Q_add_neg = ec_add_mixed_unchecked(ec_endo_laffine(P2), Q);
 	CSEL(c2, con, Q, Q_add_neg, new_ptr, typeof(ec_point_lproj));
 
-	return ec_lproj_to_laffine(Q);
+	return ec_lproj_to_laffine(Q, 1);
 }
 
 void precompute_w3(ec_point_laffine P, ec_point_laffine table[]) {
 	ec_point_lproj Pl = ec_laffine_to_lproj(P);
 	ec_point_lproj P3 = ec_double_then_add(P, Pl);
 
-	ef_intrl_elem P3Z_inv = ef_intrl_inv(P3.z);
+	ef_intrl_elem P3Z_inv = ef_intrl_inv(P3.z, 0);
 
 	table[0] = P;
 	table[1] = (ec_point_laffine) {ef_intrl_mull(P3.x, P3Z_inv), ef_intrl_mull(P3.l, P3Z_inv)};
@@ -577,7 +577,7 @@ void precompute_w4(ec_point_laffine P, ec_point_laffine table[]) {
 
 	ef_intrl_elem inv_inputs[3] = {P3.z, P5.z, P7.z};
 	ef_intrl_elem inv_outputs[3];
-	ef_intrl_sim_inv(inv_inputs, inv_outputs, 3);
+	ef_intrl_sim_inv(inv_inputs, inv_outputs, 3, 0);
 
 	table[0] = P;
 	table[1] = (ec_point_laffine) {ef_intrl_mull(P3.x, inv_outputs[0]), ef_intrl_mull(P3.l, inv_outputs[0])};
@@ -599,7 +599,7 @@ void precompute_w5(ec_point_laffine P, ec_point_laffine table[]) {
 
 	ef_intrl_elem inv_inputs[7] = {P3.z, P5.z, P7.z, P9.z, P11.z, P13.z, P15.z};
 	ef_intrl_elem inv_outputs[7];
-	ef_intrl_sim_inv(inv_inputs, inv_outputs, 7);
+	ef_intrl_sim_inv(inv_inputs, inv_outputs, 7, 0);
 
 	table[0] = P;
 	table[1] = (ec_point_laffine) {ef_intrl_mull(P3.x, inv_outputs[0]), ef_intrl_mull(P3.l, inv_outputs[0])};
@@ -611,7 +611,7 @@ void precompute_w5(ec_point_laffine P, ec_point_laffine table[]) {
 	table[7] = (ec_point_laffine) {ef_intrl_mull(P15.x, inv_outputs[6]), ef_intrl_mull(P15.l, inv_outputs[6])};
 }
 
-void precompute_w5_ptr(ec_point_laffine *P, ec_point_laffine table[]) {
+void precompute_w5_nonopt_ptr(ec_point_laffine *P, ec_point_laffine table[]) {
 	ec_point_lproj P2;
 	ec_double_mixed_ptr(P, &P2);
 	ec_point_lproj P3;
@@ -635,7 +635,7 @@ void precompute_w5_ptr(ec_point_laffine *P, ec_point_laffine table[]) {
 
 	ef_intrl_elem inv_inputs[7] = {P3.z, P5.z, P7.z, P9.z, P11.z, P13.z, P15.z};
 	ef_intrl_elem inv_outputs[7];
-	ef_intrl_sim_inv(inv_inputs, inv_outputs, 7);
+	ef_intrl_sim_inv(inv_inputs, inv_outputs, 7, 0);
 
 	table[0] = *P;
 	table[1] = (ec_point_laffine) {ef_intrl_mull(P3.x, inv_outputs[0]), ef_intrl_mull(P3.l, inv_outputs[0])};
@@ -645,6 +645,29 @@ void precompute_w5_ptr(ec_point_laffine *P, ec_point_laffine table[]) {
 	table[5] = (ec_point_laffine) {ef_intrl_mull(P11.x, inv_outputs[4]), ef_intrl_mull(P11.l, inv_outputs[4])};
 	table[6] = (ec_point_laffine) {ef_intrl_mull(P13.x, inv_outputs[5]), ef_intrl_mull(P13.l, inv_outputs[5])};
 	table[7] = (ec_point_laffine) {ef_intrl_mull(P15.x, inv_outputs[6]), ef_intrl_mull(P15.l, inv_outputs[6])};
+}
+
+void precompute_w5_ptr(ec_point_laffine *P, ec_point_laffine table[]) {
+	ec_point_lproj tmp;
+	ec_point_lproj table_proj[7];
+
+	ec_triple_mixed_ptr(P, &table_proj[0]);
+	for (int i = 0; i < 3; i++) {
+		ec_double_alt_ptr(&table_proj[i], &tmp);
+		ec_add_sub_mixed_unchecked_ptr(P, &tmp, &table_proj[2*i+2], &table_proj[2*i+1]);
+		ec_neg_mut(&table_proj[2*i+1]);
+	}
+	
+	ef_intrl_elem inv_inputs[7];
+	ef_intrl_elem inv_outputs[7];
+	for (int i = 0; i < 7; i++) {
+		inv_inputs[i] = table_proj[i].z;
+	}
+	ef_intrl_sim_inv(inv_inputs, inv_outputs, 7, 0);
+	table[0] = *P;
+	for (int i = 0; i < 7; i++) {
+		table[i+1] = (ec_point_laffine) {ef_intrl_mull(table_proj[i].x, inv_outputs[i]), ef_intrl_mull(table_proj[i].l, inv_outputs[i])};
+	}
 }
 
 void precompute_w6(ec_point_laffine P, ec_point_laffine table[]) {
@@ -673,7 +696,7 @@ void precompute_w6(ec_point_laffine P, ec_point_laffine table[]) {
 
 	ef_intrl_elem inv_inputs[15] = {P3.z, P5.z, P7.z, P9.z, P11.z, P13.z, P15.z, P17.z, P19.z, P21.z, P23.z, P25.z, P27.z, P29.z, P31.z};
 	ef_intrl_elem inv_outputs[15];
-	ef_intrl_sim_inv(inv_inputs, inv_outputs, 15);
+	ef_intrl_sim_inv(inv_inputs, inv_outputs, 15, 0);
 
 	table[0] = P;
 	table[1] = (ec_point_laffine) {ef_intrl_mull(P3.x, inv_outputs[0]), ef_intrl_mull(P3.l, inv_outputs[0])};
@@ -870,7 +893,7 @@ void ec_precompute_w4_table2D_nonopt_ptr(ec_point_laffine *P, ec_point_laffine t
 	inv_inputs[2] = tmp_table_proj[3].z;
 	
 	//Converting table to affine
-	ef_intrl_sim_inv(inv_inputs, inv_outputs, 3);
+	ef_intrl_sim_inv(inv_inputs, inv_outputs, 3, 0);
 	ec_point_laffine tmp_table[4];
 	tmp_table[0] = *P;
 	for (int i = 1; i < 4; i++) {
@@ -889,7 +912,7 @@ void ec_precompute_w4_table2D_nonopt_ptr(ec_point_laffine *P, ec_point_laffine t
 	}
 	
 	//Converting table to affine
-	ef_intrl_sim_inv(inv_inputs, inv_outputs, 16);
+	ef_intrl_sim_inv(inv_inputs, inv_outputs, 16, 0);
 	for (int i = 0; i < 16; i++) {
 		table[i] = (ec_point_laffine) {ef_intrl_mull(table_proj[i].x, inv_outputs[i]), ef_intrl_mull(table_proj[i].l, inv_outputs[i])};
 	}
@@ -911,7 +934,7 @@ void ec_precompute_w4_table2D_ptr(ec_point_laffine *P, ec_point_laffine table[])
 	inv_inputs[2] = tmp_table_proj[3].z;
 	
 	//Converting table to affine
-	ef_intrl_sim_inv(inv_inputs, inv_outputs, 3);
+	ef_intrl_sim_inv(inv_inputs, inv_outputs, 3, 0);
 	ec_point_laffine tmp_table[4];
 	tmp_table[0] = *P;
 	for (int i = 1; i < 4; i++) {
@@ -937,7 +960,7 @@ void ec_precompute_w4_table2D_ptr(ec_point_laffine *P, ec_point_laffine table[])
 	}
 	
 	//Converting table to affine
-	ef_intrl_sim_inv(inv_inputs, inv_outputs, 16);
+	ef_intrl_sim_inv(inv_inputs, inv_outputs, 16, 0);
 	for (int i = 0; i < 16; i++) {
 		table[i] = (ec_point_laffine) {ef_intrl_mull(table_proj[i].x, inv_outputs[i]), ef_intrl_mull(table_proj[i].l, inv_outputs[i])};
 	}
@@ -1009,7 +1032,7 @@ void ec_scalarmull_single_endo_w4_table2D_ptr(ec_point_laffine *P, uint64x2x2_t 
 	ec_add_mixed_unchecked_ptr(&psiP2, &Q, &Q_add_neg);
 	CSEL(c2, con, Q, Q_add_neg, new_ptr, typeof(ec_point_lproj));
 
-	ec_lproj_to_laffine_ptr(&Q, R); //Remember that this must use a constant time div
+	ec_lproj_to_laffine_ptr(&Q, R, 1);
 }
 
 void ec_lookup_from_w4_table2D_bulk_ptr(ec_split_scalar *decomp, signed char rec_k1[], signed char rec_k2[], ec_point_laffine table[], int i1, int i2, ec_point_laffine *P1, ec_point_laffine *P2) {
@@ -1087,14 +1110,14 @@ void ec_scalarmull_single_endo_w4_table2D_bulk_ptr(ec_point_laffine *P, uint64x2
 	ec_add_mixed_unchecked_ptr(&endoP2, &Q, &Q_add_neg);
 	CSEL(c2, con, Q, Q_add_neg, new_ptr, typeof(ec_point_lproj));
 
-	ec_lproj_to_laffine_ptr(&Q, R);
+	ec_lproj_to_laffine_ptr(&Q, R, 1);
 }
 
 void ec_precompute_w3_table2D_nonopt_ptr(ec_point_laffine *P, ec_point_laffine table[]) {
 	ec_point_lproj P2_proj, P3_proj;
 	ec_double_mixed_ptr(P, &P2_proj);
 	ec_add_mixed_unchecked_ptr(P, &P2_proj, &P3_proj);
-	ef_intrl_elem z3Inv = ef_intrl_inv(P3_proj.z);
+	ef_intrl_elem z3Inv = ef_intrl_inv(P3_proj.z, 0);
 	ec_point_laffine P3 = (ec_point_laffine) {ef_intrl_mull(P3_proj.x, z3Inv), ef_intrl_mull(P3_proj.l, z3Inv)};
 
 	ec_point_lproj table_proj[4];
@@ -1108,7 +1131,7 @@ void ec_precompute_w3_table2D_nonopt_ptr(ec_point_laffine *P, ec_point_laffine t
 		inv_inputs[i] = table_proj[i].z;
 	}
 	ef_intrl_elem inv_outputs[4];
-	ef_intrl_sim_inv(inv_inputs, inv_outputs, 4);
+	ef_intrl_sim_inv(inv_inputs, inv_outputs, 4, 0);
 	for (int i = 0; i < 4; i++) {
 		table[i] = (ec_point_laffine) {ef_intrl_mull(table_proj[i].x, inv_outputs[i]), ef_intrl_mull(table_proj[i].l, inv_outputs[i])};
 	}
@@ -1140,7 +1163,7 @@ void ec_precompute_w3_table2D_ptr(ec_point_laffine *P, ec_point_laffine table[])
 		inv_inputs[i] = table_proj[i].z;
 	}
 	ef_intrl_elem inv_outputs[4];
-	ef_intrl_sim_inv(inv_inputs, inv_outputs, 4);
+	ef_intrl_sim_inv(inv_inputs, inv_outputs, 4, 0);
 	for (int i = 0; i < 4; i++) {
 		table[i] = (ec_point_laffine) {ef_intrl_mull(table_proj[i].x, inv_outputs[i]), ef_intrl_mull(table_proj[i].l, inv_outputs[i])};
 	}
@@ -1198,5 +1221,5 @@ void ec_scalarmull_single_endo_w3_table2D_bulk_ptr(ec_point_laffine *P, uint64x2
 	ec_add_mixed_unchecked_ptr(&endoP2, &Q, &Q_add_neg);
 	CSEL(c2, con, Q, Q_add_neg, new_ptr, typeof(ec_point_lproj));
 
-	ec_lproj_to_laffine_ptr(&Q, R); //Remember this needs to be constant time
+	ec_lproj_to_laffine_ptr(&Q, R, 1);
 }

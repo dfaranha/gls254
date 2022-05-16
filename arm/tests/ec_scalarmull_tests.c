@@ -9,13 +9,13 @@
 
 void ec_scalarmull_single_test_example(test_ctr *ctr) {
 	//Arrange
-	ec_point_laffine P = ec_lproj_to_laffine((ec_point_lproj)GEN);
+	ec_point_laffine P = ec_lproj_to_laffine((ec_point_lproj)GEN, 0);
 	uint64x2x2_t k = (uint64x2x2_t) {{{1984, 0}, {0, 0}}};
 
 	ef_intrl_elem EX = ef_intrl_interleave(ef_create_elem(bf_create_elem(0X2CFAFD7ACC5AFCFF, 0X2D234D04135BB6AC), bf_create_elem(0XB061B3D61FBCA71D, 0X6EE833ECBA9D25)));
 	ef_intrl_elem EL = ef_intrl_interleave(ef_create_elem(bf_create_elem(0XEB821D89C63B9871, 0X6E5C83A975E6B141), bf_create_elem(0XB2CC95280AEB5B47, 0X73EE26ACBE0918AB)));
 	ef_intrl_elem EZ = ef_intrl_interleave(ef_create_elem(bf_create_elem(2, 0), bf_create_elem(1, 0)));
-	ec_point_laffine expected = ec_lproj_to_laffine(ec_create_point_lproj(EX, EL, EZ)); // expected = 1984 * GEN
+	ec_point_laffine expected = ec_lproj_to_laffine(ec_create_point_lproj(EX, EL, EZ), 0); // expected = 1984 * GEN
 
 	//Act
 	ec_point_laffine actual;
@@ -32,7 +32,7 @@ void ec_scalarmull_single_test_example(test_ctr *ctr) {
 		uint64x2x2_t k = ec_rand_scalar();
 		P = ec_rand_point_laffine();
 
-		expected = ec_lproj_to_laffine(ec_scalarmull_single(P, k));
+		expected = ec_lproj_to_laffine(ec_scalarmull_single(P, k), 0);
 		//Act
 		ec_scalarmull_single_endo_w3_table2D_bulk_ptr(&P, k, &actual);
 
@@ -59,8 +59,8 @@ void ec_scalarmull_single_test_linearity(test_ctr *ctr) {
 	ec_point_lproj Q = ec_create_point_lproj(QX, QL, QZ); //14329 * GEN
 
 	//Act
-	ec_point_laffine add_first = ec_scalarmull_single_endo_w5_randaccess(ec_lproj_to_laffine(ec_add(P, Q)), k);
-	ec_point_lproj add_after = ec_add_mixed(ec_scalarmull_single_endo_w5_randaccess(ec_lproj_to_laffine(P), k), ec_laffine_to_lproj(ec_scalarmull_single_endo_w5_randaccess(ec_lproj_to_laffine(Q), k)));
+	ec_point_laffine add_first = ec_scalarmull_single_endo_w5_randaccess(ec_lproj_to_laffine(ec_add(P, Q), 0), k);
+	ec_point_lproj add_after = ec_add_mixed(ec_scalarmull_single_endo_w5_randaccess(ec_lproj_to_laffine(P, 0), k), ec_laffine_to_lproj(ec_scalarmull_single_endo_w5_randaccess(ec_lproj_to_laffine(Q, 0), k)));
 
 	//Assert
 	uint64_t correct = ec_equal_point_mixed(add_first, add_after) && ec_is_on_curve_laffine(add_first);
@@ -76,8 +76,8 @@ void ec_scalarmull_single_test_negation_order_indifference(test_ctr *ctr) {
 	ec_point_lproj P = ec_create_point_lproj(PX, PL, PZ); //2243156791409331652485 * P
 
 	//Act
-	ec_point_laffine neg_first = ec_scalarmull_single_endo_w5_randaccess(ec_lproj_to_laffine(ec_neg(P)), k);
-	ec_point_laffine neg_last = ec_neg_laffine(ec_scalarmull_single_endo_w5_randaccess(ec_lproj_to_laffine(P), k));
+	ec_point_laffine neg_first = ec_scalarmull_single_endo_w5_randaccess(ec_lproj_to_laffine(ec_neg(P), 0), k);
+	ec_point_laffine neg_last = ec_neg_laffine(ec_scalarmull_single_endo_w5_randaccess(ec_lproj_to_laffine(P, 0), k));
 
 	//Assert
 	uint64_t correct = ec_equal_point_laffine(neg_first, neg_last);
@@ -90,8 +90,8 @@ void ec_scalarmull_single_test_order_of_gen_is_order_of_subgroup(test_ctr *ctr) 
 	order_minus_1.val[0][0] -= 1;
 
 	//Act
-	ec_point_laffine gen_inv = ec_scalarmull_single_endo(ec_lproj_to_laffine((ec_point_lproj) GEN), order_minus_1);
-	ec_point_laffine gen_inv2 = ec_lproj_to_laffine(ec_scalarmull_single(ec_lproj_to_laffine((ec_point_lproj) GEN), order_minus_1));
+	ec_point_laffine gen_inv = ec_scalarmull_single_endo(ec_lproj_to_laffine((ec_point_lproj) GEN, 0), order_minus_1);
+	ec_point_laffine gen_inv2 = ec_lproj_to_laffine(ec_scalarmull_single(ec_lproj_to_laffine((ec_point_lproj) GEN, 0), order_minus_1), 0);
 	printf("%lu", ec_equal_point_laffine(gen_inv, gen_inv2));
 	printf("%lu", ec_is_on_curve(ec_laffine_to_lproj(gen_inv)));
 	printf("%lu", ec_is_on_curve(ec_laffine_to_lproj(gen_inv2)));
@@ -122,9 +122,9 @@ void ec_scalarmull_single_test_final_k_at_once_same_as_factor_one_at_a_time(test
 	ec_point_lproj P = ec_create_point_lproj(PX, PL, PZ); //99921481365893197563 * GEN
 
 	//Act
-	ec_point_laffine k1P = ec_scalarmull_single_endo_w5_randaccess(ec_lproj_to_laffine(P), k1);
+	ec_point_laffine k1P = ec_scalarmull_single_endo_w5_randaccess(ec_lproj_to_laffine(P, 0), k1);
 	ec_point_laffine k1k2P = ec_scalarmull_single_endo_w5_randaccess(k1P, k2);
-	ec_point_laffine kP = ec_scalarmull_single_endo_w5_randaccess(ec_lproj_to_laffine(P), k);
+	ec_point_laffine kP = ec_scalarmull_single_endo_w5_randaccess(ec_lproj_to_laffine(P, 0), k);
 
 	//Assert
 	uint64_t correct = ec_equal_point_laffine(kP, k1k2P) && ec_is_on_curve_laffine(k1P) && ec_is_on_curve_laffine(k1k2P);
@@ -138,11 +138,11 @@ void ec_scalarmull_single_test_k_one_is_identity(test_ctr *ctr) {
 	ef_intrl_elem PX = ef_intrl_interleave(ef_create_elem(bf_create_elem(0X7674C426F68A7C0D, 0X26C3E68569307393), bf_create_elem(0X9BFA0D5F1CB2BB3F, 0X53889FE5B08254D3)));
 	ef_intrl_elem PL = ef_intrl_interleave(ef_create_elem(bf_create_elem(0X4F88EF9F49D18A5E, 0X5C7C38B577B3EAF4), bf_create_elem(0XCDD4DCBE486CC880, 0X18FEF6543ECA3ABC)));
 	ef_intrl_elem PZ = ef_intrl_interleave(ef_create_elem(bf_create_elem(0X20000000000004, 0), bf_create_elem(0X8000000000000000, 0X80000)));
-	ec_point_laffine P = ec_lproj_to_laffine(ec_create_point_lproj(PX, PL, PZ)); //P = 78632917462800214 * GEN
+	ec_point_laffine P = ec_lproj_to_laffine(ec_create_point_lproj(PX, PL, PZ), 0); //P = 78632917462800214 * GEN
 
 	//Act
 	ec_point_laffine actual;
-	ec_scalarmull_single_endo_w3_table2D_bulk_ptr(&P, k, &actual);
+	actual = ec_lproj_to_laffine(ec_scalarmull_single(P, k), 0);
 	//Assert
 	uint64_t correct = ec_equal_point_laffine(actual, P) && ec_is_on_curve_laffine(actual);
 	assert_true(correct, ctr, "ec: ec_scalarmull_single_test_k_one_is_identity FAILED");
@@ -341,7 +341,7 @@ void ec_scalarmull_single_endo_test_example(test_ctr *ctr) {
 	uint64x2x2_t k = (uint64x2x2_t) {{{12345, 0}, {0,0}}};
 
 	ec_point_lproj P_lproj = (ec_point_lproj) GEN;
-	ec_point_laffine P_laffine = ec_lproj_to_laffine(P_lproj);
+	ec_point_laffine P_laffine = ec_lproj_to_laffine(P_lproj, 0);
 
 	ef_intrl_elem EX = ef_intrl_interleave(ef_create_elem(bf_create_elem(6574758758697437213U, 9029938885770167062U), bf_create_elem(2238988517843169761U, 2100850367268144132U)));
 	ef_intrl_elem EL = ef_intrl_interleave(ef_create_elem(bf_create_elem(6503207926092968936U, 3219845272070329794U), bf_create_elem(10930336994397273494U, 8947327516344479714U)));
@@ -418,30 +418,33 @@ void ec_scalarmull_single_rand_test_w3(test_ctr *ctr) {
 	assert_true(equal && on_curve, ctr, "ec: ec_scalarmull_single_rand_test_w3 FAILED");
 }
 
-void ec_scalarmull_test_precomputation(test_ctr *ctr) {
+void precompute_w5_ptr_test(test_ctr *ctr) {
 	ef_intrl_elem PX = ef_intrl_interleave(ef_create_elem(bf_create_elem(0XD2C27333EFC0AE61, 0X4306673487679D76), bf_create_elem(0X909BEC5477E860BB, 0X480D39C8A1B98266)));
 	ef_intrl_elem PL = ef_intrl_interleave(ef_create_elem(bf_create_elem(0XF84FB0B45D95FC31, 0X24C3FF4B68C78BE3), bf_create_elem(0X963FE2DA0544E1A4, 0X17B6B0A1380A490)));
 	ef_intrl_elem PZ = ef_intrl_interleave(ef_create_elem(bf_create_elem(0X100, 0), bf_create_elem(0X8000000000000000, 0X4000000000000001)));
-	ec_point_lproj P = ec_create_point_lproj(PX, PL, PZ); //99921481365893197563 * GEN
+	ec_point_laffine P = ec_lproj_to_laffine(ec_create_point_lproj(PX, PL, PZ), 0); //99921481365893197563 * GEN
 
-	ec_point_laffine table[16];
-	precompute_w5(ec_lproj_to_laffine(P), table);
+	ec_point_laffine table[8];
+	precompute_w5_ptr(&P, table);
 
-	uint64_t equal1 = ec_equal_point_laffine(table[1], ec_scalarmull_single_endo_w5_randaccess(ec_lproj_to_laffine(P), (uint64x2x2_t) {{{1, 0}, {0, 0}}}));
-	uint64_t equal3 = ec_equal_point_laffine(table[3], ec_scalarmull_single_endo_w5_randaccess(ec_lproj_to_laffine(P), (uint64x2x2_t) {{{3, 0}, {0, 0}}}));
-	uint64_t equal5 = ec_equal_point_laffine(table[5], ec_scalarmull_single_endo_w5_randaccess(ec_lproj_to_laffine(P), (uint64x2x2_t) {{{5, 0}, {0, 0}}}));
-	uint64_t equal7 = ec_equal_point_laffine(table[7], ec_scalarmull_single_endo_w5_randaccess(ec_lproj_to_laffine(P), (uint64x2x2_t) {{{7, 0}, {0, 0}}}));
-	uint64_t equal9 = ec_equal_point_laffine(table[9], ec_scalarmull_single_endo_w5_randaccess(ec_lproj_to_laffine(P), (uint64x2x2_t) {{{9, 0}, {0, 0}}}));
-	uint64_t equal11 = ec_equal_point_laffine(table[11], ec_scalarmull_single_endo_w5_randaccess(ec_lproj_to_laffine(P), (uint64x2x2_t) {{{11, 0}, {0, 0}}}));
-	uint64_t equal13 = ec_equal_point_laffine(table[13], ec_scalarmull_single_endo_w5_randaccess(ec_lproj_to_laffine(P), (uint64x2x2_t) {{{13, 0}, {0, 0}}}));
-	uint64_t equal15 = ec_equal_point_laffine(table[15], ec_scalarmull_single_endo_w5_randaccess(ec_lproj_to_laffine(P), (uint64x2x2_t) {{{15, 0}, {0, 0}}}));
+	uint64_t equal = 1;
+	for (int i = 0; i < 8; i++) {
+		ec_point_laffine expected = ec_lproj_to_laffine(ec_scalarmull_single(P, (uint64x2x2_t) {{{2*i+1, 0}, {0, 0}}}), 0);
+		equal = ec_equal_point_laffine(table[i], expected);
+		if (!equal) {
+			// ec_print_hex_laffine(expected);
+			// ec_print_hex_laffine(table[i]);
+			printf("i = %d\n", i);
+			break;
+		}
+	}
 
-	assert_true(equal1 && equal3 && equal5 && equal7 && equal9 && equal11 && equal13 && equal15 , ctr, "ec_scalarmull_test_precomputation FAILED");
+	assert_true(equal , ctr, "precompute_w5_ptr_test FAILED");
 }
 
 void ec_scalarmull_test_precomputation_w4_table2D_ptr(test_ctr *ctr) {
 	//Arrange
-	ec_point_laffine P = ec_lproj_to_laffine((ec_point_lproj) GEN);
+	ec_point_laffine P = ec_lproj_to_laffine((ec_point_lproj) GEN, 0);
 	ec_point_laffine table[16];
 	
 	//Act
@@ -455,7 +458,7 @@ void ec_scalarmull_test_precomputation_w4_table2D_ptr(test_ctr *ctr) {
 			uint64x2x2_t k2 = (uint64x2x2_t) {{{2*j+1, 0}, {0, 0}}};
 			ec_point_laffine k1P = ec_scalarmull_single_endo_w5_randaccess(P, k1);
 			ec_point_laffine k2EndoP = ec_scalarmull_single_endo_w5_randaccess(ec_endo_laffine(P), k2);
-			ec_point_laffine expected = ec_lproj_to_laffine(ec_add_laffine_unchecked(k1P, k2EndoP));
+			ec_point_laffine expected = ec_lproj_to_laffine(ec_add_laffine_unchecked(k1P, k2EndoP), 0);
 			uint64_t equal = ec_equal_point_laffine(expected, table[4*i+j]);
 			correct &= equal; 
 			if(!equal) {
@@ -468,7 +471,7 @@ void ec_scalarmull_test_precomputation_w4_table2D_ptr(test_ctr *ctr) {
 
 void ec_scalarmull_test_precomputation_w3_table2D_ptr(test_ctr *ctr) {
 	//Arrange
-	ec_point_laffine P = ec_lproj_to_laffine((ec_point_lproj) GEN);
+	ec_point_laffine P = ec_lproj_to_laffine((ec_point_lproj) GEN, 0);
 	ec_point_laffine table[4];
 	
 	//Act
@@ -482,7 +485,7 @@ void ec_scalarmull_test_precomputation_w3_table2D_ptr(test_ctr *ctr) {
 			uint64x2x2_t k2 = (uint64x2x2_t) {{{2*j+1, 0}, {0, 0}}};
 			ec_point_laffine k1P = ec_scalarmull_single_endo_w5_randaccess(P, k1);
 			ec_point_laffine k2EndoP = ec_scalarmull_single_endo_w5_randaccess(ec_endo_laffine(P), k2);
-			ec_point_laffine expected = ec_lproj_to_laffine(ec_add_laffine_unchecked(k1P, k2EndoP));
+			ec_point_laffine expected = ec_lproj_to_laffine(ec_add_laffine_unchecked(k1P, k2EndoP), 0);
 			uint64_t equal = ec_equal_point_laffine(expected, table[2*i+j]);
 			correct &= equal; 
 			if(!equal) {
@@ -495,7 +498,7 @@ void ec_scalarmull_test_precomputation_w3_table2D_ptr(test_ctr *ctr) {
 
 void ec_scalarmull_test_lookup_from_w4_table2D_ptr(test_ctr *ctr) {
 	//Arrange
-	ec_point_laffine P = ec_lproj_to_laffine((ec_point_lproj) GEN);
+	ec_point_laffine P = ec_lproj_to_laffine((ec_point_lproj) GEN, 0);
 	ec_point_laffine table[16];
 	ec_precompute_w4_table2D_ptr(&P, table);
 	ec_split_scalar decomp;
@@ -515,7 +518,7 @@ void ec_scalarmull_test_lookup_from_w4_table2D_ptr(test_ctr *ctr) {
 	rec_k2[0] = k2;
 	ec_point_lproj tmp;
 	ec_add_laffine_unchecked_ptr(&iP, &jEndoP, &tmp);
-	ec_point_laffine expected = ec_lproj_to_laffine(tmp);
+	ec_point_laffine expected = ec_lproj_to_laffine(tmp, 0);
 	ec_point_laffine actual;
 	ec_lookup_from_w4_table2D_ptr(&decomp, rec_k1, rec_k2, table, 0, &actual);
 	uint64_t equal = ec_equal_point_laffine(expected, actual);
@@ -524,7 +527,7 @@ void ec_scalarmull_test_lookup_from_w4_table2D_ptr(test_ctr *ctr) {
 	rec_k1[0] = k1;
 	rec_k2[0] = -k2;
 	ec_add_laffine_unchecked_ptr(&iP, &jEndoPneg, &tmp);
-	expected = ec_lproj_to_laffine(tmp);
+	expected = ec_lproj_to_laffine(tmp, 0);
 	ec_lookup_from_w4_table2D_ptr(&decomp, rec_k1, rec_k2, table, 0, &actual);
 	equal = ec_equal_point_laffine(expected, actual);
 	assert_true(equal, ctr, "ec_scalarmull_test_lookup_from_w4_table2D_ptr +i -j FAILED");
@@ -532,7 +535,7 @@ void ec_scalarmull_test_lookup_from_w4_table2D_ptr(test_ctr *ctr) {
 	rec_k1[0] = -k1;
 	rec_k2[0] = k2;
 	ec_add_laffine_unchecked_ptr(&iPneg, &jEndoP, &tmp);
-	expected = ec_lproj_to_laffine(tmp);
+	expected = ec_lproj_to_laffine(tmp, 0);
 	ec_lookup_from_w4_table2D_ptr(&decomp, rec_k1, rec_k2, table, 0, &actual);
 	equal = ec_equal_point_laffine(expected, actual);
 	assert_true(equal, ctr, "ec_scalarmull_test_lookup_from_w4_table2D_ptr -i +j FAILED");
@@ -540,7 +543,7 @@ void ec_scalarmull_test_lookup_from_w4_table2D_ptr(test_ctr *ctr) {
 	rec_k1[0] = -k1;
 	rec_k2[0] = -k2;
 	ec_add_laffine_unchecked_ptr(&iPneg, &jEndoPneg, &tmp);
-	expected = ec_lproj_to_laffine(tmp);
+	expected = ec_lproj_to_laffine(tmp, 0);
 	ec_lookup_from_w4_table2D_ptr(&decomp, rec_k1, rec_k2, table, 0, &actual);
 	equal = ec_equal_point_laffine(expected, actual);
 	assert_true(equal, ctr, "ec_scalarmull_test_lookup_from_w4_table2D_ptr -i -j FAILED");
@@ -548,7 +551,7 @@ void ec_scalarmull_test_lookup_from_w4_table2D_ptr(test_ctr *ctr) {
 
 void ec_scalarmull_test_lookup_from_w3_table2D_ptr(test_ctr *ctr) {
 	//Arrange
-	ec_point_laffine P = ec_lproj_to_laffine((ec_point_lproj) GEN);
+	ec_point_laffine P = ec_lproj_to_laffine((ec_point_lproj) GEN, 0);
 	ec_point_laffine table[4];
 	ec_precompute_w3_table2D_ptr(&P, table);
 	ec_split_scalar decomp;
@@ -568,7 +571,7 @@ void ec_scalarmull_test_lookup_from_w3_table2D_ptr(test_ctr *ctr) {
 	rec_k2[0] = k2;
 	ec_point_lproj tmp;
 	ec_add_laffine_unchecked_ptr(&iP, &jEndoP, &tmp);
-	ec_point_laffine expected = ec_lproj_to_laffine(tmp);
+	ec_point_laffine expected = ec_lproj_to_laffine(tmp, 0);
 	ec_point_laffine actual;
 	ec_lookup_from_w3_table2D_ptr(&decomp, rec_k1, rec_k2, table, 0, &actual);
 	uint64_t equal = ec_equal_point_laffine(expected, actual);
@@ -577,7 +580,7 @@ void ec_scalarmull_test_lookup_from_w3_table2D_ptr(test_ctr *ctr) {
 	rec_k1[0] = k1;
 	rec_k2[0] = -k2;
 	ec_add_laffine_unchecked_ptr(&iP, &jEndoPneg, &tmp);
-	expected = ec_lproj_to_laffine(tmp);
+	expected = ec_lproj_to_laffine(tmp, 0);
 	ec_lookup_from_w3_table2D_ptr(&decomp, rec_k1, rec_k2, table, 0, &actual);
 	equal = ec_equal_point_laffine(expected, actual);
 	assert_true(equal, ctr, "ec_scalarmull_test_lookup_from_w3_table2D_ptr +i -j FAILED");
@@ -585,7 +588,7 @@ void ec_scalarmull_test_lookup_from_w3_table2D_ptr(test_ctr *ctr) {
 	rec_k1[0] = -k1;
 	rec_k2[0] = k2;
 	ec_add_laffine_unchecked_ptr(&iPneg, &jEndoP, &tmp);
-	expected = ec_lproj_to_laffine(tmp);
+	expected = ec_lproj_to_laffine(tmp, 0);
 	ec_lookup_from_w3_table2D_ptr(&decomp, rec_k1, rec_k2, table, 0, &actual);
 	equal = ec_equal_point_laffine(expected, actual);
 	assert_true(equal, ctr, "ec_scalarmull_test_lookup_from_w3_table2D_ptr -i +j FAILED");
@@ -593,7 +596,7 @@ void ec_scalarmull_test_lookup_from_w3_table2D_ptr(test_ctr *ctr) {
 	rec_k1[0] = -k1;
 	rec_k2[0] = -k2;
 	ec_add_laffine_unchecked_ptr(&iPneg, &jEndoPneg, &tmp);
-	expected = ec_lproj_to_laffine(tmp);
+	expected = ec_lproj_to_laffine(tmp, 0);
 	ec_lookup_from_w3_table2D_ptr(&decomp, rec_k1, rec_k2, table, 0, &actual);
 	equal = ec_equal_point_laffine(expected, actual);
 	assert_true(equal, ctr, "ec_scalarmull_test_lookup_from_w3_table2D_ptr -i -j FAILED");
@@ -601,7 +604,7 @@ void ec_scalarmull_test_lookup_from_w3_table2D_ptr(test_ctr *ctr) {
 
 void ec_scalarmull_test_lookup_from_w3_table2D_bulk_ptr(test_ctr *ctr) {
 	//Arrange
-	ec_point_laffine P = ec_lproj_to_laffine((ec_point_lproj) GEN);
+	ec_point_laffine P = ec_lproj_to_laffine((ec_point_lproj) GEN, 0);
 	ec_point_laffine table[4];
 	ec_precompute_w3_table2D_ptr(&P, table);
 	ec_split_scalar decomp;
@@ -623,9 +626,9 @@ void ec_scalarmull_test_lookup_from_w3_table2D_bulk_ptr(test_ctr *ctr) {
 	rec_k2[1] = -k2;
 	ec_point_lproj tmp;
 	ec_add_laffine_unchecked_ptr(&iP, &jEndoP, &tmp);
-	ec_point_laffine expected1 = ec_lproj_to_laffine(tmp);
+	ec_point_laffine expected1 = ec_lproj_to_laffine(tmp, 0);
 	ec_add_laffine_unchecked_ptr(&iPneg, &jEndoPneg, &tmp);
-	ec_point_laffine expected2 = ec_lproj_to_laffine(tmp);
+	ec_point_laffine expected2 = ec_lproj_to_laffine(tmp, 0);
 	ec_point_laffine actual1, actual2;
 	ec_lookup_from_w3_table2D_bulk_ptr(&decomp, rec_k1, rec_k2, table, 0, 1, &actual1, &actual2);
 	uint64_t equal = ec_equal_point_laffine(expected1, actual1) && ec_equal_point_laffine(expected2, actual2);
@@ -636,9 +639,9 @@ void ec_scalarmull_test_lookup_from_w3_table2D_bulk_ptr(test_ctr *ctr) {
 	rec_k1[1] = -k1;
 	rec_k2[1] = k2;
 	ec_add_laffine_unchecked_ptr(&iP, &jEndoPneg, &tmp);
-	expected1 = ec_lproj_to_laffine(tmp);
+	expected1 = ec_lproj_to_laffine(tmp, 0);
 	ec_add_laffine_unchecked_ptr(&iPneg, &jEndoP, &tmp);
-	expected2 = ec_lproj_to_laffine(tmp);
+	expected2 = ec_lproj_to_laffine(tmp, 0);
 	ec_lookup_from_w3_table2D_bulk_ptr(&decomp, rec_k1, rec_k2, table, 0, 1, &actual1, &actual2);
 	equal = ec_equal_point_laffine(expected1, actual1) && ec_equal_point_laffine(expected2, actual2);
 	assert_true(equal, ctr, "ec_scalarmull_test_lookup_from_w3_table2D_ptr neq sign FAILED");
@@ -668,7 +671,7 @@ void ec_scalarmull_tests(test_ctr *ctr) {
 	ec_scalarmull_single_rand_test_w4(ctr);
 	ec_scalarmull_single_rand_test_w3(ctr);*/
 
-	// ec_scalarmull_test_precomputation(ctr);
+	precompute_w5_ptr_test(ctr);
 	ec_scalarmull_test_precomputation_w4_table2D_ptr(ctr);
 	ec_scalarmull_test_precomputation_w3_table2D_ptr(ctr);
 	ec_scalarmull_test_lookup_from_w4_table2D_ptr(ctr);

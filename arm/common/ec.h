@@ -36,9 +36,9 @@ ec_point_lproj ec_laffine_to_lproj(ec_point_laffine P);
 
 void ec_laffine_to_lproj_ptr(ec_point_laffine *P, ec_point_lproj *R);
 
-ec_point_laffine ec_lproj_to_laffine(ec_point_lproj P);
+ec_point_laffine ec_lproj_to_laffine(ec_point_lproj P, int in_const_time);
 
-void ec_lproj_to_laffine_ptr(ec_point_lproj *P, ec_point_laffine *R);
+void ec_lproj_to_laffine_ptr(ec_point_lproj *P, ec_point_laffine *R, int in_const_time);
 
 uint64_t ec_is_on_curve(ec_point_lproj P);
 
@@ -117,6 +117,8 @@ ec_point_lproj ec_double_then_addtwo(ec_point_laffine P1, ec_point_laffine P2, e
 void ec_double_then_addtwo_ptr(ec_point_laffine *P1, ec_point_laffine *P2, ec_point_lproj *Q, ec_point_lproj *R);
 
 ec_point_lproj ec_double_then_addtwo_nonatomic(ec_point_laffine P1, ec_point_laffine P2, ec_point_lproj Q);
+
+void ec_triple_mixed_ptr(ec_point_laffine *P, ec_point_lproj *R);
 
 static inline ec_point_laffine ec_endo_laffine(ec_point_laffine P) {
 	/*P.x.val[0] = bf_add(P.x.val[0], P.x.val[1]);

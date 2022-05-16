@@ -305,8 +305,8 @@ static inline void ef_intrl_mull_ptr(ef_intrl_elem *a, ef_intrl_elem *b, ef_intr
 	ef_intrl_red_ptr(&c, res);
 }
 
-ef_intrl_elem ef_intrl_inv(ef_intrl_elem a);
+ef_intrl_elem ef_intrl_inv(ef_intrl_elem a, int in_const_time);
 
-void ef_intrl_sim_inv(ef_intrl_elem inputs[], ef_intrl_elem outputs[], uint64_t len);
+void ef_intrl_sim_inv(ef_intrl_elem inputs[], ef_intrl_elem outputs[], uint64_t len, int in_const_time);
 
 #endif

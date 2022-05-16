@@ -361,7 +361,7 @@ void ef_intrl_inv_test_example(test_ctr *ctr) {
 	ef_intrl_elem expected = ef_intrl_interleave(ef_create_elem(e0, e1));
 	
 	//Act
-	ef_intrl_elem actual = ef_intrl_inv(a);
+	ef_intrl_elem actual = ef_intrl_inv(a, 0);
 	
 	//Assert
 	uint64_t correct = ef_intrl_equal(expected, actual);
@@ -375,7 +375,7 @@ void ef_intrl_inv_test_inverse_of_one_is_one(test_ctr *ctr) {
 	ef_intrl_elem one = ef_intrl_interleave(ef_create_elem(one0, one1));
 	
 	//Act
-	ef_intrl_elem one_inv = ef_intrl_inv(one);
+	ef_intrl_elem one_inv = ef_intrl_inv(one, 0);
 	
 	//Assert
 	uint64_t correct = ef_intrl_equal(one, one_inv);
@@ -388,7 +388,7 @@ void ef_intrl_inv_zero_outputs_zero(test_ctr *ctr) {
 	ef_intrl_elem zero = ef_create_elem(zero0, zero0);
 	
 	//Act
-	ef_intrl_elem zero_inv = ef_intrl_inv(zero);
+	ef_intrl_elem zero_inv = ef_intrl_inv(zero, 0);
 	
 	//Assert
 	uint64_t correct = ef_intrl_equal(zero, zero_inv);
@@ -402,8 +402,8 @@ void ef_intrl_inv_test_inverse_of_inverse_is_original(test_ctr *ctr) {
 	ef_intrl_elem a = ef_intrl_interleave(ef_create_elem(a0, a1)); //(z^78 + z^27)u + (z^121 + z^13+z)
 	
 	//Act
-	ef_intrl_elem a_inv = ef_intrl_inv(a);
-	ef_intrl_elem a_inv_inv = ef_intrl_inv(a_inv);
+	ef_intrl_elem a_inv = ef_intrl_inv(a, 0);
+	ef_intrl_elem a_inv_inv = ef_intrl_inv(a_inv, 0);
 	
 	//Assert
 	uint64_t correct = ef_intrl_equal(a, a_inv_inv);
@@ -417,8 +417,8 @@ void ef_intrl_inv_test_inverse_of_inverse_is_original_rnd(test_ctr *ctr) {
 		ef_intrl_elem a = ef_intrl_rand_elem();
 		
 		//Act
-		ef_intrl_elem a_inv = ef_intrl_inv(a);
-		ef_intrl_elem a_inv_inv = ef_intrl_inv(a_inv);
+		ef_intrl_elem a_inv = ef_intrl_inv(a, 0);
+		ef_intrl_elem a_inv_inv = ef_intrl_inv(a_inv, 0);
 	
 		//Assert
 		correct &= ef_intrl_equal(a, a_inv_inv);
@@ -441,11 +441,11 @@ void ef_intrl_inv_test_prod_of_inverses_is_inverse_of_prod(test_ctr *ctr) {
 	ef_intrl_elem b = ef_intrl_interleave(ef_create_elem(b0, b1)); //(z^101 + z^64 + z)u + z^100 + z^10 + 1
 	
 	//Act
-	ef_intrl_elem a_inv = ef_intrl_inv(a);
-	ef_intrl_elem b_inv = ef_intrl_inv(b);
+	ef_intrl_elem a_inv = ef_intrl_inv(a, 0);
+	ef_intrl_elem b_inv = ef_intrl_inv(b, 0);
 	ef_intrl_elem prod_of_inverses = ef_intrl_mull(a_inv, b_inv);
 	ef_intrl_elem prod = ef_intrl_mull(a,b);
-	ef_intrl_elem inv_of_prod = ef_intrl_inv(prod);
+	ef_intrl_elem inv_of_prod = ef_intrl_inv(prod, 0);
 	
 	//Assert
 	uint64_t correct = ef_intrl_equal(prod_of_inverses, inv_of_prod);
@@ -460,11 +460,11 @@ void ef_intrl_inv_test_prod_of_inverses_is_inverse_of_prod_rnd(test_ctr *ctr) {
 		ef_intrl_elem b = ef_intrl_rand_elem();
 		
 		//Act
-		ef_intrl_elem a_inv = ef_intrl_inv(a);
-		ef_intrl_elem b_inv = ef_intrl_inv(b);
+		ef_intrl_elem a_inv = ef_intrl_inv(a, 0);
+		ef_intrl_elem b_inv = ef_intrl_inv(b, 0);
 		ef_intrl_elem prod_of_inverses = ef_intrl_mull(a_inv, b_inv);
 		ef_intrl_elem prod = ef_intrl_mull(a,b);
-		ef_intrl_elem inv_of_prod = ef_intrl_inv(prod);
+		ef_intrl_elem inv_of_prod = ef_intrl_inv(prod, 0);
 		
 		//Assert
 		correct = ef_intrl_equal(prod_of_inverses, inv_of_prod);
@@ -489,7 +489,7 @@ void ef_intrl_inv_test_prod_with_inv_is_one(test_ctr *ctr) {
 	ef_intrl_elem one = ef_intrl_interleave(ef_create_elem(one0, one1));
 	
 	//Act
-	ef_intrl_elem a_inv = ef_intrl_inv(a);
+	ef_intrl_elem a_inv = ef_intrl_inv(a, 0);
 	ef_intrl_elem a_times_inv = ef_intrl_mull(a, a_inv);
 	
 	ef_elem av = ef_intrl_disentangle(a);
@@ -509,7 +509,7 @@ void ef_intrl_inv_test_prod_with_inv_is_one_rnd(test_ctr *ctr) {
 		ef_intrl_elem one = ef_intrl_interleave(ef_create_elem(one0, one1));
 		
 		//Act
-		ef_intrl_elem a_inv = ef_intrl_inv(a);
+		ef_intrl_elem a_inv = ef_intrl_inv(a, 0);
 		ef_intrl_elem a_times_inv = ef_intrl_mull(a, a_inv);
 		
 		//Assert
@@ -535,12 +535,12 @@ void ef_intrl_sim_inv_test_crosscheck_inv_rnd(test_ctr *ctr) {
 		inputs[2] = ef_intrl_rand_elem();
 		
 		//Act
-		ef_intrl_sim_inv(inputs, outputs, len);
+		ef_intrl_sim_inv(inputs, outputs, len, 0);
 		
 		//Assert
-		correct = ef_intrl_equal(outputs[0], ef_intrl_inv(inputs[0])) 
-			   && ef_intrl_equal(outputs[1], ef_intrl_inv(inputs[1])) 
-			   && ef_intrl_equal(outputs[2], ef_intrl_inv(inputs[2]));
+		correct = ef_intrl_equal(outputs[0], ef_intrl_inv(inputs[0], 0)) 
+			   && ef_intrl_equal(outputs[1], ef_intrl_inv(inputs[1], 0)) 
+			   && ef_intrl_equal(outputs[2], ef_intrl_inv(inputs[2], 0));
 		if(!correct) {
 			printf("Inputs[0]:\n");
 			ef_intrl_print_hex_nl(inputs[0]);
