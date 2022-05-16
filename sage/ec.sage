@@ -149,6 +149,19 @@ def add_sub_mix(xP, lP, xQ, lQ, zQ):
     Lpmq = Lpq + (xQ*zQ)^2 + (B * zQ^2)*(lP+1)
     return (Xpq, Lpq, Zpq, Xpmq, Lpmq, Zpmq)
 
+def triple_mix(xP, lP):
+    global mt, ma, mb, sq
+    mt += 4
+    ma += 1
+    sq += 4
+
+    T = lP^2 + lP + a
+    A = (xP + T)^2 + T
+    Xr = xP * A^2
+    Zr = A * (A + T)
+    Lr = T^2 * T + (lP+1)*Zr
+    return (Xr, Lr, Zr)
+
 def double_add(Xq, Lq, Zq, xP, lP):
     global mt, ma, mb, sq
     mt += 10
@@ -319,7 +332,7 @@ def smu_double_add_glv_reg(xP, lP, scalar, w = 4):
 
     #Will convert table to affine coordinates using simultaneous inversion algorithm, so add costs here:
     global mt, ma, mb, sq
-    mt += 5*(2**(w-2)-1) + 13
+    mt += 5*(2**(w-2)-1) + 16
 
     _xP, _lP = psi_aff(xP, lP)
     (xP1, lP1, xP2, lP2) = (one, one, one, one)
@@ -369,18 +382,23 @@ def smu_double_add_glv_reg_tab(xP, lP, scalar, w = 4):
     k2r = regular_recode(k2, w)
     l = len(k1r)
 
-    T1 = []
-    T2 = []
-    T  = []
-    (x2, l2) = double_aff(xP, lP)
-    (Xacc, Lacc, Zacc) = (xP, lP, one)
-    for i in range(2**(w-2)):
-        T1.append((Xacc / Zacc, Lacc / Zacc))
-        (Xacc, Lacc, Zacc) = add_mix(Xacc, Lacc, Zacc, x2, l2)
-
     #Will convert table to affine coordinates using simultaneous inversion algorithm, so add costs here:
     global mt, ma, mb, sq
-    mt += 5*(2**(w-2)-1) + 13
+
+    T1 = []
+    T  = []
+    if (w == 3):
+        T1.append((xP, lP))
+        (Xacc, Lacc, Zacc) = triple_mix(xP, lP)
+        T1.append((Xacc / Zacc, Lacc / Zacc))
+        mt += 2 + 16
+    else:
+        (x2, l2) = double_aff(xP, lP)
+        (Xacc, Lacc, Zacc) = (xP, lP, one)
+        for i in range(2**(w-2)):
+            T1.append((Xacc / Zacc, Lacc / Zacc))
+            (Xacc, Lacc, Zacc) = add_mix(Xacc, Lacc, Zacc, x2, l2)
+        mt += 5*(2**(w-2)-1) + 16
 
     T = [None] * (2**(w-2)) * (2**(w-2))
     for i in range(2**(w-2)):
@@ -396,7 +414,7 @@ def smu_double_add_glv_reg_tab(xP, lP, scalar, w = 4):
             T[2**(w-2)*j+i] = psi_aff(X4 / Z4, L4 / Z4)
 
     #Will convert table to affine coordinates using simultaneous inversion algorithm, so add costs here:
-    mt += 5*(2**(2*(w-2))-1) + 13
+    mt += 5*(2**(2*(w-2))-1) + 16
 
     _xP, _lP = psi_aff(xP, lP)
     (xP1, lP1, xP2, lP2) = (one, one, one, one)
@@ -453,7 +471,7 @@ def smu_double_add_glv_reg_tab_precomp(xP, lP, w=4):
 
     #Will convert table to affine coordinates using simultaneous inversion algorithm, so add costs here:
     global mt, ma, mb, sq
-    mt += 5*(2**(w-2)-1) + 13
+    mt += 5*(2**(w-2)-1) + 16
 
     T = [None] * (2**(w-2)) * (2**(w-2))
     for i in range(2**(w-2)):
@@ -469,7 +487,7 @@ def smu_double_add_glv_reg_tab_precomp(xP, lP, w=4):
             T[2**(w-2)*j+i] = psi_aff(X4 / Z4, L4 / Z4)
 
     #Will convert table to affine coordinates using simultaneous inversion algorithm, so add costs here:
-    mt += 5*(2**(2*(w-2))-1) + 13
+    mt += 5*(2**(2*(w-2))-1) + 16
     return T1, T
 
 
@@ -520,7 +538,7 @@ regular_recode_test()
 mt = ma = mb = sq = 0
 _, _, _, mu = curve_details(b)
 
-for i in range(0, 1):
+for i in range(0, 10):
     k = randrange(r)
 
     # Pick a random point
@@ -593,6 +611,8 @@ for i in range(0, 1):
     (X3, L3, Z3) = smu_double_add_glv_reg(xP, lP, k, 6)
     assert(from_lambda_prj(X3, L3, Z3) == k*P)
     (X3, L3, Z3) = smu_double_add_glv_reg(xP, lP, k, 7)
+    assert(from_lambda_prj(X3, L3, Z3) == k*P)
+    (X3, L3, Z3) = smu_double_add_glv_reg_tab(xP, lP, k, 3)
     assert(from_lambda_prj(X3, L3, Z3) == k*P)
     (X3, L3, Z3) = smu_double_add_glv_reg_tab(xP, lP, k, 4)
     assert(from_lambda_prj(X3, L3, Z3) == k*P)
