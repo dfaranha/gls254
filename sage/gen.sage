@@ -23,17 +23,16 @@ if (r in Primes()):
 	print(E)
 	exit(0)
 
-for i in range(0, 127):
-	for j in range(0, i):
-		b = F2m(z^i + z^j)
-		E = EllipticCurve(F2m, [1, 1, 0, 0, b])
-		n = E.cardinality();
-		t = q + 1 - n
-		n2 = (q - 1)^2 + t^2
-		E2 = EllipticCurve(F2x, [1, s, 0, 0, b])
-		r = n2//2
-		if (r in Primes()):
-			print(E2)
-			#exit(0);
+for i in range(1, 127):
+	b = F2m(z^i + 1)
+	E = EllipticCurve(F2m, [1, 1, 0, 0, b])
+	n = E.cardinality();
+	t = q + 1 - n
+	n2 = (q - 1)^2 + t^2
+	E2 = EllipticCurve(F2x, [1, s, 0, 0, b])
+	r = n2//2
+	if (r in Primes()):
+		print(E2)
+		exit(0);
 
 
