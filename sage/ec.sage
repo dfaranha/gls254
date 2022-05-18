@@ -15,6 +15,7 @@ n = 2894802230932904885589274625217197696348525180873138864451012042540221131005
 # Cofactor of the prime-order subgroup
 h = 2
 r = n//h
+print(E)
 
 def generator(E):
     # Let's get a generator of the right order from MAGMA.
@@ -134,19 +135,19 @@ def add_sub_mix_mix(xP, lP, xQ, lQ):
     Zpmq = Zpq + B
     return (Xpq, Lpq, Zpq, Xpmq, Lpmq, Zpmq)
 
-def add_sub_mix(xP, lP, xQ, lQ, zQ):
+def add_sub_mix( Xq, Lq, Zq, xP, lP):
     global mt, ma, mb, sq
     mt += 12
     sq += 5
-    A = lP * zQ + lQ
-    B = (xP*zQ + xQ)^2
-    C = ((xP*zQ) * xQ)
+    A = lP * Zq + Lq
+    B = (xP*Zq + Xq)^2
+    C = ((xP*Zq) * Xq)
     Xpq = A^2 * C
-    Zpq = A * B * zQ
+    Zpq = A * B * Zq
     Lpq = ((A*xQ) + B)^2 + Zpq*(lP + 1)
-    Xpmq = Xpq + C * zQ^2
-    Zpmq = Zpq + B * zQ^2
-    Lpmq = Lpq + (xQ*zQ)^2 + (B * zQ^2)*(lP+1)
+    Xpmq = Xpq + C * Zq^2
+    Zpmq = Zpq + B * Zq^2
+    Lpmq = Lpq + (Xq*Zq)^2 + (B * Zq^2)*(lP+1)
     return (Xpq, Lpq, Zpq, Xpmq, Lpmq, Zpmq)
 
 def triple_mix(xP, lP):
@@ -175,6 +176,30 @@ def double_add(Xq, Lq, Zq, xP, lP):
     Zr = A * B *Zq^2
     Lr = T*(A+B)^2 + (lP+1)*Zr
     return (Xr, Lr, Zr)
+
+def double_add_sub_mix(Xq, Lq, Zq, xP, lP):
+    global mt, ma, mb, sq
+    mt += 14
+    sq += 9
+    ma += 1
+
+    T = Lq^2 + Lq * Zq + a * Zq^2
+    X2 = T^2
+    Z2 = T * Zq^2
+    L2 = (Xq * Zq)^2 + X2 + T * (Lq * Zq) + Z2
+
+    A = lP * Z2 + L2
+    B = (xP*Z2 + X2)^2
+    C = ((xP*Z2) * X2)
+
+    Xpq = A^2 * C
+    Zpq = A * B * Z2
+    Lpq = ((A*X2) + B)^2 + Zpq*(lP + 1)
+
+    Xpmq = Xpq + C * Z2^2
+    Zpmq = Zpq + B * Z2^2
+    Lpmq = Lpq + (Z2*X2)^2 + Zpq + (B * Z2^2)*lP
+    return (Xpq, Lpq, Zpq, Xpmq, Lpmq, Zpmq)
 
 def double_add_add(Xq, Lq, Zq, xP1, lP1, xP2, lP2):
     global mt, ma, mb, sq
@@ -387,17 +412,21 @@ def smu_double_add_glv_reg_tab(xP, lP, scalar, w = 4):
 
     T1 = []
     T  = []
+
     if (w == 3):
         T1.append((xP, lP))
         (Xacc, Lacc, Zacc) = triple_mix(xP, lP)
         T1.append((Xacc / Zacc, Lacc / Zacc))
         mt += 2 + 16
     else:
-        (x2, l2) = double_aff(xP, lP)
-        (Xacc, Lacc, Zacc) = (xP, lP, one)
-        for i in range(2**(w-2)):
-            T1.append((Xacc / Zacc, Lacc / Zacc))
-            (Xacc, Lacc, Zacc) = add_mix(Xacc, Lacc, Zacc, x2, l2)
+        T1.append((xP, lP))
+        (Xacc, Lacc, Zacc) = triple_mix(xP, lP)
+        T1.append((Xacc / Zacc, Lacc / Zacc))
+
+        for i in range(1, 2**(w-3)):
+            (Xpq, Lpq, Zpq, Xpmq, Lpmq, Zpmq) = double_add_sub_mix(T1[i][0], T1[i][1], one, xP, lP)
+            T1.append((Xpmq / Zpmq, Lpmq / Zpmq))
+            T1.append((Xpq / Zpq, Lpq / Zpq))
         mt += 5*(2**(w-2)-1) + 16
 
     T = [None] * (2**(w-2)) * (2**(w-2))
@@ -580,7 +609,7 @@ for i in range(0, 10):
     (X3, L3, Z3, X4, L4, Z4) = add_sub_mix_mix(xP, lP, xQ, lQ)
     assert(from_lambda_prj(X3, L3, Z3) == P + Q)
     assert(from_lambda_prj(X4, L4, Z4) == P - Q)
-    (X3, L3, Z3, X4, L4, Z4) = add_sub_mix(xP, lP, xQ, lQ, one)
+    (X3, L3, Z3, X4, L4, Z4) = add_sub_mix(xQ, lQ, one, xP, lP)
     assert(from_lambda_prj(X3, L3, Z3) == P + Q)
     assert(from_lambda_prj(X4, L4, Z4) == P - Q)
     (X3, L3, Z3) = add_psi(xP, lP)
@@ -596,6 +625,9 @@ for i in range(0, 10):
     assert(from_lambda_prj(X3, L3, Z3) == 2*Q + P)
     (X3, L3, Z3) = double_add_add(xQ, lQ, one, xP, lP, xR, lR)
     assert(from_lambda_prj(X3, L3, Z3) == 2*Q + P + R)
+    (X3, L3, Z3, X4, L4, Z4) = double_add_sub_mix(xQ, lQ, one, xP, lP)
+    assert(from_lambda_prj(X3, L3, Z3) == 2*Q + P)
+    assert(from_lambda_prj(X4, L4, Z4) == 2*Q - P)
 
     # Test scalar multiplication algorithms
     (X3, L3, Z3) = smu_double_add(xP, lP, k)
