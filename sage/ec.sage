@@ -101,13 +101,13 @@ def add_mix(Xp, Lp, Zp, xQ, lQ):
 
 def add_psi(xP, lP):
     global mt, ma, mb, sq
-    mt += 4
+    mt += 3.5
     sq += 1.5
     A = lP[1] + s
     B = xP[1]^2 # 1 subfield square
-    Xpq = A * xP * A * (xP + xP[1]) # 4 subfield mults
+    Xpq = (A * xP) * (A * xP + A * xP[1]) # 3 subfield mults
     Zpq = (A * B) # 1 subfield mult
-    Lpq = (A * (xP + xP[1]) + B)^2 + Zpq * (lP + 1) # 2 mults, 1 square
+    Lpq = (A * (xP + xP[1]) + B)^2 + Zpq * (lP + 1) # 1 mults, 1 square
     return (Xpq, Lpq, Zpq)
 
 def add_mix_mix(xP, lP, xQ, lQ):
@@ -179,7 +179,7 @@ def double_add(Xq, Lq, Zq, xP, lP):
 
 def double_add_sub_mix(Xq, Lq, Zq, xP, lP):
     global mt, ma, mb, sq
-    mt += 14
+    mt += 15
     sq += 9
     ma += 1
 
@@ -187,18 +187,22 @@ def double_add_sub_mix(Xq, Lq, Zq, xP, lP):
     X2 = T^2
     Z2 = T * Zq^2
     L2 = (Xq * Zq)^2 + X2 + T * (Lq * Zq) + Z2
+    #4m + 4s
 
     A = lP * Z2 + L2
     B = (xP*Z2 + X2)^2
     C = ((xP*Z2) * X2)
+    #3m + s
 
     Xpq = A^2 * C
     Zpq = A * B * Z2
     Lpq = ((A*X2) + B)^2 + Zpq*(lP + 1)
+    #5m + 2s
 
     Xpmq = Xpq + C * Z2^2
     Zpmq = Zpq + B * Z2^2
     Lpmq = Lpq + (Z2*X2)^2 + Zpq + (B * Z2^2)*lP
+    #4 m
     return (Xpq, Lpq, Zpq, Xpmq, Lpmq, Zpmq)
 
 def double_add_add(Xq, Lq, Zq, xP1, lP1, xP2, lP2):
@@ -267,26 +271,44 @@ def curve_details_test():
     #assert S(mu) == S(8008021148421066531327005693257209127155969932631024546964258714431222018403)
     print("Curve details works!")
 
-#As described by Karabina et al
-def decomp(k, t):
+#Compute the constants ahead of time
+def decomp_precomp(n, t):
     q = ZZ(2^127)
-    beta1 = (QQ(1-q)/QQ(t^2 + (q-1)^2))*QQ(k)
-    beta2 = (QQ(t)/QQ(t^2 + (q-1)^2))*QQ(k)
-    b1 = beta1.round()
-    b2 = beta2.round()
+    alpha1 = q-1+t
+    alpha2 = q-1-t
+    d = 256
+    c1 = ((QQ(alpha1)/QQ(n))*2^d).round()
+    c2 = ((QQ(alpha2)/QQ(n))*2^d).round()
+    return alpha1, alpha2, c1, c2, d
 
-    k1 = k - b1*(1-q) - b2*t
-    k2 = - b1*t - b2*(q-1)
+def decomp(k, alpha1, alpha2, c1, c2, d):
+    v1 = (alpha1//2, alpha2//2)
+    v2 = (alpha2//2, -alpha1//2)
+
+    b1 = (c1*k) // 2^d
+    b2 = (c2*k) // 2^d
+    k1 = k - b1*v1[0] - b2*v2[0]
+    k2 = -b1*v1[1] - b2*v2[1]
+
+    (u1, u2) = (v1, v2)
+    if alpha1 % 4 == 0:
+         (u1, u2) = (v2, v1)
+    p1 = (k1 +1 ) % 2
+    p2 = (k2 + 1) % 2
+    k1 = k1 - p1*u1[0] - p2*u2[0]
+    k2 = k2 - p1*u1[1] - p2*u2[1]
     return k1, k2
 
 def decomp_test():
     n, r, t, mu = curve_details(b)
-    k = ZZ(r-2)
-    k1, k2 = decomp(k, t)
-    print(k1, k2)
-    S = Integers(r)
-    assert S(k1)+S(k2)*S(mu) == S(k)
-    print("Decomp works!")
+    k = r-1
+    alpha1, alpha2, c1, c2, d = decomp_precomp(n, t)
+    k1, k2 = decomp(k, alpha1, alpha2, c1, c2, d)
+    assert (k-k1-k2*mu) % r == 0
+    assert k1 % 2 == 1
+    assert k2 % 2 == 1
+    assert ZZ(abs(k1)).nbits() <= 128
+    assert ZZ(abs(k2)).nbits() <= 128
 
 def smu_double_add(xP, lP, scalar):
     (Xq, Lq, Zq) = (xP, lP, one)
@@ -308,7 +330,8 @@ def smu_double_always_add(xP, lP, scalar):
 
 def smu_double_add_glv(xP, lP, scalar):
     n, r, t, mu = curve_details(b)
-    k1, k2 = decomp(scalar, t)
+    alpha1, alpha2, c1, c2, d = decomp_precomp(n, t)
+    k1, k2 = decomp(scalar, alpha1, alpha2, c1, c2, d)
     assert((k1 + k2*mu) % r == scalar)
 
     _xP, _lP = psi_aff(xP, lP)
@@ -337,13 +360,10 @@ def smu_double_add_glv(xP, lP, scalar):
 def smu_double_add_glv_reg(xP, lP, scalar, w = 4):
     #b = F2m(z^49 + z^25 + 1)
     n, r, t, mu = curve_details(b)
-    k1, k2 = decomp(scalar, t)
+    alpha1, alpha2, c1, c2, d = decomp_precomp(n, t)
+    k1, k2 = decomp(scalar, alpha1, alpha2, c1, c2, d)
     assert((k1+k2*mu) % r == scalar)
 
-    c1 = (k1 + 1) % 2
-    c2 = (k2 + 1) % 2
-    k1 = k1 + c1
-    k2 = k2 + c2
     k1r = regular_recode(k1, w)
     k2r = regular_recode(k2, w)
     l = len(k1r)
@@ -384,25 +404,15 @@ def smu_double_add_glv_reg(xP, lP, scalar, w = 4):
             (xP2, lP2) = neg_aff(xP2, lP2)
         (Xq, Lq, Zq) = double_add_add(Xq, Lq, Zq, xP1, lP1, xP2, lP2)
 
-    if c1 == 1:
-        (mxP, mlP) = neg_aff(xP, lP)
-        (Xq, Lq, Zq) = add_mix(Xq, Lq, Zq, mxP, mlP)
-    if c2 == 1:
-        (mxP, mlP) = neg_aff(_xP, _lP)
-        (Xq, Lq, Zq) = add_mix(Xq, Lq, Zq, mxP, mlP)
-
     return (Xq, Lq, Zq)
 
 def smu_double_add_glv_reg_tab(xP, lP, scalar, w = 4):
     #b = F2m(z^49 + z^25 + 1)
     n, r, t, mu = curve_details(b)
-    k1, k2 = decomp(scalar, t)
+    alpha1, alpha2, c1, c2, d = decomp_precomp(n, t)
+    k1, k2 = decomp(scalar, alpha1, alpha2, c1, c2, d)
     assert((k1+k2*mu) % r == scalar)
 
-    c1 = (k1 + 1) % 2
-    c2 = (k2 + 1) % 2
-    k1 = k1 + c1
-    k2 = k2 + c2
     k1r = regular_recode(k1, w)
     k2r = regular_recode(k2, w)
     l = len(k1r)
@@ -479,13 +489,6 @@ def smu_double_add_glv_reg_tab(xP, lP, scalar, w = 4):
             (xP1, lP1) = neg_aff(xP1, lP1)
         (Xq, Lq, Zq) = double_add(Xq, Lq, Zq, xP1, lP1)
 
-    if c1 == 1:
-        (mxP, mlP) = neg_aff(xP, lP)
-        (Xq, Lq, Zq) = add_mix(Xq, Lq, Zq, mxP, mlP)
-    if c2 == 1:
-        (mxP, mlP) = neg_aff(_xP, _lP)
-        (Xq, Lq, Zq) = add_mix(Xq, Lq, Zq, mxP, mlP)
-
     return (Xq, Lq, Zq)
 
 def smu_double_add_glv_reg_tab_precomp(xP, lP, w=4):
@@ -524,7 +527,7 @@ def smu_double_add_glv_reg_tab_precomp(xP, lP, w=4):
 #Modified alg 6 from "Exponent Recoding and Regular Exponentiation Algorithms"
 #by Joye et al
 def regular_recode(k, w):
-    l = ZZ(QQ(127/(w-1)).ceil()+1)
+    l = ZZ(QQ(127/(w-1)).ceil())
     v = ZZ(2^(w-1))
     acc = k
     k_reg = [0] * l
@@ -540,7 +543,7 @@ def regular_recode_test():
     k1 = ZZ(85070591730234615877113501116496779623)
     w = 4
     k1_reg = regular_recode(k1, w)
-    assert(len(k1_reg) == 44)
+    assert(len(k1_reg) == 43)
 
     acc = ZZ(0)
     v = ZZ(1)
@@ -565,9 +568,9 @@ decomp_test()
 regular_recode_test()
 
 mt = ma = mb = sq = 0
-_, _, _, mu = curve_details(b)
+n, r, t, mu = curve_details(b)
 
-for i in range(0, 10):
+for i in range(0, 1):
     k = randrange(r)
 
     # Pick a random point
