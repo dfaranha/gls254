@@ -56,7 +56,7 @@ void ec_equal_point_lproj_test_notequivalent_example(test_ctr *ctr) {
 void ec_is_on_curve_test_generator_on_curve(test_ctr *ctr) {
 	//Arrange, Act & Assert
 	uint64_t on_curve = ec_is_on_curve((ec_point_lproj) GEN);
-	assert_true(on_curve, ctr, "ec: test_generator_on_curve FAILED");
+	assert_true(on_curve, ctr, "ec: ec_is_on_curve_test_generator_on_curve FAILED");
 }
 
 void ec_is_on_curve_test_point_not_on_curve(test_ctr *ctr) {
@@ -68,7 +68,7 @@ void ec_is_on_curve_test_point_not_on_curve(test_ctr *ctr) {
 
 	//Act & Assert
 	uint64_t on_curve = ec_is_on_curve((ec_point_lproj) P);
-	assert_false(on_curve, ctr, "ec: test_generator_on_curve FAILED");
+	assert_false(on_curve, ctr, "ec: ec_is_on_curve_test_point_not_on_curve FAILED");
 }
 
 
@@ -857,38 +857,38 @@ void ec_triple_mixed_test_crosscheck_rnd(test_ctr *ctr) {
 void ec_tests(test_ctr *ctr) {
 	ec_create_point_lproj_test_example(ctr);
 
-	ec_equal_point_lproj_test_equivalent_example(ctr);
-	ec_equal_point_lproj_test_notequivalent_example(ctr);
+	//ec_equal_point_lproj_test_equivalent_example(ctr);
+	//ec_equal_point_lproj_test_notequivalent_example(ctr);
 
 	ec_is_on_curve_test_generator_on_curve(ctr);
 	ec_is_on_curve_test_point_not_on_curve(ctr);
 	ec_rand_point_lproj_test_on_curve(ctr);
 	ec_rand_point_laffine_test_on_curve(ctr);
 
-	ec_add_test_example(ctr);
+	//ec_add_test_example(ctr);
 	ec_add_test_is_on_curve_rnd(ctr);
-	ec_add_test_associative(ctr);
+	//ec_add_test_associative(ctr);
 	ec_add_test_associative_rnd(ctr);
-	ec_add_test_commutative(ctr);
+	//ec_add_test_commutative(ctr);
 	ec_add_test_commutative_rnd(ctr);
 	ec_add_test_point_plus_infty_is_point(ctr);
 	ec_add_test_infty_plus_point_is_point(ctr);
-	ec_add_test_crosscheck_double(ctr);
-	ec_add_test_order_of_subgroup_is_order_of_generator(ctr);
+	//ec_add_test_crosscheck_double(ctr);
+	//ec_add_test_order_of_subgroup_is_order_of_generator(ctr);
 
-	ec_double_test_example(ctr);
+	//ec_double_test_example(ctr);
 	ec_double_test_is_on_curve_rnd(ctr);
-	ec_double_test_double_of_sum_is_sum_of_doubled(ctr);
+	//ec_double_test_double_of_sum_is_sum_of_doubled(ctr);
 	ec_double_test_double_of_sum_is_sum_of_doubled_rnd(ctr);
 	ec_double_test_double_of_infty_is_infty(ctr);
 
-	ec_neg_test_example(ctr);
+	//ec_neg_test_example(ctr);
 	ec_neg_test_is_on_curve_rnd(ctr);
-	ec_neg_test_neg_of_sum_same_as_sum_of_neg(ctr);
+	//ec_neg_test_neg_of_sum_same_as_sum_of_neg(ctr);
 	ec_neg_test_neg_of_sum_same_as_sum_of_neg_rnd(ctr);
-	ec_neg_test_neg_of_double_same_as_double_of_neg(ctr);
+	//ec_neg_test_neg_of_double_same_as_double_of_neg(ctr);
 	ec_neg_test_neg_of_double_same_as_double_of_neg_rnd(ctr);
-	ec_neg_test_neg_of_neg_is_original(ctr);
+	//ec_neg_test_neg_of_neg_is_original(ctr);
 	ec_neg_test_neg_of_neg_is_original_rnd(ctr);
 	ec_neg_of_infty_is_infty(ctr);
 	ec_neg_test_add_point_with_neg_is_infty(ctr);

@@ -85,6 +85,7 @@ void reg_rec(uint64x2_t k, uint64_t w, signed char* rec, uint64_t l);
 void ec_print_rec(signed char *rec, uint64_t l);
 
 ec_split_scalar ec_scalar_decomp(uint64x2x2_t k);
+ec_split_scalar ec_scalar_decomp_new(uint64x2x2_t k);
 
 static inline uint64x2x2_t ec_get_lookup_data_table2D(signed char k1_digit, signed char k2_digit, ec_split_scalar *decomp, int ncols) {
 	//Code to find correct scalar values, as we can't redefine P as -P for negative k1 or k2. But we can, different points!!

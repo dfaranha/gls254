@@ -86,3 +86,33 @@ uint64x2_t mult_u64(uint64_t a, uint64_t b) {
     result[1] = (ahbl >> 32) + (cross >> 32) + ahbh;
 	return result;
 }
+
+void mult_u64_multiword(uint64_t *c, const uint64_t *a, const uint64_t *b, int size) {
+	int i, j;
+	const uint64_t *tmpa, *tmpb;
+	uint64_t r0, r1, r2;
+
+	r0 = r1 = r2 = 0;
+	for (i = 0; i < size; i++, c++) {
+		tmpa = a;
+		tmpb = b + i;
+		for (j = 0; j <= i; j++, tmpa++, tmpb--) {
+			RLC_COMBA_STEP_MUL(r2, r1, r0, *tmpa, *tmpb);
+		}
+		*c = r0;
+		r0 = r1;
+		r1 = r2;
+		r2 = 0;
+	}
+	for (i = 0; i < size; i++, c++) {
+		tmpa = a + i + 1;
+		tmpb = b + (size - 1);
+		for (j = 0; j < size - (i + 1); j++, tmpa++, tmpb--) {
+			RLC_COMBA_STEP_MUL(r2, r1, r0, *tmpa, *tmpb);
+		}
+		*c = r0;
+		r0 = r1;
+		r1 = r2;
+		r2 = 0;
+	}
+}

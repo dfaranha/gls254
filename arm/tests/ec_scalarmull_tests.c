@@ -432,8 +432,8 @@ void precompute_w5_ptr_test(test_ctr *ctr) {
 		ec_point_laffine expected = ec_lproj_to_laffine(ec_scalarmull_single(P, (uint64x2x2_t) {{{2*i+1, 0}, {0, 0}}}), 0);
 		equal = ec_equal_point_laffine(table[i], expected);
 		if (!equal) {
-			// ec_print_hex_laffine(expected);
-			// ec_print_hex_laffine(table[i]);
+			ec_print_hex_laffine(expected);
+			ec_print_hex_laffine(table[i]);
 			printf("i = %d\n", i);
 			break;
 		}

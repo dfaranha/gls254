@@ -877,6 +877,87 @@ ec_split_scalar ec_scalar_decomp(uint64x2x2_t k) {
 	return result;
 }
 
+/* GLS recoding in constant time, using new approach. */
+ec_split_scalar ec_scalar_decomp_new(uint64x2x2_t k) {
+	//c_i <= (q+1+|t|)/((q-1)^2 + t^2)*2^256 <= q+1+2sqrt(q)/(q+1)^2 * 2^256 <= 2^130-1
+	//So the c_i will at most be 130 bits
+    const uint64_t c1[4] = {0xE334618602D4CB44, 0x0000000000000004, 0x2, 0x0};
+    const uint64_t c2[4] = {0x1CCB9E79FD2B34AC, 0xFFFFFFFFFFFFFFFB, 0x1, 0x0};
+	//|a_i| <= q+1+|t| <= q+sqrt(q)+1 <= 2q-1
+	//So the a_i will at most be 128 bits
+    const uint64_t a1[2] = {0x38CD186180B532D2, 0x8000000000000001};
+    const uint64_t a2[2] = {0xC732E79E7F4ACD2C, 0x7FFFFFFFFFFFFFFE};
+    uint64_t v1[2][2], v2[2][2];
+    uint64_t b1[2], b2[2], p1, p2, tmp1[4], tmp2[8];
+	uint64_t zero = 0;
+	ec_split_scalar res;
+
+	//Step 1: Putting k into tmp1 for later multiplications
+	tmp1[0] = k.val[0][0];
+	tmp1[1] = k.val[0][1];
+	tmp1[2] = k.val[1][0];
+	tmp1[3] = k.val[1][1];
+
+	//Step 2: Initializing basis
+    /* v1 = (alpha1//2, alpha2//2), v2 = (alpha2//2, -alpha1//2) */
+	//Need to remember that v2[1] is negative
+    v2[1][0] = v1[0][0] = (a1[0] >> 1) | a1[1] << 63;
+    v2[1][1] = v1[0][1] = (a1[1] >> 1);
+    v2[0][0] = v1[1][0] = (a2[0] >> 1) | a2[1] << 63;
+    v2[0][1] = v1[1][1] = (a2[1] >> 1);
+
+    /* Step 3: Computing b1 = (c1*k) // 2^d, b2 = (c2*k) // 2^d for d = 256. */
+    mult_u64_multiword(tmp2, c1, tmp1, 4);
+    b1[0] = tmp2[4];
+    b1[1] = tmp2[5];
+	printf("b1 [0] = %lu [1] = %lu\n", b1[0], b1[1]);
+    mult_u64_multiword(tmp2, c2, tmp1, 4);
+    b2[0] = tmp2[4];
+    b2[1] = tmp2[5];
+	printf("b2 [0] = %lu [1] = %lu\n", b2[0], b2[1]);
+
+	//Step 4: Compute parity corrections p1,p2 ahead of time
+	//v2[0] is always even, so doesn't matter for parity.
+	//b1*v1[0] is odd iff b1 is odd.
+	p1 = (tmp1[0] + b1[0] + 1) & 0x1;
+	ADDACC_128(p1, zero, b1[0], b1[1]);
+	//v1[1] is always even, v2[1] odd.
+	p2 = (b2[0] + 1) & 0x1;
+	ADDACC_128(p2, zero, b2[0], b2[1]);
+	// (u1, u2) = (v1, v2) as alpha1 % 4 != 0
+	printf("p1 %lu p2 %lu\n", p1, p2);
+	printf("b1 [0] = %lu [1] = %lu\n", b1[0], b1[1]);
+	printf("b2 [0] = %lu [1] = %lu\n", b2[0], b2[1]);
+
+	//Step 5: Compute k1
+    mult_u64_multiword(tmp2, b1, v1[0], 2); //b1'*v1[0]
+	printf("b1'*v1[0] [0] = %lu [1] = %lu [2] = %lu [3] %lu\n", tmp2[0], tmp2[1], tmp2[2], tmp2[3]);
+    mult_u64_multiword(tmp2+4, b2, v2[0], 2); //b2'*v2[0]
+	printf("b2'*v2[0] [0] = %lu [1] = %lu [2] = %lu [3] %lu\n", tmp2[4], tmp2[5], tmp2[6], tmp2[7]);
+    ADDACC_256(tmp2[0], tmp2[1], tmp2[2], tmp2[3], tmp2[4], tmp2[5], tmp2[6], tmp2[7]); //b1'*v1[0] + b2'*v2[0]
+	printf("b1'*v1[0] + b2'*v2[0] [0] = %lu [1] = %lu [2] = %lu [3] %lu\n", tmp2[4], tmp2[5], tmp2[6], tmp2[7]);
+	SUBACC_256(tmp2[4], tmp2[5], tmp2[6], tmp2[7], tmp1[0], tmp1[1], tmp1[2], tmp1[3]); //k - (b1'*v1[0] + b2'*v2[0])
+	printf("k1 [0] = %lu [1] = %lu [2] = %lu [3] = %lu carry %lu \n", tmp1[0], tmp1[1], tmp1[2], tmp1[3], res.k1_sign);
+	res.k1_sign = tmp1[3] != 0; //top half of tmp1 is either 0,0 or -1,-1 
+	//Take two's complement if needed.
+	res.k1[0] = tmp1[0] ^ (-res.k1_sign);
+	res.k1[1] = tmp1[1] ^ (-res.k1_sign);
+	ADDACC_128(res.k1_sign, zero, res.k1[0], res.k1[1]);
+
+	//Step 6: Compute k2
+	mult_u64_multiword(tmp1, b1, v1[1], 2); //b1'*v1[1]
+	mult_u64_multiword(tmp2, b2, v2[1], 2); //-b2'*v2[1] 
+	//b1'*v1[1] > 0 and b2'*v2[1] < 0.
+	SUBACC_256(tmp1[0], tmp1[1], tmp1[2], tmp1[3], tmp2[0], tmp2[1], tmp2[2], tmp2[3]); //-b1'*v1[1] -b2'*v2[1]
+	res.k2_sign = tmp2[3] != 0; //top half of tmp2 is either 0,0 or -1,-1 
+	//Take two's complement if needed.
+	res.k2[0] = tmp2[0] ^ (-res.k2_sign);
+	res.k2[1] = tmp2[1] ^ (-res.k2_sign);
+	ADDACC_128(res.k2_sign, zero, res.k2[0], res.k2[1]);
+
+	return res;
+}
+
 void ec_precompute_w4_table2D_nonopt_ptr(ec_point_laffine *P, ec_point_laffine table[]) {
 	ef_intrl_elem inv_inputs[16];
 	ef_intrl_elem inv_outputs[16];

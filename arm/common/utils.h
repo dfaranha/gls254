@@ -94,4 +94,19 @@ ec_point_laffine lproj_to_laffine(ec_point_lproj P);
 
 uint64x2_t mult_u64(uint64_t a, uint64_t b);
 
+#define RLC_COMBA_ADD(T, R2, R1, R0, A)										\
+	(T) = (R1);																\
+	(R0) += (A);															\
+	(R1) += (R0) < (A);														\
+	(R2) += (R1) < (T);														\
+
+#define RLC_COMBA_STEP_MUL(R2, R1, R0, A, B)								\
+	uint64_t r;													            \
+	uint64x2_t r0_r1 = mult_u64(A, B); 										\
+	RLC_COMBA_ADD(r, R2, R1, R0, r0_r1[0]);									\
+	(R1) += r0_r1[1];														\
+	(R2) += (R1) < r0_r1[1];												\
+
+void mult_u64_multiword(uint64_t *c, const uint64_t *a, const uint64_t *b, int size);
+
 #endif
