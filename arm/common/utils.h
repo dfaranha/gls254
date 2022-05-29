@@ -74,6 +74,13 @@
 	); \
 	old = *((type*)new_ptr); \
 
+#define CSEL_PTR(cond, old_ptr, new_ptr) \
+	asm volatile ("CMP %1, #1;" \
+	"CSEL %0, %2, %0, EQ;" \
+	: "+r" (old_ptr), "+r" (cond) \
+	: "r" (new_ptr) \
+	); \
+
 void utils_init();
 
 double average(uint64_t nums[], uint64_t len);

@@ -107,24 +107,16 @@ ec_point_laffine ec_scalarmull_single_endo(ec_point_laffine P, uint64x2x2_t k) {
 
 ec_point_laffine ec_scalarmull_single_endo_w3_randaccess(ec_point_laffine P, uint64x2x2_t k) {
 	uint64_t new_ptr, con = 1;
-	int l = 65;
+	int l = 64;
 
 	ec_split_scalar decomp = ec_scalar_decomp(k);
-
-	uint64_t zero = 0;
-
-	uint64_t c1 = 1-(decomp.k1[0]&1);
-	decomp.k1[0] = decomp.k1[0]+c1;
-
-	uint64_t c2 = 1-(decomp.k2[0]&1);
-	decomp.k2[0] = decomp.k2[0]+c2;
 
 	// Compute recodings
 	signed char rec_k1[l];
 	signed char rec_k2[l];
 
-	reg_rec(decomp.k1, 3, rec_k1, l-1);
-	reg_rec(decomp.k2, 3, rec_k2, l-1);
+	reg_rec(decomp.k1, 3, rec_k1, l);
+	reg_rec(decomp.k2, 3, rec_k2, l);
 
 	// Precomputation
 	ec_point_laffine table[2];
@@ -132,12 +124,12 @@ ec_point_laffine ec_scalarmull_single_endo_w3_randaccess(ec_point_laffine P, uin
 
 	signed char k1_digit = rec_k1[l-1];
 	uint64_t k1_digit_sign = ((unsigned char)k1_digit >> 7);
-	signed char k1_val = (k1_digit^(zero - k1_digit_sign))+k1_digit_sign;
+	signed char k1_val = (k1_digit^(-k1_digit_sign))+k1_digit_sign;
 	uint64_t k1_sign = k1_digit_sign^decomp.k1_sign;
 
 	signed char k2_digit = rec_k2[l-1];
 	uint64_t k2_digit_sign = (unsigned char)k2_digit >> 7;
-	signed char k2_val = (k2_digit^(zero - k2_digit_sign))+k2_digit_sign;
+	signed char k2_val = (k2_digit^(-k2_digit_sign))+k2_digit_sign;
 	uint64_t k2_sign = k2_digit_sign^decomp.k2_sign;
 
 	ec_point_laffine P1;
@@ -158,12 +150,12 @@ ec_point_laffine ec_scalarmull_single_endo_w3_randaccess(ec_point_laffine P, uin
 
 		k1_digit = rec_k1[i];
 		k1_digit_sign = ((unsigned char)k1_digit >> 7);
-		k1_val = (k1_digit^(zero - k1_digit_sign))+k1_digit_sign;
+		k1_val = (k1_digit^(-k1_digit_sign))+k1_digit_sign;
 		k1_sign = k1_digit_sign^decomp.k1_sign;
 
 		k2_digit = rec_k2[i];
 		k2_digit_sign = ((unsigned char)k2_digit >> 7);
-		k2_val = (k2_digit^(zero - k2_digit_sign))+k2_digit_sign;
+		k2_val = (k2_digit^(-k2_digit_sign))+k2_digit_sign;
 		k2_sign = k2_digit_sign^decomp.k2_sign;
 
 		lin_pass_w5(&P1, &P2, &table, k1_val/2, k2_val/2);
@@ -177,42 +169,21 @@ ec_point_laffine ec_scalarmull_single_endo_w3_randaccess(ec_point_laffine P, uin
 		Q = ec_double_then_addtwo(P1, P2, Q);
 	}
 
-	// Fix if c1 > 0
-	P1 = P;
-	P1.l.val[0][0] ^= 1-decomp.k1_sign;
-	ec_point_lproj Q_add_neg = ec_add_mixed(P1, Q);
-	CSEL(c1, con, Q, Q_add_neg, new_ptr, typeof(ec_point_lproj));
-
-
-	// Fix if c2 > 0
-	P2 = P;
-	P2.l.val[0][0] ^= 1-decomp.k2_sign;
-	Q_add_neg = ec_add_mixed(ec_endo_laffine(P2), Q);
-	CSEL(c2, con, Q, Q_add_neg, new_ptr, typeof(ec_point_lproj));
-
 	return ec_lproj_to_laffine(Q, 1);
 }
 
 ec_point_laffine ec_scalarmull_single_endo_w4_randaccess(ec_point_laffine P, uint64x2x2_t k) {
 	uint64_t new_ptr, con = 1;
-	int l = 44;
+	int l = 43;
 
 	ec_split_scalar decomp = ec_scalar_decomp(k);
-
-	uint64_t zero = 0;
-
-	uint64_t c1 = 1-(decomp.k1[0]&1);
-	decomp.k1[0] = decomp.k1[0]+c1;
-
-	uint64_t c2 = 1-(decomp.k2[0]&1);
-	decomp.k2[0] = decomp.k2[0]+c2;
 
 	// Compute recodings
 	signed char rec_k1[l];
 	signed char rec_k2[l];
 
-	reg_rec(decomp.k1, 4, rec_k1, l-1);
-	reg_rec(decomp.k2, 4, rec_k2, l-1);
+	reg_rec(decomp.k1, 4, rec_k1, l);
+	reg_rec(decomp.k2, 4, rec_k2, l);
 
 	// Precomputation
 	ec_point_laffine table[4];
@@ -220,12 +191,12 @@ ec_point_laffine ec_scalarmull_single_endo_w4_randaccess(ec_point_laffine P, uin
 
 	signed char k1_digit = rec_k1[l-1];
 	uint64_t k1_digit_sign = ((unsigned char)k1_digit >> 7);
-	signed char k1_val = (k1_digit^(zero - k1_digit_sign))+k1_digit_sign;
+	signed char k1_val = (k1_digit^(-k1_digit_sign))+k1_digit_sign;
 	uint64_t k1_sign = k1_digit_sign^decomp.k1_sign;
 
 	signed char k2_digit = rec_k2[l-1];
 	uint64_t k2_digit_sign = (unsigned char)k2_digit >> 7;
-	signed char k2_val = (k2_digit^(zero - k2_digit_sign))+k2_digit_sign;
+	signed char k2_val = (k2_digit^(-k2_digit_sign))+k2_digit_sign;
 	uint64_t k2_sign = k2_digit_sign^decomp.k2_sign;
 
 	ec_point_laffine P1;
@@ -247,12 +218,12 @@ ec_point_laffine ec_scalarmull_single_endo_w4_randaccess(ec_point_laffine P, uin
 
 		k1_digit = rec_k1[i];
 		k1_digit_sign = ((unsigned char)k1_digit >> 7);
-		k1_val = (k1_digit^(zero - k1_digit_sign))+k1_digit_sign;
+		k1_val = (k1_digit^(-k1_digit_sign))+k1_digit_sign;
 		k1_sign = k1_digit_sign^decomp.k1_sign;
 
 		k2_digit = rec_k2[i];
 		k2_digit_sign = ((unsigned char)k2_digit >> 7);
-		k2_val = (k2_digit^(zero - k2_digit_sign))+k2_digit_sign;
+		k2_val = (k2_digit^(-k2_digit_sign))+k2_digit_sign;
 		k2_sign = k2_digit_sign^decomp.k2_sign;
 
 		lin_pass_w4(&P1, &P2, &table, k1_val/2, k2_val/2);
@@ -267,40 +238,20 @@ ec_point_laffine ec_scalarmull_single_endo_w4_randaccess(ec_point_laffine P, uin
 		Q = ec_double_then_addtwo(P1, P2, Q);
 	}
 
-	// Fix if c1 > 0
-	P1 = P;
-	P1.l.val[0][0] ^= 1-decomp.k1_sign;
-	ec_point_lproj Q_add_neg = ec_add_mixed_unchecked(P1, Q);
-	CSEL(c1, con, Q, Q_add_neg, new_ptr, typeof(ec_point_lproj));
-
-	// Fix if c2 > 0
-	P2 = P;
-	P2.l.val[0][0] ^= 1-decomp.k2_sign;
-	Q_add_neg = ec_add_mixed_unchecked(ec_endo_laffine(P2), Q);
-	CSEL(c2, con, Q, Q_add_neg, new_ptr, typeof(ec_point_lproj));
-
 	return ec_lproj_to_laffine(Q, 1);
 }
 
 ec_point_laffine ec_scalarmull_single_endo_w5_randaccess(ec_point_laffine P, uint64x2x2_t k) {
 	uint64_t new_ptr, con = 1;
-	int l = 33;
+	int l = 32;
 
 	ec_split_scalar decomp = ec_scalar_decomp(k);
-
-	uint64_t zero = 0;
-
-	uint64_t c1 = 1-(decomp.k1[0]&1);
-	decomp.k1[0] = decomp.k1[0]+c1;
-
-	uint64_t c2 = 1-(decomp.k2[0]&1);
-	decomp.k2[0] = decomp.k2[0]+c2;
 
 	// Compute recodings
 	signed char rec_k1[l], rec_k2[l];
 
-	reg_rec(decomp.k1, 5, rec_k1, l-1);
-	reg_rec(decomp.k2, 5, rec_k2, l-1);
+	reg_rec(decomp.k1, 5, rec_k1, l);
+	reg_rec(decomp.k2, 5, rec_k2, l);
 
 	// Precomputation
 	ec_point_laffine table[8];
@@ -308,18 +259,16 @@ ec_point_laffine ec_scalarmull_single_endo_w5_randaccess(ec_point_laffine P, uin
 
 	signed char k1_digit = rec_k1[l-1];
 	uint64_t k1_digit_sign = ((unsigned char)k1_digit >> 7);
-	signed char k1_val = (k1_digit^(zero - k1_digit_sign))+k1_digit_sign;
+	signed char k1_val = (k1_digit^(-k1_digit_sign))+k1_digit_sign;
 	uint64_t k1_sign = k1_digit_sign^decomp.k1_sign;
 
 	signed char k2_digit = rec_k2[l-1];
 	uint64_t k2_digit_sign = (unsigned char)k2_digit >> 7;
-	signed char k2_val = (k2_digit^(zero - k2_digit_sign))+k2_digit_sign;
+	signed char k2_val = (k2_digit^(-k2_digit_sign))+k2_digit_sign;
 	uint64_t k2_sign = k2_digit_sign^decomp.k2_sign;
 
 	ec_point_laffine P1, P2;
 	lin_pass_w5(&P1, &P2, &table, k1_val/2, k2_val/2);
-	//P1 = table[k1_val/2];
-	//P2 = table[k2_val/2];
 
 	P2 = ec_endo_laffine(P2);
 
@@ -336,12 +285,12 @@ ec_point_laffine ec_scalarmull_single_endo_w5_randaccess(ec_point_laffine P, uin
 
 		k1_digit = rec_k1[i];
 		k1_digit_sign = ((unsigned char)k1_digit >> 7);
-		k1_val = (k1_digit^(zero - k1_digit_sign))+k1_digit_sign;
+		k1_val = (k1_digit^(-k1_digit_sign))+k1_digit_sign;
 		k1_sign = k1_digit_sign^decomp.k1_sign;
 
 		k2_digit = rec_k2[i];
 		k2_digit_sign = ((unsigned char)k2_digit >> 7);
-		k2_val = (k2_digit^(zero - k2_digit_sign))+k2_digit_sign;
+		k2_val = (k2_digit^(-k2_digit_sign))+k2_digit_sign;
 		k2_sign = k2_digit_sign^decomp.k2_sign;
 
 		//P1 = table[k1_val/2];
@@ -359,41 +308,20 @@ ec_point_laffine ec_scalarmull_single_endo_w5_randaccess(ec_point_laffine P, uin
 		Q = ec_double_then_addtwo(P1, P2, Q);
 	}
 
-	// Fix if c1 > 0
-	P1 = P;
-	P1.l.val[0][0] ^= 1-decomp.k1_sign;
-	ec_point_lproj Q_add_neg = ec_add_mixed_unchecked(P1, Q);
-	CSEL(c1, con, Q, Q_add_neg, new_ptr, typeof(ec_point_lproj));
-
-
-	// Fix if c2 > 0
-	P2 = P;
-	P2.l.val[0][0] ^= 1-decomp.k2_sign;
-	Q_add_neg = ec_add_mixed_unchecked(ec_endo_laffine(P2), Q);
-	CSEL(c2, con, Q, Q_add_neg, new_ptr, typeof(ec_point_lproj));
-
 	return ec_lproj_to_laffine(Q, 1);
 }
 
 void ec_scalarmull_single_endo_w5_randaccess_ptr(ec_point_laffine *P, uint64x2x2_t k, ec_point_laffine *R) {
 	uint64_t new_ptr, con = 1;
-	int l = 33;
+	int l = 32;
 
 	ec_split_scalar decomp = ec_scalar_decomp(k);
-
-	uint64_t zero = 0;
-
-	uint64_t c1 = 1-(decomp.k1[0]&1);
-	decomp.k1[0] = decomp.k1[0]+c1;
-
-	uint64_t c2 = 1-(decomp.k2[0]&1);
-	decomp.k2[0] = decomp.k2[0]+c2;
 
 	// Compute recodings
 	signed char rec_k1[l], rec_k2[l];
 
-	reg_rec(decomp.k1, 5, rec_k1, l-1);
-	reg_rec(decomp.k2, 5, rec_k2, l-1);
+	reg_rec(decomp.k1, 5, rec_k1, l);
+	reg_rec(decomp.k2, 5, rec_k2, l);
 
 	// Precomputation
 	ec_point_laffine table[8];
@@ -401,18 +329,16 @@ void ec_scalarmull_single_endo_w5_randaccess_ptr(ec_point_laffine *P, uint64x2x2
 
 	signed char k1_digit = rec_k1[l-1];
 	uint64_t k1_digit_sign = ((unsigned char)k1_digit >> 7);
-	signed char k1_val = (k1_digit^(zero - k1_digit_sign))+k1_digit_sign;
+	signed char k1_val = (k1_digit^(- k1_digit_sign))+k1_digit_sign;
 	uint64_t k1_sign = k1_digit_sign^decomp.k1_sign;
 
 	signed char k2_digit = rec_k2[l-1];
 	uint64_t k2_digit_sign = (unsigned char)k2_digit >> 7;
-	signed char k2_val = (k2_digit^(zero - k2_digit_sign))+k2_digit_sign;
+	signed char k2_val = (k2_digit^(-k2_digit_sign))+k2_digit_sign;
 	uint64_t k2_sign = k2_digit_sign^decomp.k2_sign;
 
 	ec_point_laffine P1, P2;
 	lin_pass_w5(&P1, &P2, &table, k1_val/2, k2_val/2);
-	//P1 = table[k1_val/2];
-	//P2 = table[k2_val/2];
 
 	P2 = ec_endo_laffine(P2);
 
@@ -432,16 +358,14 @@ void ec_scalarmull_single_endo_w5_randaccess_ptr(ec_point_laffine *P, uint64x2x2
 
 		k1_digit = rec_k1[i];
 		k1_digit_sign = ((unsigned char)k1_digit >> 7);
-		k1_val = (k1_digit^(zero - k1_digit_sign))+k1_digit_sign;
+		k1_val = (k1_digit^(- k1_digit_sign))+k1_digit_sign;
 		k1_sign = k1_digit_sign^decomp.k1_sign;
 
 		k2_digit = rec_k2[i];
 		k2_digit_sign = ((unsigned char)k2_digit >> 7);
-		k2_val = (k2_digit^(zero - k2_digit_sign))+k2_digit_sign;
+		k2_val = (k2_digit^(- k2_digit_sign))+k2_digit_sign;
 		k2_sign = k2_digit_sign^decomp.k2_sign;
 
-		//P1 = table[k1_val/2];
-		//P2 = table[k2_val/2];
 		lin_pass_w5(&P1, &P2, &table, k1_val/2, k2_val/2);
 
 		P2 = ec_endo_laffine(P2);
@@ -451,44 +375,30 @@ void ec_scalarmull_single_endo_w5_randaccess_ptr(ec_point_laffine *P, uint64x2x2
 
 		P2_neg = ec_neg_laffine(P2);
 		CSEL(k2_sign, con, P2, P2_neg, new_ptr, typeof(ec_point_laffine));
-
-		ec_double_then_addtwo_ptr(&P1, &P2, &Q1, &Q);
-		//ec_print_hex_laffine(ec_lproj_to_laffine(Q));
+		if(i == 0) {
+			ec_double_alt_ptr(&Q1, &Q2);
+			ec_add_mixed_ptr(&P1, &Q2, &Q1);
+			ec_add_mixed_ptr(&P2, &Q1, &Q);
+		} else {
+			ec_double_then_addtwo_ptr(&P1, &P2, &Q1, &Q);
+		}
 	}
-
-	P1 = ec_create_point_laffine(P->x, P->l);
-	P1.l.val[0][0] ^= 1-decomp.k1_sign;
-	ec_point_lproj Q_add_neg = ec_add_mixed_unchecked(P1, Q);
-	CSEL(c1, con, Q, Q_add_neg, new_ptr, typeof(ec_point_lproj));
-
-	P2 = ec_create_point_laffine(P->x, P->l);
-	P2.l.val[0][0] ^= 1-decomp.k2_sign;
-	Q_add_neg = ec_add_mixed_unchecked(ec_endo_laffine(P2), Q);
-	CSEL(c2, con, Q, Q_add_neg, new_ptr, typeof(ec_point_lproj));
 
 	ec_lproj_to_laffine_ptr(&Q, R, 1);
 }
 
 ec_point_laffine ec_scalarmull_single_endo_w6_randaccess(ec_point_laffine P, uint64x2x2_t k) {
 	uint64_t new_ptr, con = 1;
-	int l = 27;
+	int l = 26;
 
 	ec_split_scalar decomp = ec_scalar_decomp(k);
-
-	uint64_t zero = 0;
-
-	uint64_t c1 = 1-(decomp.k1[0]&1);
-	decomp.k1[0] = decomp.k1[0]+c1;
-
-	uint64_t c2 = 1-(decomp.k2[0]&1);
-	decomp.k2[0] = decomp.k2[0]+c2;
 
 	// Compute recodings
 	signed char rec_k1[l];
 	signed char rec_k2[l];
 
-	reg_rec(decomp.k1, 6, rec_k1, l-1);
-	reg_rec(decomp.k2, 6, rec_k2, l-1);
+	reg_rec(decomp.k1, 6, rec_k1, l);
+	reg_rec(decomp.k2, 6, rec_k2, l);
 
 	// Precomputation
 	ec_point_laffine table[16];
@@ -496,12 +406,12 @@ ec_point_laffine ec_scalarmull_single_endo_w6_randaccess(ec_point_laffine P, uin
 
 	signed char k1_digit = rec_k1[l-1];
 	uint64_t k1_digit_sign = ((unsigned char)k1_digit >> 7);
-	signed char k1_val = (k1_digit^(zero - k1_digit_sign))+k1_digit_sign;
+	signed char k1_val = (k1_digit^(- k1_digit_sign))+k1_digit_sign;
 	uint64_t k1_sign = k1_digit_sign^decomp.k1_sign;
 
 	signed char k2_digit = rec_k2[l-1];
 	uint64_t k2_digit_sign = (unsigned char)k2_digit >> 7;
-	signed char k2_val = (k2_digit^(zero - k2_digit_sign))+k2_digit_sign;
+	signed char k2_val = (k2_digit^(- k2_digit_sign))+k2_digit_sign;
 	uint64_t k2_sign = k2_digit_sign^decomp.k2_sign;
 
 	ec_point_laffine P1;
@@ -523,12 +433,12 @@ ec_point_laffine ec_scalarmull_single_endo_w6_randaccess(ec_point_laffine P, uin
 
 		k1_digit = rec_k1[i];
 		k1_digit_sign = ((unsigned char)k1_digit >> 7);
-		k1_val = (k1_digit^(zero - k1_digit_sign))+k1_digit_sign;
+		k1_val = (k1_digit^(- k1_digit_sign))+k1_digit_sign;
 		k1_sign = k1_digit_sign^decomp.k1_sign;
 
 		k2_digit = rec_k2[i];
 		k2_digit_sign = ((unsigned char)k2_digit >> 7);
-		k2_val = (k2_digit^(zero - k2_digit_sign))+k2_digit_sign;
+		k2_val = (k2_digit^(- k2_digit_sign))+k2_digit_sign;
 		k2_sign = k2_digit_sign^decomp.k2_sign;
 
 		lin_pass_w6(&P1, &P2, table, k1_val/2, k2_val/2);
@@ -545,16 +455,6 @@ ec_point_laffine ec_scalarmull_single_endo_w6_randaccess(ec_point_laffine P, uin
 		//Q = ec_double_then_add(P1, Q);
 		//Q = ec_add_mixed_unchecked(P2, Q);
 	}
-
-	P1 = P;
-	P1.l.val[0][0] ^= 1-decomp.k1_sign;
-	ec_point_lproj Q_add_neg = ec_add_mixed_unchecked(P1, Q);
-	CSEL(c1, con, Q, Q_add_neg, new_ptr, typeof(ec_point_lproj));
-
-	P2 = P;
-	P2.l.val[0][0] ^= 1-decomp.k2_sign;
-	Q_add_neg = ec_add_mixed_unchecked(ec_endo_laffine(P2), Q);
-	CSEL(c2, con, Q, Q_add_neg, new_ptr, typeof(ec_point_lproj));
 
 	return ec_lproj_to_laffine(Q, 1);
 }
@@ -721,33 +621,27 @@ void precompute_w6(ec_point_laffine P, ec_point_laffine table[]) {
 void reg_rec(uint64x2_t k, uint64_t w, signed char rec[], uint64_t l) {
 	uint64_t mask = MASK(w);
 
-  int i = 0;
-  while (k[1] > 0 || i < l) {
-    int64_t k_i_temp = (k[0] & mask) - ((int64_t)1 << (w - 1)); // (k mod 16 only needs lower word)
-
-    rec[i] = k_i_temp;
-
+	for(int i = 0; i < l-1; i++) {
+		int64_t k_i_temp = (k[0] & mask) - ((int64_t)1 << (w - 1)); // (k mod 16 only needs lower word)
+		rec[i] = k_i_temp;
 		k[0] -=k_i_temp;
 
-    // First shift lower bits
-    k[0] = k[0] >> (w-1);
+		// First shift lower bits
+		k[0] = k[0] >> (w-1);
 
-    // Then higher bits with w-1 bits carry
-    uint64_t carries = k[1] & mask;
+		// Then higher bits with w-1 bits carry
+		uint64_t carries = k[1] & mask;
 
-    uint64_t shift_res;
-    asm ("ROR %[res], %[input], %[s];"
-      : [res] "=r" (shift_res)
-      : [input] "r" (carries), [s] "r" (w-1)
-      );
+		uint64_t shift_res;
+		asm ("ROR %[res], %[input], %[s];"
+		: [res] "=r" (shift_res)
+		: [input] "r" (carries), [s] "r" (w-1)
+		);
 
-    k[0] = k[0] | shift_res;
-    k[1] = k[1] >> (w-1);
-
-    i++;
-  }
-
-	rec[i] = k[0] & mask;
+		k[0] = k[0] | shift_res;
+		k[1] = k[1] >> (w-1);
+	}
+	rec[l-1] = k[0] & mask;
 }
 
 void ec_print_rec(signed char *rec, uint64_t l) {
@@ -758,127 +652,8 @@ void ec_print_rec(signed char *rec, uint64_t l) {
   printf("\n");
 }
 
-ec_split_scalar ec_scalar_decomp(uint64x2x2_t k) {
-	ec_split_scalar result;
-	uint64_t tmp0, tmp1, tmp2, tmp3, tmp4, tmp5, tmp6, tmp7, sign;
-	uint64_t zero = 0;
-
-	// Step 1: {tmp1, tmp2, tmp3, tmp4} = b1 = k / 2^127 (where / is integer division)
-	tmp0 = (k.val[1][0] << 1) | (k.val[0][1] >> 63);
-	tmp1 = (k.val[1][1] << 1) | (k.val[1][0] >> 63);
-	//tmp0 += ((k.val[0][1] >> 62) & 0x1); // round
-	tmp2 = 0;
-	tmp3 = 0;
-	//printf("Step 1: %lu, %lu, %lu, %lu\n", tmp0, tmp1, tmp2, tmp3);
-
-	//Step 2: b2 = k*trace / 2^254
-	// Mult trace by each word in k.
-	uint64x2_t tk0 = mult_u64((uint64_t) TRACE, k.val[0][0]);
-	uint64x2_t tk1 = mult_u64((uint64_t) TRACE, k.val[0][1]);
-	uint64x2_t tk2 = mult_u64((uint64_t) TRACE, k.val[1][0]);
-	uint64x2_t tk3 = mult_u64((uint64_t) TRACE, k.val[1][1]);
-
-	//Add previous [1] with next [0]
-	//We are only interested in the last two words of the result, rest will be consumed by division by 2^254.
-	asm volatile ("ADDS %[tmp4], %[tk01], %[tk10];"
-		 "ADCS %[tmp4], %[tk11], %[tk20];"
-		 "ADCS %[tmp4], %[tk21], %[tk30];"
-		 "ADC %[tmp5], %[tk31], %[zero];"
-		: [tmp4] "+r" (tmp4), [tmp5] "+r" (tmp5)
-		: [tk01] "r" (tk0[1]), [tk10] "r" (tk1[0]), [tk11] "r" (tk1[1]), [tk20] "r" (tk2[0]), [tk21] "r" (tk2[1]), [tk30] "r" (tk3[0]), [tk31] "r" (tk3[1]), [zero] "r" (zero)
-		);
-
-	//Divide k*trace by 2^254
-	uint64_t b2 = (tmp4 >> 62) | (tmp5 << 2);
-	b2 += ((tmp4 >> 61) & 0x1); //Round
-	//printf("Step 2: %lu\n", b2);
-
-	//Step 3: b1*t
-	uint64x2_t b10_times_t = mult_u64((uint64_t) TRACE, tmp0);
-	uint64x2_t b11_times_t = mult_u64((uint64_t) TRACE, tmp1);
-	uint64_t b1_times_t0, b1_times_t1, b1_times_t2;
-	b1_times_t0 = b10_times_t[0];
-	b1_times_t1 = b10_times_t[1];
-	b1_times_t2 = b11_times_t[1];
-	ADDACC_128(b11_times_t[0], zero, b1_times_t1, b1_times_t2);
-	//printf("Step 3: %lu, %lu, %lu\n", b1_times_t0, b1_times_t1, b1_times_t2);
-
-	//Step 4: b2*t
-	uint64x2_t b2_times_t = mult_u64((uint64_t) TRACE, b2);
-	//printf("Step 4: %lu, %lu\n", b2_times_t[0], b2_times_t[1]);
-
-	//k1 computation
-
-	//Step 5: {tmp4, tmp5, tmp6, tmp7} = b1*q (q = 2^127)
-	tmp4 = 0;
-	tmp5 = tmp0 << 63;
-	tmp6 = (tmp0 >> 1) | (tmp1 << 63);
-	tmp7 = tmp1 >> 1;
-	//printf("Step 5: %lu, %lu, %lu, %lu\n", tmp4, tmp5, tmp6, tmp7);
-
-	//Step 6: {tmp0, tmp1, tmp2, tmp3} = b1 + k
-	ADDACC_256(k.val[0][0], k.val[0][1], k.val[1][0], k.val[1][1], tmp0, tmp1, tmp2, tmp3);
-	//printf("%lu\n", k.val[0][0]);
-	//printf("Step 6: %lu, %lu, %lu, %lu\n", tmp0, tmp1, tmp2, tmp3);
-
-	//Step 7: {tmp4, tmp5, tmp6, tmp7} = b1*q + b2*t
-	ADDACC_256(b2_times_t[0], b2_times_t[1], zero, zero, tmp4, tmp5, tmp6, tmp7);
-	//printf("Step 7: %lu, %lu, %lu, %lu\n", tmp4, tmp5, tmp6, tmp7);
-
-	//Step 8: Determine sign of k1 
-	sign = (tmp3 < tmp7) | ((tmp3 == tmp7) & ((tmp2 < tmp6) | ((tmp2 == tmp6) & ((tmp1 < tmp5) | ((tmp1 == tmp5) & (tmp0 < tmp4))))));
-	//printf("Step 8: %lu\n", sign);
-
-	//Step 9: {tmp0, tmp1, tmp2, tmp3} = (b1 + k) - (b1*q + b2*t)
-	SUBACC_256(tmp4, tmp5, tmp6, tmp7, tmp0, tmp1, tmp2, tmp3);
-	//printf("Step 9: %lu, %lu, %lu, %lu\n", tmp0, tmp1, tmp2, tmp3);
-
-	//Step 10: Now take two's complement if needed
-	tmp0 ^= (zero - sign);
-	tmp1 ^= (zero - sign);
-	ADDACC_128(sign, zero, tmp0, tmp1);
-	result.k1[0] = tmp0;
-	result.k1[1] = tmp1;
-	result.k1_sign = sign;
-	//printf("Step 10: %lu, %lu, sign: %lu\n", tmp0, tmp1, sign);
-
-	//k2 computation
-
-	//Step 11: {tmp0, tmp1, tmp2} = b1*t + b2
-	tmp0 = b1_times_t0;
-	tmp1 = b1_times_t1;
-	tmp2 = b1_times_t2;
-	ADDACC_192(b2, zero, zero, tmp0, tmp1, tmp2);
-	//printf("Step 11: %lu, %lu, %lu\n", tmp0, tmp1, tmp2);
-
-	//Step 12: {tmp3, tmp4, tmp5} = b2*q (q = 2^127)
-	tmp3 = 0;
-	tmp4 = b2 << 63;
-	tmp5 = b2 >> 1;
-	//printf("Step 12: %lu, %lu, %lu\n", tmp3, tmp4, tmp5);
-
-	//Step 13: k2 sign (0 for positive)
-	sign = (tmp2 < tmp5) | ((tmp2 == tmp5) & ((tmp1 < tmp4) | ((tmp1 == tmp4) & (tmp0 < tmp3))));
-	//printf("Step 13: %lu\n", sign);
-
-	//Step 14: {tmp0, tmp1, tmp2} = b2*q - (b1*t + b2)
-	SUBACC_192(tmp3, tmp4, tmp5, tmp0, tmp1, tmp2);
-	//printf("Step 14: %lu, %lu, %lu\n", tmp0, tmp1, tmp2);
-
-	//Step 15: Now take two's complement if needed.
-	tmp0 ^= (zero - sign);
-	tmp1 ^= (zero - sign);
-	ADDACC_128(sign, zero, tmp0, tmp1);
-	result.k2[0] = tmp0;
-	result.k2[1] = tmp1;
-	result.k2_sign = sign;
-	//printf("Step 15: %lu, %lu sign: %lu\n", tmp0, tmp1, sign);
-
-	return result;
-}
-
 /* GLS recoding in constant time, using new approach. */
-ec_split_scalar ec_scalar_decomp_new(uint64x2x2_t k) {
+ec_split_scalar ec_scalar_decomp(uint64x2x2_t k) {
 	//c_i <= (q+1+|t|)/((q-1)^2 + t^2)*2^256 <= q+1+2sqrt(q)/(q+1)^2 * 2^256 <= 2^130-1
 	//So the c_i will at most be 130 bits
     const uint64_t c1[4] = {0xE334618602D4CB44, 0x0000000000000004, 0x2, 0x0};
@@ -910,11 +685,9 @@ ec_split_scalar ec_scalar_decomp_new(uint64x2x2_t k) {
     mult_u64_multiword(tmp2, c1, tmp1, 4);
     b1[0] = tmp2[4];
     b1[1] = tmp2[5];
-	printf("b1 [0] = %lu [1] = %lu\n", b1[0], b1[1]);
     mult_u64_multiword(tmp2, c2, tmp1, 4);
     b2[0] = tmp2[4];
     b2[1] = tmp2[5];
-	printf("b2 [0] = %lu [1] = %lu\n", b2[0], b2[1]);
 
 	//Step 4: Compute parity corrections p1,p2 ahead of time
 	//v2[0] is always even, so doesn't matter for parity.
@@ -925,19 +698,12 @@ ec_split_scalar ec_scalar_decomp_new(uint64x2x2_t k) {
 	p2 = (b2[0] + 1) & 0x1;
 	ADDACC_128(p2, zero, b2[0], b2[1]);
 	// (u1, u2) = (v1, v2) as alpha1 % 4 != 0
-	printf("p1 %lu p2 %lu\n", p1, p2);
-	printf("b1 [0] = %lu [1] = %lu\n", b1[0], b1[1]);
-	printf("b2 [0] = %lu [1] = %lu\n", b2[0], b2[1]);
 
 	//Step 5: Compute k1
     mult_u64_multiword(tmp2, b1, v1[0], 2); //b1'*v1[0]
-	printf("b1'*v1[0] [0] = %lu [1] = %lu [2] = %lu [3] %lu\n", tmp2[0], tmp2[1], tmp2[2], tmp2[3]);
     mult_u64_multiword(tmp2+4, b2, v2[0], 2); //b2'*v2[0]
-	printf("b2'*v2[0] [0] = %lu [1] = %lu [2] = %lu [3] %lu\n", tmp2[4], tmp2[5], tmp2[6], tmp2[7]);
     ADDACC_256(tmp2[0], tmp2[1], tmp2[2], tmp2[3], tmp2[4], tmp2[5], tmp2[6], tmp2[7]); //b1'*v1[0] + b2'*v2[0]
-	printf("b1'*v1[0] + b2'*v2[0] [0] = %lu [1] = %lu [2] = %lu [3] %lu\n", tmp2[4], tmp2[5], tmp2[6], tmp2[7]);
 	SUBACC_256(tmp2[4], tmp2[5], tmp2[6], tmp2[7], tmp1[0], tmp1[1], tmp1[2], tmp1[3]); //k - (b1'*v1[0] + b2'*v2[0])
-	printf("k1 [0] = %lu [1] = %lu [2] = %lu [3] = %lu carry %lu \n", tmp1[0], tmp1[1], tmp1[2], tmp1[3], res.k1_sign);
 	res.k1_sign = tmp1[3] != 0; //top half of tmp1 is either 0,0 or -1,-1 
 	//Take two's complement if needed.
 	res.k1[0] = tmp1[0] ^ (-res.k1_sign);
@@ -1065,53 +831,36 @@ void ec_lookup_from_w4_table2D_ptr(ec_split_scalar *decomp, signed char rec_k1[]
 
 void ec_scalarmull_single_endo_w4_table2D_ptr(ec_point_laffine *P, uint64x2x2_t k, ec_point_laffine *R) {
 	uint64_t new_ptr, con = 1;
-	int l = 44;
+	int l = 43;
 
 	ec_split_scalar decomp = ec_scalar_decomp(k);
-
-	uint64_t c1 = 1-(decomp.k1[0]&1);
-	decomp.k1[0] = decomp.k1[0]+c1;
-
-	uint64_t c2 = 1-(decomp.k2[0]&1);
-	decomp.k2[0] = decomp.k2[0]+c2;
 
 	signed char rec_k1[l];
 	signed char rec_k2[l];
 
-	reg_rec(decomp.k1, 4, rec_k1, l-1);
-	reg_rec(decomp.k2, 4, rec_k2, l-1);
+	reg_rec(decomp.k1, 4, rec_k1, l);
+	reg_rec(decomp.k2, 4, rec_k2, l);
 
 	ec_point_laffine table[16];
 	ec_precompute_w4_table2D_nonopt_ptr(P, table);
 	
 	ec_point_laffine next;
 	ec_lookup_from_w4_table2D_ptr(&decomp, rec_k1, rec_k2, table, l-1, &next);
-	//next = ec_lookup_from_w4_table2D(decomp, rec_k1, rec_k2, table, l-1);
+	
 	ec_point_lproj Q, Qtmp1, Qtmp2;
 	ec_laffine_to_lproj_ptr(&next, &Q);
-	// printf("Initial: \n");
-	// ec_print_hex_laffine(ec_lproj_to_laffine(Q));
 
-	for(int i=l-2; i>=0; i--) {
+	for(int i=l-2; i>=1; i--) {
+		ec_lookup_from_w4_table2D_ptr(&decomp, rec_k1, rec_k2, table, i, &next);
 		ec_double_alt_ptr(&Q, &Qtmp1);
 		ec_double_alt_ptr(&Qtmp1, &Qtmp2);
-		ec_lookup_from_w4_table2D_ptr(&decomp, rec_k1, rec_k2, table, i, &next);
-		//next = ec_lookup_from_w4_table2D(decomp, rec_k1, rec_k2, table, i);
 		ec_double_then_add_ptr(&next, &Qtmp2, &Q);
-		// ec_print_hex_laffine(ec_lproj_to_laffine(Q));
 	}
-	//Logic here with the xor is also strange
-	ec_point_laffine P1 = ec_create_point_laffine(P->x, P->l);
-	P1.l.val[0][0] ^= 1-decomp.k1_sign;
-	ec_point_lproj Q_add_neg;
-	ec_add_mixed_unchecked_ptr(&P1, &Q, &Q_add_neg);
-	CSEL(c1, con, Q, Q_add_neg, new_ptr, typeof(ec_point_lproj));
-
-	ec_point_laffine P2 = ec_create_point_laffine(P->x, P->l);
-	P2.l.val[0][0] ^= 1-decomp.k2_sign;
-	ec_point_laffine psiP2 = ec_endo_laffine(P2);
-	ec_add_mixed_unchecked_ptr(&psiP2, &Q, &Q_add_neg);
-	CSEL(c2, con, Q, Q_add_neg, new_ptr, typeof(ec_point_lproj));
+	ec_lookup_from_w4_table2D_ptr(&decomp, rec_k1, rec_k2, table, 0, &next);
+	ec_double_alt_ptr(&Q, &Qtmp1);
+	ec_double_alt_ptr(&Qtmp1, &Qtmp2);
+	ec_double_alt_ptr(&Qtmp2, &Qtmp1);
+	ec_add_mixed_ptr(&next, &Qtmp1, &Q);
 
 	ec_lproj_to_laffine_ptr(&Q, R, 1);
 }
@@ -1134,21 +883,15 @@ void ec_lookup_from_w4_table2D_bulk_ptr(ec_split_scalar *decomp, signed char rec
 
 void ec_scalarmull_single_endo_w4_table2D_bulk_ptr(ec_point_laffine *P, uint64x2x2_t k, ec_point_laffine *R) {
 	uint64_t new_ptr, con = 1;
-	int l = 44;
+	int l = 43;
 
 	ec_split_scalar decomp = ec_scalar_decomp(k);
-
-	uint64_t c1 = 1-(decomp.k1[0]&1);
-	decomp.k1[0] = decomp.k1[0]+c1;
-
-	uint64_t c2 = 1-(decomp.k2[0]&1);
-	decomp.k2[0] = decomp.k2[0]+c2;
 
 	signed char rec_k1[l];
 	signed char rec_k2[l];
 
-	reg_rec(decomp.k1, 4, rec_k1, l-1);
-	reg_rec(decomp.k2, 4, rec_k2, l-1);
+	reg_rec(decomp.k1, 4, rec_k1, l);
+	reg_rec(decomp.k2, 4, rec_k2, l);
 
 	ec_point_laffine table[16];
 	ec_precompute_w4_table2D_ptr(P, table);
@@ -1160,8 +903,7 @@ void ec_scalarmull_single_endo_w4_table2D_bulk_ptr(ec_point_laffine *P, uint64x2
 	ec_double_mixed_ptr(&P1, &Qtmp1);
 	ec_double_alt_ptr(&Qtmp1, &Qtmp2);
 	ec_double_then_add_ptr(&P2, &Qtmp2, &Q);
-
-	for(int i=l-3; i > 1; i -= 2) {
+	for(int i=l-3; i > 0; i -= 2) {
 		ec_lookup_from_w4_table2D_bulk_ptr(&decomp, rec_k1, rec_k2, table, i, i-1, &P1, &P2);
 		ec_double_alt_ptr(&Q, &Qtmp1);
 		ec_double_alt_ptr(&Qtmp1, &Qtmp2);
@@ -1170,26 +912,12 @@ void ec_scalarmull_single_endo_w4_table2D_bulk_ptr(ec_point_laffine *P, uint64x2
 		ec_double_alt_ptr(&Qtmp1, &Qtmp2);
 		ec_double_then_add_ptr(&P2, &Qtmp2, &Q);
 	}
-	ec_lookup_from_w4_table2D_bulk_ptr(&decomp, rec_k1, rec_k2, table, 1, 0, &P1, &P2);
+	//Complete formula:
+	ec_lookup_from_w4_table2D_ptr(&decomp, rec_k1, rec_k2, table, 0, &P1);
 	ec_double_alt_ptr(&Q, &Qtmp1);
 	ec_double_alt_ptr(&Qtmp1, &Qtmp2);
-	ec_double_then_add_ptr(&P1, &Qtmp2, &Q);
-	ec_double_alt_ptr(&Q, &Qtmp1);
-	ec_double_alt_ptr(&Qtmp1, &Qtmp2);
-	ec_double_then_add_ptr(&P2, &Qtmp2, &Q); //Preparing for complete formula here
-
-	//Logic here with the xor is also strange
-	P1 = ec_create_point_laffine(P->x, P->l);
-	P1.l.val[0][0] ^= 1-decomp.k1_sign;
-	ec_point_lproj Q_add_neg;
-	ec_add_mixed_unchecked_ptr(&P1, &Q, &Q_add_neg);
-	CSEL(c1, con, Q, Q_add_neg, new_ptr, typeof(ec_point_lproj));
-
-	P2 = ec_create_point_laffine(P->x, P->l);
-	P2.l.val[0][0] ^= 1-decomp.k2_sign;
-	ec_point_laffine endoP2 = ec_endo_laffine(P2);
-	ec_add_mixed_unchecked_ptr(&endoP2, &Q, &Q_add_neg);
-	CSEL(c2, con, Q, Q_add_neg, new_ptr, typeof(ec_point_lproj));
+	ec_double_alt_ptr(&Qtmp2, &Qtmp1);
+	ec_add_mixed_ptr(&P1, &Qtmp1, &Q);
 
 	ec_lproj_to_laffine_ptr(&Q, R, 1);
 }
@@ -1253,21 +981,15 @@ void ec_precompute_w3_table2D_ptr(ec_point_laffine *P, ec_point_laffine table[])
 void ec_scalarmull_single_endo_w3_table2D_bulk_ptr(ec_point_laffine *P, uint64x2x2_t k, ec_point_laffine *R) {
 	uint64_t new_ptr, con = 1;
 	int w = 3;
-	int l = 65;
+	int l = 64;
 
 	ec_split_scalar decomp = ec_scalar_decomp(k);
-
-	uint64_t c1 = 1-(decomp.k1[0]&1);
-	decomp.k1[0] = decomp.k1[0]+c1;
-
-	uint64_t c2 = 1-(decomp.k2[0]&1);
-	decomp.k2[0] = decomp.k2[0]+c2;
 
 	signed char rec_k1[l];
 	signed char rec_k2[l];
 
-	reg_rec(decomp.k1, w, rec_k1, l-1);
-	reg_rec(decomp.k2, w, rec_k2, l-1);
+	reg_rec(decomp.k1, w, rec_k1, l);
+	reg_rec(decomp.k2, w, rec_k2, l);
 
 	ec_point_laffine table[4];
 	ec_precompute_w3_table2D_ptr(P, table);
@@ -1275,32 +997,22 @@ void ec_scalarmull_single_endo_w3_table2D_bulk_ptr(ec_point_laffine *P, uint64x2
 	ec_point_laffine P1, P2;
 	ec_lookup_from_w3_table2D_bulk_ptr(&decomp, rec_k1, rec_k2, table, l-1, l-2, &P1, &P2);
 
-	ec_point_lproj Q, Qtmp;
-	ec_double_mixed_ptr(&P1, &Qtmp);
-	ec_double_then_add_ptr(&P2, &Qtmp, &Q);
+	ec_point_lproj Q, Qtmp1, Qtmp2;
+	ec_double_mixed_ptr(&P1, &Qtmp1);
+	ec_double_then_add_ptr(&P2, &Qtmp1, &Q);
+
 	for(int i=l-3; i > 0; i -= 2) {
 		ec_lookup_from_w3_table2D_bulk_ptr(&decomp, rec_k1, rec_k2, table, i, i-1, &P1, &P2);
-		ec_double_alt_ptr(&Q, &Qtmp);
-		ec_double_then_add_ptr(&P1, &Qtmp, &Q);
-		ec_double_alt_ptr(&Q, &Qtmp);
-		ec_double_then_add_ptr(&P2, &Qtmp, &Q);
+		ec_double_alt_ptr(&Q, &Qtmp1);
+		ec_double_then_add_ptr(&P1, &Qtmp1, &Q);
+		ec_double_alt_ptr(&Q, &Qtmp1);
+		if(i == 1) {
+			ec_double_alt_ptr(&Qtmp1, &Qtmp2); 
+			ec_add_mixed_ptr(&P2, &Qtmp2, &Q);
+		} else {
+			ec_double_then_add_ptr(&P2, &Qtmp1, &Q);
+		}
 	}
-	ec_lookup_from_w3_table2D_ptr(&decomp, rec_k1, rec_k2, table, 0, &P1);
-	ec_double_alt_ptr(&Q, &Qtmp);
-	ec_double_then_add_ptr(&P1, &Qtmp, &Q); //Preparing for complete formula here
-
-	//Logic here with the xor is also strange
-	P1 = ec_create_point_laffine(P->x, P->l);
-	P1.l.val[0][0] ^= 1-decomp.k1_sign;
-	ec_point_lproj Q_add_neg;
-	ec_add_mixed_unchecked_ptr(&P1, &Q, &Q_add_neg);
-	CSEL(c1, con, Q, Q_add_neg, new_ptr, typeof(ec_point_lproj));
-
-	P2 = ec_create_point_laffine(P->x, P->l);
-	P2.l.val[0][0] ^= 1-decomp.k2_sign;
-	ec_point_laffine endoP2 = ec_endo_laffine(P2);
-	ec_add_mixed_unchecked_ptr(&endoP2, &Q, &Q_add_neg);
-	CSEL(c2, con, Q, Q_add_neg, new_ptr, typeof(ec_point_lproj));
 
 	ec_lproj_to_laffine_ptr(&Q, R, 1);
 }

@@ -185,6 +185,41 @@ ec_point_lproj ec_add_unchecked(ec_point_lproj P, ec_point_lproj Q) {
 	return R;
 }
 
+void ec_add_ptr(ec_point_lproj *P, ec_point_lproj *Q, ec_point_lproj *R) {
+	ef_intrl_elem zero = (ef_intrl_elem) {{{0,0}, {0,0}}};
+	ec_point_lproj inf = (ec_point_lproj) INFTY;
+	ec_point_lproj *tmp_res = &inf;
+
+	uint64_t is_P_inf = ef_intrl_equal(P->z, zero);
+
+	CSEL_PTR(is_P_inf, tmp_res, Q);
+	
+	uint64_t is_Q_inf = ef_intrl_equal(Q->z, zero);
+	CSEL_PTR(is_Q_inf, tmp_res, P);
+
+	ef_intrl_elem Xp = ef_intrl_mull(P->x, Q->z);
+	ef_intrl_elem Lp = ef_intrl_mull(P->l, Q->z);
+	ef_intrl_elem Xq = ef_intrl_mull(Q->x, P->z);
+	ef_intrl_elem Lq = ef_intrl_mull(Q->l, P->z);
+	ef_intrl_elem Z = ef_intrl_mull(P->z, Q->z);
+
+	uint64_t equal_x = ef_intrl_equal(Xp, Xq);
+	uint64_t equal_l = ef_intrl_equal(Lp, Lq);
+	uint64_t neg_l = ef_intrl_equal(ef_intrl_add(Lp, Z), Lq);
+	uint64_t neg = equal_x & neg_l;
+
+	uint64_t equal = equal_x & equal_l;
+	ec_point_lproj P2;
+	ec_double_alt_ptr(P, &P2);
+	CSEL_PTR(equal, tmp_res, &P2);
+	
+	uint64_t normal = (!is_P_inf) & (!is_Q_inf) & (!neg) & (!equal);
+	ec_point_lproj PplusQ;
+	ec_add_unchecked_ptr(P, Q, &PplusQ);
+	CSEL_PTR(normal, tmp_res, &PplusQ);
+	*R = *tmp_res;
+}
+
 void ec_add_unchecked_ptr(ec_point_lproj *P, ec_point_lproj *Q, ec_point_lproj *R) {
 	ef_intrl_elem u = ef_intrl_add(ef_intrl_mull(P->l, Q->z), ef_intrl_mull(Q->l, P->z)); // U = L_P * Z_Q + L_Q * Z_P
 	ef_intrl_elem w1 = ef_intrl_mull(P->x, Q->z); //W1 = X_P * Z_Q
@@ -224,6 +259,37 @@ ec_point_lproj ec_add_mixed_unchecked(ec_point_laffine P, ec_point_lproj Q) {
 	return R;
 }
 
+void ec_add_mixed_ptr(ec_point_laffine *P, ec_point_lproj *Q, ec_point_lproj *R) {
+	ef_intrl_elem zero = (ef_intrl_elem) {{{0,0}, {0,0}}};
+	ec_point_lproj inf = (ec_point_lproj) INFTY;
+	ec_point_lproj *tmp_res = &inf;
+	
+	uint64_t is_Q_inf = ef_intrl_equal(Q->z, zero);
+	ec_point_lproj Pproj;
+	ec_laffine_to_lproj_ptr(P, &Pproj);
+	CSEL_PTR(is_Q_inf, tmp_res, &Pproj);
+
+	ef_intrl_elem Xp = ef_intrl_mull(P->x, Q->z);
+	ef_intrl_elem Lp = ef_intrl_mull(P->l, Q->z);
+
+	uint64_t equal_x = ef_intrl_equal(Xp, Q->x);
+	uint64_t equal_l = ef_intrl_equal(Lp, Q->l);
+	uint64_t neg_l = ef_intrl_equal(ef_intrl_add(Lp, Q->z), Q->l);
+	uint64_t neg = equal_x & neg_l;
+
+	uint64_t equal = equal_x & equal_l;
+	ec_point_lproj P2;
+	ec_double_mixed_ptr(P, &P2);
+	CSEL_PTR(equal, tmp_res, &P2);
+	
+	uint64_t normal = (!is_Q_inf) & (!neg) & (!equal);
+	ec_point_lproj PplusQ;
+	ec_add_mixed_unchecked_ptr(P, Q, &PplusQ);
+	CSEL_PTR(normal, tmp_res, &PplusQ);
+
+	*R = *tmp_res;
+}
+
 void ec_add_mixed_unchecked_ptr(ec_point_laffine *P, ec_point_lproj *Q, ec_point_lproj *R) {
 	ef_intrl_elem E = ef_intrl_add(ef_intrl_mull(P->l, Q->z), Q->l); //A = L_P * Z_Q + L_Q
 	ef_intrl_elem F = ef_intrl_mull(P->x, Q->z); //X_P * Z_Q
@@ -245,6 +311,29 @@ ec_point_lproj ec_add_laffine_unchecked(ec_point_laffine P, ec_point_laffine Q) 
 	R.z = ef_intrl_mull(E, F); //A * B * Z_Q
 	R.l = ef_intrl_add(ef_intrl_square(ef_intrl_add(F, G)), ef_intrl_mull(R.z, ef_intrl_add(P.l, (ef_intrl_elem) {{{1, 0}, {0, 0}}}))); //(G+H)^2 + R.z + R.z * (P.l + 1)
 	return R;
+}
+
+void ec_add_laffine_ptr(ec_point_laffine *P, ec_point_laffine *Q, ec_point_lproj *R) {
+	ec_point_lproj inf = (ec_point_lproj) INFTY;
+	ec_point_lproj *tmp_res = &inf;
+	ef_intrl_elem one = (ef_intrl_elem) {{{1, 0}, {0, 0}}};
+
+	uint64_t equal_x = ef_intrl_equal(P->x, Q->x);
+	uint64_t equal_l = ef_intrl_equal(P->l, Q->l);
+	uint64_t neg_l = ef_intrl_equal(ef_intrl_add(P->l, one), Q->l);
+	uint64_t neg = equal_x & neg_l;
+
+	uint64_t equal = equal_x & equal_l;
+	ec_point_lproj P2;
+	ec_double_mixed_ptr(P, &P2);
+	CSEL_PTR(equal, tmp_res, &P2);
+	
+	uint64_t normal = (!neg) & (!equal);
+	ec_point_lproj PplusQ;
+	ec_add_laffine_unchecked_ptr(P, Q, &PplusQ);
+	CSEL_PTR(normal, tmp_res, &PplusQ);
+
+	*R = *tmp_res;
 }
 
 void ec_add_laffine_unchecked_ptr(ec_point_laffine *P, ec_point_laffine *Q, ec_point_lproj *R) {

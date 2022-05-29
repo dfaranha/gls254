@@ -147,7 +147,8 @@ void ec_add_test_is_on_curve_rnd(test_ctr *ctr) {
 		ec_point_lproj Q = ec_rand_point_lproj();
 		
 		//Act
-		ec_point_lproj sum = ec_add(P, Q);
+		ec_point_lproj sum;
+		ec_add_ptr(&P, &Q, &sum);
 
 		//Assert
 		correct = ec_is_on_curve(sum);
@@ -200,10 +201,11 @@ void ec_add_test_associative_rnd(test_ctr *ctr) {
 		ec_point_lproj R = ec_rand_point_lproj();
 
 		//Act
-		ec_point_lproj P_plus_Q = ec_add(P, Q);
-		ec_point_lproj P_plus_Q_first = ec_add(P_plus_Q, R);
-		ec_point_lproj Q_plus_R = ec_add(Q, R);
-		ec_point_lproj Q_plus_R_first = ec_add(P, Q_plus_R);
+		ec_point_lproj P_plus_Q, P_plus_Q_first, Q_plus_R, Q_plus_R_first;
+		ec_add_ptr(&P, &Q, &P_plus_Q);
+		ec_add_ptr(&P_plus_Q, &R, &P_plus_Q_first);
+		ec_add_ptr(&Q, &R, &Q_plus_R);
+		ec_add_ptr(&P, &Q_plus_R, &Q_plus_R_first);
 
 		//Assert
 		correct = ec_equal_point_lproj(P_plus_Q_first, Q_plus_R_first);
@@ -250,8 +252,9 @@ void ec_add_test_commutative_rnd(test_ctr *ctr) {
 		ec_point_lproj Q = ec_rand_point_lproj();
 
 		//Act
-		ec_point_lproj P_plus_Q = ec_add(P, Q);
-		ec_point_lproj Q_plus_P = ec_add(Q, P);
+		ec_point_lproj P_plus_Q, Q_plus_P;
+		ec_add_ptr(&P, &Q, &P_plus_Q);
+		ec_add_ptr(&Q, &P, &Q_plus_P);
 
 		//Assert
 		correct = ec_equal_point_lproj(P_plus_Q, Q_plus_P);
@@ -273,9 +276,11 @@ void ec_add_test_point_plus_infty_is_point(test_ctr *ctr) {
 	ef_intrl_elem PL = ef_intrl_interleave(ef_create_elem(bf_create_elem(0XEB821D89C63B9871, 0X6E5C83A975E6B141), bf_create_elem(0XB2CC95280AEB5B47, 0X73EE26ACBE0918AB)));
 	ef_intrl_elem PZ = ef_intrl_interleave(ef_create_elem(bf_create_elem(2, 0), bf_create_elem(1, 0)));
 	ec_point_lproj P = ec_create_point_lproj(PX, PL, PZ); // P = 1984 * GEN , z = u + z
+	ec_point_lproj inf = (ec_point_lproj) INFTY;
 
 	//Act
-	ec_point_lproj result = ec_add(P, (ec_point_lproj) INFTY);
+	ec_point_lproj result;
+	ec_add_ptr(&P, &inf, &result);
 
 	//Assert
 	uint64_t correct = ec_equal_point_lproj(P, result);
@@ -288,9 +293,11 @@ void ec_add_test_infty_plus_point_is_point(test_ctr *ctr) {
 	ef_intrl_elem PL = ef_intrl_interleave(ef_create_elem(bf_create_elem(0XA75AABA91400402C, 0X2EB5E7A7EE3E6DEA), bf_create_elem(0X82C9609FFC5E6794, 0X19B8A04EA04D0DF)));
 	ef_intrl_elem PZ = ef_intrl_interleave(ef_create_elem(bf_create_elem(0X8150BD7B681CEB67, 0X1773D8F08AD460A5), bf_create_elem(0X64E2D12FB4409DDD, 0X391936225DE0A796)));
 	ec_point_lproj P = ec_create_point_lproj(PX, PL, PZ); //12345 * GEN + 1984 * GEN
+	ec_point_lproj inf = (ec_point_lproj) INFTY;
 
 	//Act
-	ec_point_lproj result = ec_add((ec_point_lproj) INFTY, P);
+	ec_point_lproj result;
+	ec_add_ptr(&inf, &P, &result);
 
 	//Assert
 	uint64_t correct = ec_equal_point_lproj(P, result);
@@ -437,6 +444,47 @@ void ec_double_test_double_of_infty_is_infty(test_ctr *ctr) {
 	//Assert
 	uint64_t correct = ec_equal_point_lproj((ec_point_lproj) INFTY, doubled);
 	assert_true(correct, ctr, "ec: ec_double_test_double_of_infty_is_infty FAILED");
+}
+
+void ec_double_alt_test_is_on_curve_rnd(test_ctr *ctr) {
+	uint64_t correct;
+	for (int i = 0; i < 3; i++) {
+		//Arrange
+		ec_point_lproj P = ec_rand_point_lproj();
+		ec_point_lproj P2;
+		
+		//Act
+		ec_double_alt_ptr(&P, &P2);
+
+		//Assert
+		correct = ec_is_on_curve(P2);
+		if(!correct) {
+			ec_print_hex(P);
+			break;
+		}
+	}
+	assert_true(correct, ctr, "ec: ec_double_alt_test_is_on_curve_rnd FAILED");
+}
+
+void ec_double_alt_test_crosscheck_double_rnd(test_ctr *ctr) {
+	uint64_t correct;
+	for (int i = 0; i < 3; i++) {
+		//Arrange
+		ec_point_lproj P = ec_rand_point_lproj();
+		ec_point_lproj expected, actual;
+		ec_double_ptr(&P, &expected);
+
+		//Act
+		ec_double_alt_ptr(&P, &actual);
+
+		//Assert
+		correct = ec_equal_point_lproj(expected, actual);
+		if(!correct) {
+			ec_print_hex(P);
+			break;
+		}
+	}
+	assert_true(correct, ctr, "ec: ec_double_alt_test_crosscheck_double_rnd FAILED");
 }
 
 void ec_neg_test_example(test_ctr* ctr) {
@@ -652,11 +700,12 @@ void ec_add_mixed_test_crosscheck_rnd(test_ctr *ctr) {
 	ec_point_lproj Q = ec_rand_point_lproj();
 
 	//Act
-	ec_point_lproj expected = ec_add(P_proj, Q);
-	ec_point_lproj result = ec_add_mixed(P, Q);
+	ec_point_lproj expected, actual;
+	ec_add_ptr(&P_proj, &Q, &expected);
+	ec_add_mixed_ptr(&P, &Q, &actual);
 
 	//Assert
-	uint64_t equal = ec_equal_point_lproj(expected, result);
+	uint64_t equal = ec_equal_point_lproj(expected, actual);
 	assert_true(equal, ctr, "ec: ec_add_mixed_test_is_on_curve_rnd FAILED");
 }
 
@@ -881,6 +930,9 @@ void ec_tests(test_ctr *ctr) {
 	//ec_double_test_double_of_sum_is_sum_of_doubled(ctr);
 	ec_double_test_double_of_sum_is_sum_of_doubled_rnd(ctr);
 	ec_double_test_double_of_infty_is_infty(ctr);
+
+	ec_double_alt_test_is_on_curve_rnd(ctr);
+	ec_double_alt_test_crosscheck_double_rnd(ctr);
 
 	//ec_neg_test_example(ctr);
 	ec_neg_test_is_on_curve_rnd(ctr);

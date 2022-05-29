@@ -24,25 +24,61 @@ void ec_scalarmull_single_test_example(test_ctr *ctr) {
 	//Assert
 	uint64_t equal = ec_equal_point_laffine(actual, expected);
 	uint64_t on_curve = ec_is_on_curve_laffine(actual);
+	uint64_t correct = equal && on_curve;
 	assert_true(equal && on_curve, ctr, "ec: ec_scalar_mull_test_example FAILED");
+}
 
-	uint64_t num_runs = 1;
-
-	for(int i = 0; i < num_runs; i++) {
+void ec_scalarmull_test_1D_rnd(test_ctr *ctr) {
+	uint64_t correct = 1;
+	for(int i = 0; i < 3; i++) {
+		//Arrange
 		uint64x2x2_t k = ec_rand_scalar();
-		P = ec_rand_point_laffine();
+		ec_point_laffine P = ec_rand_point_laffine();
 
-		expected = ec_lproj_to_laffine(ec_scalarmull_single(P, k), 0);
+		ec_point_laffine expected = ec_lproj_to_laffine(ec_scalarmull_single(P, k), 0);
+		ec_point_laffine actual;
+
+		//Act
+		ec_scalarmull_single_endo_w5_randaccess_ptr(&P, k, &actual);
+
+		//Assert
+		uint64_t equal = ec_equal_point_laffine(actual, expected);
+		uint64_t on_curve = ec_is_on_curve_laffine(actual);
+		correct = equal & on_curve;
+		if(!correct) {
+			ec_print_hex_laffine(P);
+			printf("k [0] = %lu [1] = %lu [2] = %lu [3] = %lu\n", k.val[0][0], k.val[0][1], k.val[1][0], k.val[1][1]);
+			break;
+		}
+	}
+	assert_true(correct, ctr, "ec: ec_scalar_mull_test_1D_rnd FAILED");
+} 
+
+void ec_scalarmull_test_2D_rnd(test_ctr *ctr) {
+	uint64_t correct = 1;
+	for(int i = 0; i < 3; i++) {
+		//Arrange
+		uint64x2x2_t k = ec_rand_scalar();
+		ec_point_laffine P = ec_rand_point_laffine();
+
+		ec_point_laffine expected = ec_lproj_to_laffine(ec_scalarmull_single(P, k), 0);
+		ec_point_laffine actual;
+
 		//Act
 		ec_scalarmull_single_endo_w3_table2D_bulk_ptr(&P, k, &actual);
 
 		//Assert
 		uint64_t equal = ec_equal_point_laffine(actual, expected);
 		uint64_t on_curve = ec_is_on_curve_laffine(actual);
-
-		assert_true(equal && on_curve, ctr, "ec: ec_scalar_mull_test_rand FAILED");
+		correct = equal & on_curve;
+		if(!correct) {
+			ec_print_hex_laffine(P);
+			printf("k [0] = %lu [1] = %lu [2] = %lu [3] = %lu\n", k.val[0][0], k.val[0][1], k.val[1][0], k.val[1][1]);
+			break;
+		}
 	}
-}
+	assert_true(correct, ctr, "ec: ec_scalar_mull_test_2D_rnd FAILED");
+} 
 
 void ec_scalarmull_single_test_linearity(test_ctr *ctr) {
 	//Arrange
@@ -419,10 +455,7 @@ void ec_scalarmull_single_rand_test_w3(test_ctr *ctr) {
 }
 
 void precompute_w5_ptr_test(test_ctr *ctr) {
-	ef_intrl_elem PX = ef_intrl_interleave(ef_create_elem(bf_create_elem(0XD2C27333EFC0AE61, 0X4306673487679D76), bf_create_elem(0X909BEC5477E860BB, 0X480D39C8A1B98266)));
-	ef_intrl_elem PL = ef_intrl_interleave(ef_create_elem(bf_create_elem(0XF84FB0B45D95FC31, 0X24C3FF4B68C78BE3), bf_create_elem(0X963FE2DA0544E1A4, 0X17B6B0A1380A490)));
-	ef_intrl_elem PZ = ef_intrl_interleave(ef_create_elem(bf_create_elem(0X100, 0), bf_create_elem(0X8000000000000000, 0X4000000000000001)));
-	ec_point_laffine P = ec_lproj_to_laffine(ec_create_point_lproj(PX, PL, PZ), 0); //99921481365893197563 * GEN
+	ec_point_laffine P = ec_lproj_to_laffine(((ec_point_lproj) GEN), 0);
 
 	ec_point_laffine table[8];
 	precompute_w5_ptr(&P, table);
@@ -648,12 +681,14 @@ void ec_scalarmull_test_lookup_from_w3_table2D_bulk_ptr(test_ctr *ctr) {
 }
 
 void ec_scalarmull_tests(test_ctr *ctr) {
-	ec_scalarmull_single_test_example(ctr);
+	//ec_scalarmull_single_test_example(ctr);
+	ec_scalarmull_test_1D_rnd(ctr);
+	ec_scalarmull_test_2D_rnd(ctr);
 	/*ec_scalarmull_single_test_linearity(ctr);
 	ec_scalarmull_single_test_negation_order_indifference(ctr);
 	ec_scalarmull_single_test_order_of_gen_is_order_of_subgroup(ctr);
 	ec_scalarmull_single_test_final_k_at_once_same_as_factor_one_at_a_time(ctr);*/
-	ec_scalarmull_single_test_k_one_is_identity(ctr);
+	//ec_scalarmull_single_test_k_one_is_identity(ctr);
 
 	// ec_scalarmull_double_test_example(ctr);
 	// ec_scalarmull_double_test_linearity(ctr);
@@ -671,10 +706,10 @@ void ec_scalarmull_tests(test_ctr *ctr) {
 	ec_scalarmull_single_rand_test_w4(ctr);
 	ec_scalarmull_single_rand_test_w3(ctr);*/
 
-	precompute_w5_ptr_test(ctr);
+	/*precompute_w5_ptr_test(ctr);
 	ec_scalarmull_test_precomputation_w4_table2D_ptr(ctr);
 	ec_scalarmull_test_precomputation_w3_table2D_ptr(ctr);
 	ec_scalarmull_test_lookup_from_w4_table2D_ptr(ctr);
 	ec_scalarmull_test_lookup_from_w3_table2D_ptr(ctr);
-	ec_scalarmull_test_lookup_from_w3_table2D_bulk_ptr(ctr);
+	ec_scalarmull_test_lookup_from_w3_table2D_bulk_ptr(ctr);*/
 }
