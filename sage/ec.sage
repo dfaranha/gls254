@@ -6,7 +6,7 @@ load("field.sage")
 
 # Define curve coefficients, notice we are using a different b than the original paper.
 one = F2m(1)
-a = F2x(s);
+a = F2x(s)
 b = F2m(z^27 + one)
 
 E = EllipticCurve(F2x, [1, s, 0, 0, b])
@@ -55,7 +55,7 @@ def double_aff(xP, lP):
     return (x2P, l2P)
 
 def double_prj(Xp, Lp, Zp):
-    global mt, ma, mb, sq
+    global inv, mt, ma, mb, sq
     mt += 4
     ma += 1
     sq += 4
@@ -66,7 +66,7 @@ def double_prj(Xp, Lp, Zp):
     return (X2, L2, Z2)
 
 def doubleb_prj(Xp, Lp, Zp):
-    global mt, ma, mb, sq
+    global inv, mt, ma, mb, sq
     mt += 3
     ma += 1
     mb += 1
@@ -77,8 +77,17 @@ def doubleb_prj(Xp, Lp, Zp):
     L2 = (Lp + Xp)^2 * ((Lp + Xp)^2 + T + Zp^2) + (a^2 + b) * Zp^4 + X2 + (a + 1) * Z2
     return (X2, L2, Z2)
 
+def double_mix(xP, lP):
+    global inv, mt, ma, mb, sq
+    mt += 1
+    sq += 3
+    Z2 = lP^2 + lP + a
+    X2 = Z2^2
+    L2 = xP^2 + X2 + Z2 * (lP + 1)
+    return (X2, L2, Z2)
+
 def add_prj(Xp, Lp, Zp, Xq, Lq, Zq):
-    global mt, ma, mb, sq
+    global inv, mt, ma, mb, sq
     mt += 11
     sq += 2
     A = Lp * Zq + Lq * Zp
@@ -89,7 +98,7 @@ def add_prj(Xp, Lp, Zp, Xq, Lq, Zq):
     return (Xpq, Lpq, Zpq)
 
 def add_mix(Xp, Lp, Zp, xQ, lQ):
-    global mt, ma, mb, sq
+    global inv, mt, ma, mb, sq
     mt += 8
     sq += 2
     A = Lp + lQ * Zp
@@ -99,8 +108,22 @@ def add_mix(Xp, Lp, Zp, xQ, lQ):
     Zpq = (A * B) * Zp
     return (Xpq, Lpq, Zpq)
 
+def add_mix_complete(Xp, Lp, Zp, xQ, lQ):
+    global inv, mt, ma, mb, sq
+    mt += 2
+
+    Xq = xQ * Zp
+    Lq = lQ * Zp
+    (Xq2, Lq2, Zq2) = double_mix(xQ, lQ)
+    (Xpq, Lpq, Zpq) = add_mix(Xp, Lp, Zp, xQ, lQ)
+    if Zp == 0:
+        return (xQ, lQ, 1)
+    if Xp == Xq and Lp == Lq:
+        return (Xq2, Lq2, Zq2)
+    return (Xpq, Lpq, Zpq)
+
 def add_psi(xP, lP):
-    global mt, ma, mb, sq
+    global inv, mt, ma, mb, sq
     mt += 3.5
     sq += 1.5
     A = lP[1] + s
@@ -111,7 +134,7 @@ def add_psi(xP, lP):
     return (Xpq, Lpq, Zpq)
 
 def add_mix_mix(xP, lP, xQ, lQ):
-    global mt, ma, mb, sq
+    global inv, mt, ma, mb, sq
     mt += 5
     sq += 2
     A = lP + lQ
@@ -122,7 +145,7 @@ def add_mix_mix(xP, lP, xQ, lQ):
     return (Xpq, Lpq, Zpq)
 
 def add_sub_mix_mix(xP, lP, xQ, lQ):
-    global mt, ma, mb, sq
+    global inv, mt, ma, mb, sq
     mt += 6
     sq += 4
     A = lP + lQ
@@ -136,7 +159,7 @@ def add_sub_mix_mix(xP, lP, xQ, lQ):
     return (Xpq, Lpq, Zpq, Xpmq, Lpmq, Zpmq)
 
 def add_sub_mix( Xq, Lq, Zq, xP, lP):
-    global mt, ma, mb, sq
+    global inv, mt, ma, mb, sq
     mt += 12
     sq += 5
     A = lP * Zq + Lq
@@ -151,7 +174,7 @@ def add_sub_mix( Xq, Lq, Zq, xP, lP):
     return (Xpq, Lpq, Zpq, Xpmq, Lpmq, Zpmq)
 
 def triple_mix(xP, lP):
-    global mt, ma, mb, sq
+    global inv, mt, ma, mb, sq
     mt += 4
     ma += 1
     sq += 4
@@ -164,7 +187,7 @@ def triple_mix(xP, lP):
     return (Xr, Lr, Zr)
 
 def double_add(Xq, Lq, Zq, xP, lP):
-    global mt, ma, mb, sq
+    global inv, mt, ma, mb, sq
     mt += 10
     ma += 1
     sq += 6
@@ -178,7 +201,7 @@ def double_add(Xq, Lq, Zq, xP, lP):
     return (Xr, Lr, Zr)
 
 def double_add_sub_mix(Xq, Lq, Zq, xP, lP):
-    global mt, ma, mb, sq
+    global inv, mt, ma, mb, sq
     mt += 15
     sq += 9
     ma += 1
@@ -206,7 +229,7 @@ def double_add_sub_mix(Xq, Lq, Zq, xP, lP):
     return (Xpq, Lpq, Zpq, Xpmq, Lpmq, Zpmq)
 
 def double_add_add(Xq, Lq, Zq, xP1, lP1, xP2, lP2):
-    global mt, ma, mb, sq
+    global inv, mt, ma, mb, sq
     mt += 17
     ma += 1
     sq += 8
@@ -358,6 +381,8 @@ def smu_double_add_glv(xP, lP, scalar):
     return (Xq, Lq, Zq)
 
 def smu_double_add_glv_reg(xP, lP, scalar, w = 4):
+    global inv, mt, ma, mb, sq
+
     #b = F2m(z^49 + z^25 + 1)
     n, r, t, mu = curve_details(b)
     alpha1, alpha2, c1, c2, d = decomp_precomp(n, t)
@@ -368,18 +393,8 @@ def smu_double_add_glv_reg(xP, lP, scalar, w = 4):
     k2r = regular_recode(k2, w)
     l = len(k1r)
 
-    T = []
-    (x2, l2) = double_aff(xP, lP)
-    (Xacc, Lacc, Zacc) = (xP, lP, one)
-    for i in range(2**(w-2)):
-        T.append((Xacc / Zacc, Lacc / Zacc))
-        (Xacc, Lacc, Zacc) = add_mix(Xacc, Lacc, Zacc, x2, l2)
+    T = smu_double_add_glv_reg_precomp(xP, lP, w)
 
-    #Will convert table to affine coordinates using simultaneous inversion algorithm, so add costs here:
-    global mt, ma, mb, sq
-    mt += 5*(2**(w-2)-1) + 16
-
-    _xP, _lP = psi_aff(xP, lP)
     (xP1, lP1, xP2, lP2) = (one, one, one, one)
 
     (xP1, lP1) = T[(abs(k1r[l-1])-1)/2]
@@ -389,11 +404,11 @@ def smu_double_add_glv_reg(xP, lP, scalar, w = 4):
         (xP1, lP1) = neg_aff(xP1, lP1)
     if k2r[l-1] < 0:
         (xP2, lP2) = neg_aff(xP2, lP2)
-    (Xq, Lq, Zq) = add_mix(xP1, lP1, one, xP2, lP2)
+    (Xq, Lq, Zq) = add_mix_mix(xP1, lP1, xP2, lP2)
 
     for i in range(l - 2, -1, -1):
         for j in range(w-2):
-            (Xq, Lq, Zq) = double_prj(Xq, Lq, Zq)
+            (Xq, Lq, Zq) = doubleb_prj(Xq, Lq, Zq)
         (xP1, lP1) = T[(abs(k1r[i])-1)/2]
         (xP2, lP2) = T[(abs(k2r[i])-1)/2]
         (xP2, lP2) = psi_aff(xP2, lP2)
@@ -402,11 +417,22 @@ def smu_double_add_glv_reg(xP, lP, scalar, w = 4):
             (xP1, lP1) = neg_aff(xP1, lP1)
         if k2r[i] < 0:
             (xP2, lP2) = neg_aff(xP2, lP2)
-        (Xq, Lq, Zq) = double_add_add(Xq, Lq, Zq, xP1, lP1, xP2, lP2)
+        
+        if i == 0: #Complete formula at last iteration
+            (Xq, Lq, Zq) = doubleb_prj(Xq, Lq, Zq)
+            (Xq, Lq, Zq) = add_mix_complete(Xq, Lq, Zq, xP1, lP1)
+            (Xq, Lq, Zq) = add_mix_complete(Xq, Lq, Zq, xP2, lP2)
+        else:
+            (Xq, Lq, Zq) = double_add_add(Xq, Lq, Zq, xP1, lP1, xP2, lP2)
 
+    #Cost of converting to affine
+    inv += 1
+    mt += 2
     return (Xq, Lq, Zq)
 
 def smu_double_add_glv_reg_tab(xP, lP, scalar, w = 4):
+    global inv, mt, ma, mb, sq
+    
     #b = F2m(z^49 + z^25 + 1)
     n, r, t, mu = curve_details(b)
     alpha1, alpha2, c1, c2, d = decomp_precomp(n, t)
@@ -417,99 +443,66 @@ def smu_double_add_glv_reg_tab(xP, lP, scalar, w = 4):
     k2r = regular_recode(k2, w)
     l = len(k1r)
 
-    #Will convert table to affine coordinates using simultaneous inversion algorithm, so add costs here:
-    global mt, ma, mb, sq
-
-    T1 = []
-    T  = []
-
-    if (w == 3):
-        T1.append((xP, lP))
-        (Xacc, Lacc, Zacc) = triple_mix(xP, lP)
-        T1.append((Xacc / Zacc, Lacc / Zacc))
-        mt += 2 + 16
-    else:
-        T1.append((xP, lP))
-        (Xacc, Lacc, Zacc) = triple_mix(xP, lP)
-        T1.append((Xacc / Zacc, Lacc / Zacc))
-
-        for i in range(1, 2**(w-3)):
-            (Xpq, Lpq, Zpq, Xpmq, Lpmq, Zpmq) = double_add_sub_mix(T1[i][0], T1[i][1], one, xP, lP)
-            T1.append((Xpmq / Zpmq, Lpmq / Zpmq))
-            T1.append((Xpq / Zpq, Lpq / Zpq))
-        mt += 5*(2**(w-2)-1) + 16
-
-    T = [None] * (2**(w-2)) * (2**(w-2))
-    for i in range(2**(w-2)):
-        (xP1, lP1) = T1[i]
-        (xP2, lP2) = psi_aff(xP1, lP1)
-        (Xacc, Lacc, Zacc) = add_mix_mix(xP1, lP1, xP2, lP2)
-        T[2**(w-2)*i+i] = (Xacc / Zacc, Lacc / Zacc)
-        for j in range(i+1, 2**(w-2)):
-            (xP2, lP2) = T1[j]
-            (xP2, lP2) = psi_aff(xP2, lP2)
-            (X3, L3, Z3, X4, L4, Z4) = add_sub_mix_mix(xP1, lP1, xP2, lP2)
-            T[2**(w-2)*i+j] = (X3 / Z3, L3 / Z3)
-            T[2**(w-2)*j+i] = psi_aff(X4 / Z4, L4 / Z4)
-
-    #Will convert table to affine coordinates using simultaneous inversion algorithm, so add costs here:
-    mt += 5*(2**(2*(w-2))-1) + 16
-
-    _xP, _lP = psi_aff(xP, lP)
-    (xP1, lP1, xP2, lP2) = (one, one, one, one)
-
-    (xP1, lP1) = T1[(abs(k1r[l-1])-1)/2]
-    (xP2, lP2) = T1[(abs(k2r[l-1])-1)/2]
-    (xP2, lP2) = psi_aff(xP2, lP2)
-    if k1r[l-1] < 0:
-        (xP1, lP1) = neg_aff(xP1, lP1)
-    if k2r[l-1] < 0:
-        (xP2, lP2) = neg_aff(xP2, lP2)
-    (Xq, Lq, Zq) = add_mix(xP1, lP1, one, xP2, lP2)
+    T = smu_double_add_glv_reg_tab_precomp(xP, lP, w)
+    (Xq, Lq) = smu_double_add_glv_reg_tab_lookup(T, k1r, k2r, l-1, w)
+    Zq = one
 
     for i in range(l - 2, -1, -1):
         for j in range(w-2):
-            (Xq, Lq, Zq) = double_prj(Xq, Lq, Zq)
+            (Xq, Lq, Zq) = doubleb_prj(Xq, Lq, Zq)
 
-        if k1r[i] > 0 and k2r[i] > 0:
-            k = 2**(w-2)*(abs(k1r[i])-1)/2 + (abs(k2r[i])-1)/2
-            (xP1, lP1) = T[k]
-        if k1r[i] < 0 and k2r[i] < 0:
-            k = 2**(w-2)*(abs(k1r[i])-1)/2 + (abs(k2r[i])-1)/2
-            (xP1, lP1) = T[k]
-            (xP1, lP1) = neg_aff(xP1, lP1)
-        if k1r[i] < 0 and k2r[i] > 0:
-            k = 2**(w-2)*(abs(k2r[i])-1)/2 + (abs(k1r[i])-1)/2
-            (xP1, lP1) = T[k]
-            (xP1, lP1) = psi_aff(xP1, lP1)
-        if k1r[i] > 0 and k2r[i] < 0:
-            k = 2**(w-2)*(abs(k2r[i])-1)/2 + (abs(k1r[i])-1)/2
-            (xP1, lP1) = T[k]
-            (xP1, lP1) = psi_aff(xP1, lP1)
-            (xP1, lP1) = neg_aff(xP1, lP1)
-        (Xq, Lq, Zq) = double_add(Xq, Lq, Zq, xP1, lP1)
+        (xP1, lP1) = smu_double_add_glv_reg_tab_lookup(T, k1r, k2r, i, w)
+        if i == 0:
+            (Xq, Lq, Zq) = doubleb_prj(Xq, Lq, Zq)
+            (Xq, Lq, Zq) = add_mix_complete(Xq, Lq, Zq, xP1, lP1)
+        else:
+            (Xq, Lq, Zq) = double_add(Xq, Lq, Zq, xP1, lP1)
 
+    #Cost of converting to affine
+    inv += 1
+    mt += 2
     return (Xq, Lq, Zq)
 
-def smu_double_add_glv_reg_tab_precomp(xP, lP, w=4):
-    T1 = []
-    T2 = []
-    T  = []
-    (x2, l2) = double_aff(xP, lP)
-    (Xacc, Lacc, Zacc) = (xP, lP, one)
-    for i in range(2**(w-2)):
-        T1.append((Xacc / Zacc, Lacc / Zacc))
-        (Xacc, Lacc, Zacc) = add_mix(Xacc, Lacc, Zacc, x2, l2)
+def smu_double_add_glv_reg_precomp(xP, lP, w=4):
+    global inv, mt, ma, mb, sq
+
+    T = []
+    T.append((xP, lP))
+    (Xacc, Lacc, Zacc) = triple_mix(xP, lP)
+    T.append((Xacc / Zacc, Lacc / Zacc))
+
+    for i in range(1, 2**(w-3)):
+        (Xpq, Lpq, Zpq, Xpmq, Lpmq, Zpmq) = double_add_sub_mix(T[i][0], T[i][1], one, xP, lP)
+        T.append((Xpmq / Zpmq, Lpmq / Zpmq))
+        T.append((Xpq / Zpq, Lpq / Zpq))
 
     #Will convert table to affine coordinates using simultaneous inversion algorithm, so add costs here:
-    global mt, ma, mb, sq
-    mt += 5*(2**(w-2)-1) + 16
+    inv += 1
+    mt += 3*(2**(w-2)-2) + 2*(2**(w-2)-1)
+    return T
+
+def smu_double_add_glv_reg_tab_precomp(xP, lP, w=4):
+    global inv, mt, ma, mb, sq
+
+    T1 = []
+    T  = []
+
+    T1.append((xP, lP))
+    (Xacc, Lacc, Zacc) = triple_mix(xP, lP)
+    T1.append((Xacc / Zacc, Lacc / Zacc))
+
+    for i in range(1, 2**(w-3)):
+        (Xpq, Lpq, Zpq, Xpmq, Lpmq, Zpmq) = double_add_sub_mix(T1[i][0], T1[i][1], one, xP, lP)
+        T1.append((Xpmq / Zpmq, Lpmq / Zpmq))
+        T1.append((Xpq / Zpq, Lpq / Zpq))
+    inv += 1
+    mt += 3*(2**(w-2)-2) + 2*(2**(w-2)-1)
 
     T = [None] * (2**(w-2)) * (2**(w-2))
     for i in range(2**(w-2)):
         (xP1, lP1) = T1[i]
         (xP2, lP2) = psi_aff(xP1, lP1)
-        (Xacc, Lacc, Zacc) = add_mix_mix(xP1, lP1, xP2, lP2)
+        (Xacc, Lacc, Zacc) = add_psi(xP1, lP1)
         T[2**(w-2)*i+i] = (Xacc / Zacc, Lacc / Zacc)
         for j in range(i+1, 2**(w-2)):
             (xP2, lP2) = T1[j]
@@ -519,15 +512,54 @@ def smu_double_add_glv_reg_tab_precomp(xP, lP, w=4):
             T[2**(w-2)*j+i] = psi_aff(X4 / Z4, L4 / Z4)
 
     #Will convert table to affine coordinates using simultaneous inversion algorithm, so add costs here:
-    mt += 5*(2**(2*(w-2))-1) + 16
-    return T1, T
+    inv += 1
+    mt += 3*(2**(2*(w-2))-1) + 2*(2**(2*(w-2)))
+    return T
 
+def smu_double_add_glv_reg_tab_precomp_altw3(xP, lP):
+    global inv, mt, ma, mb, sq
+
+    T = []
+    (Xp2, Lp2, Zp2) = double_mix(xP, lP)
+    (Xep2, Lep2, Zep2) = psi_proj(Xp2, Lp2, Zp2)
+    (X11, L11, Z11) = add_psi(xP, lP)
+    (X13, L13, Z13) = add_prj(X11, L11, Z11, Xep2, Lep2, Zep2)
+    (X31, L31, Z31) = add_prj(X11, L11, Z11, Xp2, Lp2, Zp2)
+    (X33, L33, Z33) = add_prj(X13, L13, Z13, Xp2, Lp2, Zp2)
+
+    inv += 1
+    mt += 17
+    T.append((X11 / Z11, L11 / Z11))
+    T.append((X13 / Z13, L13 / Z13))
+    T.append((X31 / Z31, L31 / Z31))
+    T.append((X33 / Z33, L33 / Z33))
+
+    return T
+
+
+def smu_double_add_glv_reg_tab_lookup(T, k1r, k2r, i, w=4):
+    if k1r[i] > 0 and k2r[i] > 0:
+        index = 2**(w-2)*(abs(k1r[i])-1)/2 + (abs(k2r[i])-1)/2
+        return T[index]
+    if k1r[i] < 0 and k2r[i] < 0:
+        index = 2**(w-2)*(abs(k1r[i])-1)/2 + (abs(k2r[i])-1)/2
+        (xP1, lP1) = T[index]
+        return neg_aff(xP1, lP1)
+    if k1r[i] < 0 and k2r[i] > 0:
+        index = 2**(w-2)*(abs(k2r[i])-1)/2 + (abs(k1r[i])-1)/2
+        (xP1, lP1) = T[index]
+        return psi_aff(xP1, lP1)
+    if k1r[i] > 0 and k2r[i] < 0:
+        index = 2**(w-2)*(abs(k2r[i])-1)/2 + (abs(k1r[i])-1)/2
+        (xP1, lP1) = T[index]
+        (xP1, lP1) = psi_aff(xP1, lP1)
+        return neg_aff(xP1, lP1)
 
 #Input must be odd
 #Modified alg 6 from "Exponent Recoding and Regular Exponentiation Algorithms"
 #by Joye et al
 def regular_recode(k, w):
-    l = ZZ(QQ(127/(w-1)).ceil())
+    l = ZZ(QQ(128/(w-1)).ceil())
     v = ZZ(2^(w-1))
     acc = k
     k_reg = [0] * l
@@ -540,10 +572,10 @@ def regular_recode(k, w):
     return k_reg
 
 def regular_recode_test():
-    k1 = ZZ(85070591730234615877113501116496779623)
-    w = 4
+    k1 = 85070591730234615877113501116496779625
+    w = 3
     k1_reg = regular_recode(k1, w)
-    assert(len(k1_reg) == 43)
+    assert(len(k1_reg) == 64)
 
     acc = ZZ(0)
     v = ZZ(1)
@@ -567,7 +599,7 @@ curve_details_test()
 decomp_test()
 regular_recode_test()
 
-mt = ma = mb = sq = 0
+inv = inv = mt = ma = mb = sq = 0
 n, r, t, mu = curve_details(b)
 
 for i in range(0, 1):
@@ -660,48 +692,84 @@ for i in range(0, 1):
     assert(from_lambda_aff(xP, lP) == int(mu)*P)
 
 # Benchmarks by operation counts
-print("Operation counts as (muls, mul_a, mul_b, sqrs)")
+print("Operation counts as (inv, muls, mul_a, mul_b, sqrs)")
 
-# mt = ma = mb = sq = 0
+# inv = mt = ma = mb = sq = 0
 # (X3, L3, Z3) = smu_double_add(xP, lP, k)
-# print("Double-add       : ", mt, ma, mb, sq)
+# print("Double-add       : ", inv, mt, ma, mb, sq)
 
-# mt = ma = mb = sq = 0
+# inv = mt = ma = mb = sq = 0
 # (X3, L3, Z3) = smu_double_always_add(xP, lP, k)
-# print("Double-add-always: ", mt, ma, mb, sq)
+# print("Double-add-always: ", inv, mt, ma, mb, sq)
 
-# mt = ma = mb = sq = 0
+# inv = mt = ma = mb = sq = 0
 # (X3, L3, Z3) = smu_double_add_glv(xP, lP, k)
-# print("GLV-double-add: ", mt, ma, mb, sq)
+# print("GLV-double-add: ", inv, mt, ma, mb, sq)
 
-mt = ma = mb = sq = 0
+inv = mt = ma = mb = sq = 0
+(X3, L3, Z3) = smu_double_add_glv_reg(xP, lP, k, 3)
+print("GLV-reg-3-double-add: ", inv, mt, ma, mb, sq)
+
+inv = mt = ma = mb = sq = 0
 (X3, L3, Z3) = smu_double_add_glv_reg(xP, lP, k, 4)
-print("GLV-reg-4-double-add: ", mt, ma, mb, sq)
+print("GLV-reg-4-double-add: ", inv, mt, ma, mb, sq)
 
-mt = ma = mb = sq = 0
+inv = mt = ma = mb = sq = 0
 (X3, L3, Z3) = smu_double_add_glv_reg(xP, lP, k, 5)
-print("GLV-reg-5-double-add: ", mt, ma, mb, sq)
+print("GLV-reg-5-double-add: ", inv, mt, ma, mb, sq)
 
-mt = ma = mb = sq = 0
+inv = mt = ma = mb = sq = 0
 (X3, L3, Z3) = smu_double_add_glv_reg(xP, lP, k, 6)
-print("GLV-reg-6-double-add: ", mt, ma, mb, sq)
+print("GLV-reg-6-double-add: ", inv, mt, ma, mb, sq)
 
-mt = ma = mb = sq = 0
+inv = mt = ma = mb = sq = 0
 (X3, L3, Z3) = smu_double_add_glv_reg_tab(xP, lP, k, 3)
-print("GLV-reg-3-double-add-tab: ", mt, ma, mb, sq)
+print("GLV-reg-3-double-add-tab: ", inv, mt, ma, mb, sq)
 
-mt = ma = mb = sq = 0
+inv = mt = ma = mb = sq = 0
 (X3, L3, Z3) = smu_double_add_glv_reg_tab(xP, lP, k, 4)
-print("GLV-reg-4-double-add-tab: ", mt, ma, mb, sq)
+print("GLV-reg-4-double-add-tab: ", inv, mt, ma, mb, sq)
 
-mt = ma = mb = sq = 0
+inv = mt = ma = mb = sq = 0
 (X3, L3, Z3) = smu_double_add_glv_reg_tab(xP, lP, k, 5)
-print("GLV-reg-5-double-add-tab: ", mt, ma, mb, sq)
+print("GLV-reg-5-double-add-tab: ", inv, mt, ma, mb, sq)
 
-mt = ma = mb = sq = 0
+inv = mt = ma = mb = sq = 0
 (X3, L3, Z3) = smu_double_add_glv_reg_tab(xP, lP, k, 6)
-print("GLV-reg-6-double-add-tab: ", mt, ma, mb, sq)
+print("GLV-reg-6-double-add-tab: ", inv, mt, ma, mb, sq)
 
-mt = ma = mb = sq = 0
-(T1, T) = smu_double_add_glv_reg_tab_precomp(xP, lP, 4)
-print("GLV-reg-4-double-add-tab_precomp: ", mt, ma, mb, sq)
+inv = mt = ma = mb = sq = 0
+T = smu_double_add_glv_reg_precomp(xP, lP, 3)
+print("GLV-reg-3-double-add-precomp: ", inv, mt, ma, mb, sq)
+
+inv = mt = ma = mb = sq = 0
+T = smu_double_add_glv_reg_precomp(xP, lP, 4)
+print("GLV-reg-4-double-add-precomp: ", inv, mt, ma, mb, sq)
+
+inv = mt = ma = mb = sq = 0
+T = smu_double_add_glv_reg_precomp(xP, lP, 5)
+print("GLV-reg-5-double-add-precomp: ", inv, mt, ma, mb, sq)
+
+inv = mt = ma = mb = sq = 0
+T = smu_double_add_glv_reg_precomp(xP, lP, 6)
+print("GLV-reg-6-double-add-precomp: ", inv, mt, ma, mb, sq)
+
+inv = mt = ma = mb = sq = 0
+T = smu_double_add_glv_reg_tab_precomp(xP, lP, 3)
+print("GLV-reg-3-double-add-tab_precomp: ", inv, mt, ma, mb, sq)
+
+inv = mt = ma = mb = sq = 0
+T = smu_double_add_glv_reg_tab_precomp_altw3(xP, lP)
+print("GLV-reg-alt3-double-add-tab_precomp: ", inv, mt, ma, mb, sq)
+
+inv = mt = ma = mb = sq = 0
+T = smu_double_add_glv_reg_tab_precomp(xP, lP, 4)
+print("GLV-reg-4-double-add-tab_precomp: ", inv, mt, ma, mb, sq)
+
+inv = mt = ma = mb = sq = 0
+T = smu_double_add_glv_reg_tab_precomp(xP, lP, 5)
+print("GLV-reg-5-double-add-tab_precomp: ", inv, mt, ma, mb, sq)
+
+inv = mt = ma = mb = sq = 0
+T = smu_double_add_glv_reg_tab_precomp(xP, lP, 6)
+print("GLV-reg-6-double-add-tab_precomp: ", inv, mt, ma, mb, sq)
