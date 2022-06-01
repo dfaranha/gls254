@@ -122,7 +122,7 @@ static int ec_ok(__m128i x0, __m128i x1, __m128i l0, __m128i l1) {
 
 static void ec_enc(unsigned char *p, __m128i x0, __m128i x1, __m128i l0, __m128i l1) {
 	/* Write the results. */
-	_mm_store_si128((__m128i *) &p[0], x0);
+	_mm_store_si128((__m128i *) &p[ 0], x0);
 	_mm_store_si128((__m128i *) &p[16], x1);
 
 #ifdef COMPRESSION
@@ -171,7 +171,8 @@ static int ec_dec(__m128i *x0, __m128i *x1, __m128i *l0, __m128i *l1, uint8_t *p
 #else
 	*x0 = _mm_loadu_si128((__m128i *) &p[ 0]);
 	*x1 = _mm_loadu_si128((__m128i *) &p[16]);
-	if (_mm_movemask_epi8(_mm_cmpeq_epi32(*x0,zero)) == 0xFFFF && _mm_movemask_epi8(_mm_cmpeq_epi32(*x1,zero)) == 0xFFFF)  {
+	if (_mm_movemask_epi8(_mm_cmpeq_epi32(*x0,zero)) == 0xFFFF &&
+			_mm_movemask_epi8(_mm_cmpeq_epi32(*x1,zero)) == 0xFFFF)  {
 		return 0;
 	}
 	*l0 = _mm_loadu_si128((__m128i *) &p[32]);

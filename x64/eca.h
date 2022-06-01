@@ -1,5 +1,42 @@
 /* elliptic curve arithmetic */
 
+void ec_print(__m128i px0, __m128i px1, __m128i pl0, __m128i pl1) {
+    uint64_t u[2] = { 0 };
+    uint64_t v[2] = { 0 };
+
+    __m128i ONE = _mm_set_epi64x(0x1, 0x1);
+
+    low_red_127_063_000(px0, px1, ONE);
+	low_red_127_063_000(pl0, pl1, ONE);
+
+    _mm_store_si128((__m128i *) u, px0);
+    _mm_store_si128((__m128i *) v, px1);
+
+    uint64_t x0[2] = { 0 };
+    uint64_t x1[2] = { 0 };
+
+    x0[0] = u[0];
+    x0[1] = v[0];
+    x1[0] = u[1];
+    x1[1] = v[1];
+
+    _mm_store_si128((__m128i *) u, pl0);
+    _mm_store_si128((__m128i *) v, pl1);
+
+    uint64_t l0[2] = { 0 };
+    uint64_t l1[2] = { 0 };
+
+    l0[0] = u[0];
+    l0[1] = v[0];
+    l1[0] = u[1];
+    l1[1] = v[1];
+
+    bn_print(x0, 2);
+    bn_print(x1, 2);
+    bn_print(l0, 2);
+    bn_print(l1, 2);
+}
+
 /* [p > p] full doubling alternative */
 void eca_dbl_ful(__m128i *rx0, __m128i *rx1,
                  __m128i *rl0, __m128i *rl1,
