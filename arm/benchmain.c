@@ -18,7 +18,7 @@ int main() {
 	enable_pmu(0x008);
 	benchmark_bf_all();
 	//benchmark_ef_all();
-	//benchmark_ef_intrl_all();
+	benchmark_ef_intrl_all();
 	//benchmark_ec_all();
 	benchmark_ec_scalarmull_all();
 	disable_pmu(0x008);

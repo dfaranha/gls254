@@ -347,6 +347,27 @@ void benchmark_ec_double_alt_ptr() {
 	printf("Median: %lf\n\n", median(times, num_runs));
 }
 
+void benchmark_ec_triple_mixed_ptr() {
+	uint64_t num_runs = 2000;
+	uint64_t times[num_runs];
+	ec_point_lproj sum = (ec_point_lproj) INFTY;
+
+	for(int i = 0; i < num_runs; i++) {
+		ec_point_laffine P = ec_rand_point_laffine();
+		ec_point_lproj R;
+		uint64_t start = read_pmccntr();
+		ec_triple_mixed_ptr(&P, &R);
+		uint64_t end = read_pmccntr();
+		insert_sorted(end-start, times, i);
+		sum = ec_add(sum, R);
+	}
+	ec_print_hex(sum);
+	printf("BENCHMARK ec_triple_mixed_ptr\n");
+	printf("Number of iterations: %lu\n", num_runs);
+	printf("Average: %lf\n", average(times, num_runs));
+	printf("Median: %lf\n\n", median(times, num_runs));
+}
+
 void benchmark_ec_double_then_add() {
 	uint64_t num_runs = 2000;
 	uint64_t times[num_runs];
@@ -478,6 +499,26 @@ void benchmark_ec_double_then_addtwo_nonatomic() {
 	printf("Median: %lf\n\n", median(times, num_runs));
 }
 
+void benchmark_ec_endo_laffine() {
+	uint64_t num_runs = 2000;
+	uint64_t times[num_runs];
+	ec_point_lproj sum = ec_rand_point_lproj();
+
+	for(int i = 0; i < num_runs; i++) {
+		ec_point_laffine P = ec_rand_point_laffine();
+		uint64_t start = read_pmccntr();
+		ec_point_laffine R = ec_endo_laffine(P);
+		uint64_t end = read_pmccntr();
+		insert_sorted(end-start, times, i);
+		sum = ec_add_mixed(R, sum);
+	}
+	ec_print_hex(sum);
+	printf("BENCHMARK ec_endo_laffine\n");
+	printf("Number of iterations: %lu\n", num_runs);
+	printf("Average: %lf\n", average(times, num_runs));
+	printf("Median: %lf\n\n", median(times, num_runs));
+}
+
 void benchmark_ec_endo_lproj() {
 	uint64_t num_runs = 2000;
 	uint64_t times[num_runs];
@@ -510,9 +551,11 @@ void benchmark_ec_all() {
 	benchmark_ec_double_ptr();
 	benchmark_ec_double_mixed_ptr();
 	benchmark_ec_double_alt_ptr();
+	benchmark_ec_triple_mixed_ptr();
 	benchmark_ec_double_then_add_ptr();
 	benchmark_ec_double_then_addtwo_ptr();
 	//benchmark_ec_double_then_add_nonatomic();
 	//benchmark_ec_double_then_addtwo_nonatomic();
+	benchmark_ec_endo_laffine();
 	benchmark_ec_endo_lproj();
 }

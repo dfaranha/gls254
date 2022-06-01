@@ -174,7 +174,7 @@ void benchmark_ef_intrl_red_ptr() {
 }
 
 void benchmark_ef_intrl_inv() {
-	uint64_t num_runs = 20000;
+	uint64_t num_runs = 2000;
 	uint64_t times[num_runs];
 	ef_intrl_elem sum = ef_intrl_rand_elem();
 
@@ -194,7 +194,7 @@ void benchmark_ef_intrl_inv() {
 }
 
 void benchmark_ef_intrl_inv_in_const() {
-	uint64_t num_runs = 20000;
+	uint64_t num_runs = 2000;
 	uint64_t times[num_runs];
 	ef_intrl_elem sum = ef_intrl_rand_elem();
 
