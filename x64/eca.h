@@ -199,6 +199,62 @@ void eca_add_mix(__m128i *rx0, __m128i *rx1,
     return;
 }
 
+/* [pm > p] mixed addition */
+void eca_add_mix_complete(__m128i *rx0, __m128i *rx1,
+                 __m128i *rl0, __m128i *rl1,
+                 __m128i *rz0, __m128i *rz1,
+                 __m128i px0, __m128i px1,
+                 __m128i pl0, __m128i pl1,
+                 __m128i pz0, __m128i pz1,
+                 __m128i qx0, __m128i qx1,
+                 __m128i ql0, __m128i ql1) {
+    /* var */
+    __m128i a0, a1, b0, b1, c0, c1, d0, d1, e0, e1, msk0, msk1, msk2;
+    __m128i sx0, sx1, sl0, sl1, sz0, sz1;
+    __m128i ZERO = _mm_setzero_si128(), ONE = _mm_set_epi64x(0x0, 0x1);
+
+    /* (Xq2, Lq2, Zq2) = double_mix(xQ, lQ) */
+    eca_dbl_ful(&a0, &a1, &b0, &b1, &c0, &c1, qx0, qx1, ql0, ql1, ONE, ZERO);
+    /* (Xpq, Lpq, Zpq) = add_mix(Xp, Lp, Zp, xQ, lQ) */
+    eca_add_mix(&sx0, &sx1, &sl0, &sl1, &sz0, &sz1, px0, px1, pl0, pl1, pz0, pz1, qx0, qx1, ql0, ql1);
+    /* Xq = xQ * Zp, Lq = lQ * Zp */
+    low_mul(&d0, &d1, qx0, qx1, pz0, pz1);
+    low_mul(&e0, &e1, ql0, ql1, pz0, pz1);
+
+    /* if Zp == 0, return (xQ, lQ, 1) */
+    msk0 = _mm_and_si128(_mm_cmpeq_epi64(pz0, ZERO), _mm_cmpeq_epi64(pz1, ZERO));
+    /* if Xp == Xq and Lp == Lq, return (Xq2, Lq2, Zq2) */
+    msk1 = _mm_and_si128(_mm_and_si128(_mm_cmpeq_epi64(d0, px0), _mm_cmpeq_epi64(d1, px1)),
+                         _mm_and_si128(_mm_cmpeq_epi64(e0, pl0), _mm_cmpeq_epi64(e1, pl1)));
+    msk2 = _mm_or_si128(msk0, msk1);
+
+    *rx0 = *rx1 = *rl0 = *rl1 = *rz0 = *rz1 = ZERO;
+    *rx0 = _mm_xor_si128(*rx0, _mm_and_si128(qx0, msk0));
+    *rx1 = _mm_xor_si128(*rx1, _mm_and_si128(qx1, msk0));
+    *rl0 = _mm_xor_si128(*rl0, _mm_and_si128(ql0, msk0));
+    *rl1 = _mm_xor_si128(*rl1, _mm_and_si128(ql1, msk0));
+    *rz0 = _mm_xor_si128(*rz0, _mm_and_si128(ONE, msk0));
+    *rz1 = _mm_xor_si128(*rz1, _mm_and_si128(ZERO, msk0));
+
+    *rx0 = _mm_xor_si128(*rx0, _mm_and_si128(a0, msk1));
+    *rx1 = _mm_xor_si128(*rx1, _mm_and_si128(a1, msk1));
+    *rl0 = _mm_xor_si128(*rl0, _mm_and_si128(b0, msk1));
+    *rl1 = _mm_xor_si128(*rl1, _mm_and_si128(b1, msk1));
+    *rz0 = _mm_xor_si128(*rz0, _mm_and_si128(c0, msk1));
+    *rz1 = _mm_xor_si128(*rz1, _mm_and_si128(c1, msk1));
+
+    /* return (Xpq, Lpq, Zpq) */
+    *rx0 = _mm_xor_si128(*rx0, _mm_andnot_si128(msk2, sx0));
+    *rx1 = _mm_xor_si128(*rx1, _mm_andnot_si128(msk2, sx1));
+    *rl0 = _mm_xor_si128(*rl0, _mm_andnot_si128(msk2, sl0));
+    *rl1 = _mm_xor_si128(*rl1, _mm_andnot_si128(msk2, sl1));
+    *rz0 = _mm_xor_si128(*rz0, _mm_andnot_si128(msk2, sz0));
+    *rz1 = _mm_xor_si128(*rz1, _mm_andnot_si128(msk2, sz1));
+
+    /* end */
+    return;
+}
+
 /* [mm> p] mixed-mixed addition */
 void eca_add_mma(__m128i *rx0, __m128i *rx1,
                  __m128i *rl0, __m128i *rl1,
