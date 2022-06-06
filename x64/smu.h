@@ -91,13 +91,9 @@ void smu_pre_4nf(__m128i *ppx0, __m128i *ppx1,
 		__m128i *ppz0, __m128i *ppz1,
 		__m128i px0, __m128i px1, __m128i pl0, __m128i pl1) {
 	/* var */
-	__m128i ONE, ml00;
 	__m128i zin0[4], zin1[4];
 	__m128i tmp0[1], tmp1[1];
-
-	/* init */
-	ONE = _mm_set_epi64x(0x0, 0x1);
-	ml00 = _mm_xor_si128(pl0, ONE);
+	__m128i  ONE = _mm_set_epi64x(0x0, 0x1);
 
 	/* pre-computation */
 	/* P1 */
@@ -148,13 +144,9 @@ void smu_pre_5nf(__m128i *ppx0, __m128i *ppx1,
 		__m128i *ppz0, __m128i *ppz1,
 		__m128i px0, __m128i px1, __m128i pl0, __m128i pl1) {
 	/* var */
-	__m128i ONE, ml00;
+	__m128i ONE = _mm_set_epi64x(0x0, 0x1);
 	__m128i zin0[8], zin1[8];
 	__m128i tmp0[5], tmp1[5];
-
-	/* init */
-	ONE = _mm_set_epi64x(0x0, 0x1);
-	ml00 = _mm_xor_si128(pl0, ONE);
 
 	/* pre-computation */
 	/* P1 */
@@ -282,6 +274,8 @@ void smu_5nf_dna_ltr(__m128i *qx0, __m128i *qx1, __m128i *ql0, __m128i *ql1,
 	gls_recoding(k, k0, k1, &k0neg, &k1neg);
 	smu_reg_rec(dg0, k0, 5);
 	smu_reg_rec(dg1, k1, 5);
+	/* Negate endomorphism */
+    k1neg ^= 1;
 
 	/* pre computation */
 	smu_pre_5nf(ppx0, ppx1, ppl0, ppl1, ppz0, ppz1, px0, px1, pl0, pl1);

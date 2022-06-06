@@ -35,7 +35,7 @@ int crypto_dh_gls254prot_opt_keypair(unsigned char *pk, unsigned char *sk) {
 	pl1 = _mm_set_epi64x(0x0B3834B048C217C1, 0x1A1764D658204447);
 
 	/* Scalar multiplication. */
-	smu_4nf_dna_ltr(&px0, &px1, &pl0, &pl1, px0, px1, pl0, pl1, (uint64_t *)sk);
+	smu_5nf_dna_ltr(&px0, &px1, &pl0, &pl1, px0, px1, pl0, pl1, (uint64_t *)sk);
 
 	/* Write the result. */
 	ec_enc(pk, px0, px1, pl0, pl1);
@@ -52,7 +52,7 @@ int crypto_dh_gls254prot_opt(unsigned char *out, unsigned char *pk,
 
 	ec_dec(&px0, &px1, &pl0, &pl1, pk);
 
-	smu_4nf_dna_ltr(&px0, &px1, &pl0, &pl1, px0, px1, pl0, pl1, (uint64_t *)sk);
+	smu_5nf_dna_ltr(&px0, &px1, &pl0, &pl1, px0, px1, pl0, pl1, (uint64_t *)sk);
 
 	ec_enc(out, px0, px1, pl0, pl1);
 
