@@ -35,7 +35,7 @@ int crypto_dh_gls254prot_opt_keypair(unsigned char *pk, unsigned char *sk) {
 	pl1 = _mm_set_epi64x(0x0B3834B048C217C1, 0x1A1764D658204447);
 
 	/* Scalar multiplication. */
-	smu_3nf_2d_ltr(&px0, &px1, &pl0, &pl1, px0, px1, pl0, pl1, (uint64_t *)sk);
+	smu_5nf_dna_ltr(&px0, &px1, &pl0, &pl1, px0, px1, pl0, pl1, (uint64_t *)sk);
 
 	/* Write the result. */
 	ec_enc(pk, px0, px1, pl0, pl1);
@@ -102,6 +102,12 @@ static void ec_test() {
 	for (int i = 0; i < 4; i++) {
 		__builtin_ia32_rdrand64_step(&u[i]);
 	}
+
+	crypto_dh_generator(q);
+	crypto_dh_gls254prot_opt_keypair(p, (unsigned char*)u);
+	crypto_dh_gls254prot_opt(q, q, (unsigned char*)u);
+	assert(memcmp(p, q, 32) == 0);
+
 	l0 = _mm_loadu_si128((__m128i *) u);
 	l1 = _mm_loadu_si128((__m128i *) (u + 2));
 	ec_sw(&x0, &x1, &l0, &l1, l0, l1);
@@ -120,6 +126,8 @@ static void ec_test() {
 	memset(p, 0, sizeof(p));
 	assert(ec_dec(&x0, &x1, &l0, &l1, p) == 0);
 	assert(ec_ok(x0, x1, l0, l1) == 0);
+
+
 }
 
 static void dh_test() {

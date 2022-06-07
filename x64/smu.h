@@ -610,8 +610,9 @@ void smu_3nf_2d_ltr(__m128i *qx0, __m128i *qx1, __m128i *ql0, __m128i *ql1,
 	sig0 ^= k0n;
 	sig1 ^= k1n;
 	cnd0 = -(sig0 ^ sig1);
-	abs0 ^= (abs0 ^ abs1) & cnd0;
-	abs1 ^= (abs0 ^ abs1) & cnd0;
+	ind0 = (abs0 ^ abs1) & cnd0;
+	abs0 ^= ind0;
+	abs1 ^= ind0;
 	ind0 = 2 * abs0 + abs1;
 
 	smu_get_flg(dg0, 62, msk, abs0, sig2);
@@ -619,8 +620,9 @@ void smu_3nf_2d_ltr(__m128i *qx0, __m128i *qx1, __m128i *ql0, __m128i *ql1,
 	sig2 ^= k0n;
 	sig3 ^= k1n;
 	cnd1 = -(sig2 ^ sig3);
-	abs0 ^= (abs0 ^ abs1) & cnd1;
-	abs1 ^= (abs0 ^ abs1) & cnd1;
+	ind1 = (abs0 ^ abs1) & cnd1;
+	abs0 ^= ind1;
+	abs1 ^= ind1;
 	ind1 = 2 * abs0 + abs1;
 
     /* linear pass */
@@ -646,7 +648,7 @@ void smu_3nf_2d_ltr(__m128i *qx0, __m128i *qx1, __m128i *ql0, __m128i *ql1,
 	eca_dbl_mix(qx0, qx1, ql0, ql1, &qz0, &qz1, *qx0, *qx1, *ql0, *ql1);
 
 	smu_psi_end_cond(e1x0, e1x1, e1l0, e1l1, a1x0, a1x1, a1l0, a1l1,
-		_mm_set_epi64x(sig2 ^ sig3, sig3), _mm_set_epi64x(cnd1, cnd1));
+		_mm_set_epi64x(sig2 ^ sig3, 0x0), _mm_set_epi64x(cnd1, cnd1));
 
 	e1l0 = _mm_xor_si128(e1l0, _mm_set_epi64x(0x0, sig3));
 	eca_dbl_add(qx0, qx1, ql0, ql1, &qz0, &qz1,
@@ -665,8 +667,9 @@ void smu_3nf_2d_ltr(__m128i *qx0, __m128i *qx1, __m128i *ql0, __m128i *ql1,
 		sig0 ^= k0n;
 		sig1 ^= k1n;
 		cnd0 = -(sig0 ^ sig1);
-		abs0 ^= (abs0 ^ abs1) & cnd0;
-		abs1 ^= (abs0 ^ abs1) & cnd0;
+		ind0 = (abs0 ^ abs1) & cnd0;
+		abs0 ^= ind0;
+		abs1 ^= ind0;
 		ind0 = 2 * abs0 + abs1;
 
 		smu_get_flg(dg0, i-1, msk, abs0, sig2);
@@ -675,8 +678,9 @@ void smu_3nf_2d_ltr(__m128i *qx0, __m128i *qx1, __m128i *ql0, __m128i *ql1,
 		sig2 ^= k0n;
 		sig3 ^= k1n;
 		cnd1 = -(sig2 ^ sig3);
-		abs0 ^= (abs0 ^ abs1) & cnd1;
-		abs1 ^= (abs0 ^ abs1) & cnd1;
+		ind1 = (abs0 ^ abs1) & cnd1;
+		abs0 ^= ind1;
+		abs1 ^= ind1;
 		ind1 = 2 * abs0 + abs1;
 
 		/* linear pass */
