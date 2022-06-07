@@ -407,21 +407,15 @@ void eca_dbl_add(__m128i *rx0, __m128i *rx1,
                  __m128i qx0, __m128i qx1,
                  __m128i ql0, __m128i ql1) {
     /* var */
-    __m128i d0, d1, e0, e1, f0, f1, s0, s1;
+    __m128i d0, d1, e0, e1, x0, x1, s0, s1;
     __m128i t0, t1, a0, a1, b0, b1, c0, c1;
-    __m128i x0, x1;
-    __m128i ONE;
-
-    /* init */
-    ONE = _mm_set_epi64x(0x0, 0x1);
+    __m128i ONE = _mm_set_epi64x(0x0, 0x1);
 
     /* point doubling-and-addition */
     /* D */
     low_sqr(&d0, &d1, pl0, pl1);
     /* E */
     low_sqr(&e0, &e1, pz0, pz1);
-    /* F */
-    f0 = _mm_xor_si128(ql0, ONE); f1 = ql1;
     /* S */
     low_mul(&s0, &s1, qx0, qx1, e0, e1);
 
@@ -433,7 +427,7 @@ void eca_dbl_add(__m128i *rx0, __m128i *rx1,
     /* A */
     low_sqr(&a0, &a1, px0, px1);
     low_mul(&a0, &a1, a0, a1, e0, e1);
-    x0 = _mm_xor_si128(f0, _mm_slli_si128(ONE, 8)); x1 = f1;
+    x0 = _mm_xor_si128(ql0, _mm_set_epi64x(0x1, 0x1)); x1 = ql1;
     low_mul(&x0, &x1, x0, x1, e0, e1);
     x0 = _mm_xor_si128(x0, d0); x1 = _mm_xor_si128(x1, d1);
     low_mul(&x0, &x1, x0, x1, t0, t1);
@@ -449,10 +443,11 @@ void eca_dbl_add(__m128i *rx0, __m128i *rx1,
     low_mul(rz0, rz1, a0, a1, b0, b1);
     low_mul(rz0, rz1, *rz0, *rz1, e0, e1);
     /* rl */
+    ql0 = _mm_xor_si128(ql0, ONE);
     *rl0 = _mm_xor_si128(a0, b0); *rl1 = _mm_xor_si128(a1, b1);
     low_sqr(rl0, rl1, *rl0, *rl1);
     low_mul(rl0, rl1, *rl0, *rl1, t0, t1);
-    low_mul(&x0, &x1, f0, f1, *rz0, *rz1);
+    low_mul(&x0, &x1, ql0, ql1, *rz0, *rz1);
     *rl0 = _mm_xor_si128(*rl0, x0); *rl1 = _mm_xor_si128(*rl1, x1);
 
     /* end */
@@ -473,7 +468,7 @@ void eca_dbl_add_sub(__m128i *sx0, __m128i *sx1,
                     __m128i ql0, __m128i ql1) {
     /* var */
     __m128i a0, a1, b0, b1, c0, c1, t0, t1, x0, x1;
-    __m128i ONE;
+    __m128i ONE = _mm_set_epi64x(0x0, 0x1);
 
     /* point doubling */
     /* B */
@@ -514,7 +509,6 @@ void eca_dbl_add_sub(__m128i *sx0, __m128i *sx1,
     b1 = _mm_xor_si128(b1, *sx1);
     low_sqr(&b0, &b1, b0, b1);
 
-    ONE = _mm_set_epi64x(0x0, 0x1);
     /* Xpq = A^2 * C. */
     low_sqr(&t0, &t1, a0, a1);
     low_mul(rx0, rx1, t0, t1, c0, c1);
@@ -565,10 +559,7 @@ void eca_dbl_add_add(__m128i *rx0, __m128i *rx1,
     __m128i d0, d1, e0, e1, f0, f1, s0, s1;
     __m128i t0, t1, a0, a1, b0, b1, c0, c1;
     __m128i x0, x1;
-    __m128i ONE;
-
-    /* init */
-    ONE = _mm_set_epi64x(0x0, 0x1);
+    __m128i ONE = _mm_set_epi64x(0x0, 0x1);
 
     /* point doubling-and-addition */
     /* D */
