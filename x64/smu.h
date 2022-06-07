@@ -528,8 +528,8 @@ void smu_pre_3nf_2d(__m128i *ppx0, __m128i *ppx1,
 	eca_add_mma(&ppx0[0], &ppx1[0], &ppl0[0], &ppl1[0], &ppz0[0], &ppz1[0],
 		ppx0[0], ppx1[0], ppl0[0], ppl1[0], px0, px1, pl0, pl1);
 	/* Compute 2P and \psi(2P). */
-	eca_dbl_ful(&tmp0[0], &tmp0[1], &tmp0[2], &tmp0[3], &tmp0[4], &tmp0[5],
-		px0, px1, pl0, pl1, ONE, _mm_setzero_si128());
+	eca_dbl_mix(&tmp0[0], &tmp0[1], &tmp0[2], &tmp0[3], &tmp0[4], &tmp0[5],
+		px0, px1, pl0, pl1);
 	smu_psi_end_prj(tmp1[0], tmp1[1], tmp1[2], tmp1[3], tmp1[4], tmp1[5],
 		tmp0[0], tmp0[1], tmp0[2], tmp0[3], tmp0[4], tmp0[5], A);
 	/* P + \psi(3P) */
@@ -642,11 +642,8 @@ void smu_3nf_2d_ltr(__m128i *qx0, __m128i *qx1, __m128i *ql0, __m128i *ql1,
     *qx1 = e1x1;
 	*ql0 = _mm_xor_si128(e1l0, _mm_set_epi64x(0x0, sig1));
 	*ql1 = e1l1;
-	qz0 = _mm_set_epi64x(0x0, 0x1);
-	qz1 = _mm_setzero_si128();
 
-	eca_dbl_ful(qx0, qx1, ql0, ql1, &qz0, &qz1,
-			*qx0, *qx1, *ql0, *ql1, qz0, qz1);
+	eca_dbl_mix(qx0, qx1, ql0, ql1, &qz0, &qz1, *qx0, *qx1, *ql0, *ql1);
 
 	smu_psi_end_cond(e1x0, e1x1, e1l0, e1l1, a1x0, a1x1, a1l0, a1l1,
 		_mm_set_epi64x(sig2 ^ sig3, sig3), _mm_set_epi64x(cnd1, cnd1));

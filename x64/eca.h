@@ -62,6 +62,35 @@ void ec_print_prj(__m128i px0, __m128i px1, __m128i pl0, __m128i pl1, __m128i pz
 }
 
 /* [p > p] full doubling alternative */
+void eca_dbl_mix(__m128i *rx0, __m128i *rx1,
+                 __m128i *rl0, __m128i *rl1,
+                 __m128i *rz0, __m128i *rz1,
+                 __m128i px0, __m128i px1,
+                 __m128i pl0, __m128i pl1) {
+    /* var */
+    __m128i c0, c1, t0, t1;
+
+    /* point doubling */
+    /* T */
+    low_sqr(&t0, &t1, pl0, pl1);
+    t0 = _mm_xor_si128(t0, pl0); t1 = _mm_xor_si128(t1, pl1);
+    t0 = _mm_xor_si128(t0, _mm_set_epi64x(0x1, 0));
+    /* rz */
+    *rz0 = t0; *rz1 = t1;
+    /* rx */
+    low_sqr(rx0, rx1, t0, t1);
+    /* rl */
+    low_sqr(rl0, rl1, px0, px1);
+    low_mul(&c0, &c1, pl0, pl1, t0, t1);
+    *rl0 = _mm_xor_si128(*rl0, c0); *rl1 = _mm_xor_si128(*rl1, c1);
+    *rl0 = _mm_xor_si128(*rl0, *rz0); *rl1 = _mm_xor_si128(*rl1, *rz1);
+    *rl0 = _mm_xor_si128(*rl0, *rx0); *rl1 = _mm_xor_si128(*rl1, *rx1);
+
+    /* end */
+    return;
+}
+
+/* [p > p] full doubling alternative */
 void eca_dbl_ful(__m128i *rx0, __m128i *rx1,
                  __m128i *rl0, __m128i *rl1,
                  __m128i *rz0, __m128i *rz1,
