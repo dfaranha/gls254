@@ -172,7 +172,7 @@ void smu_pre_4nf(__m128i *ppx0, __m128i *ppx1,
 	low_mul(&zin0[0], &zin1[0], tmp0[0], tmp1[0], ppz0[3], ppz1[3]);
 
 	/* part II */
-	low_inv(&zin0[0], &zin1[0], zin0[0], zin1[0]);
+	low_inv_var(&zin0[0], &zin1[0], zin0[0], zin1[0]);
 
 	/* part III */
 	low_mul(&zin0[3], &zin1[3], zin0[0], zin1[0], tmp0[0], tmp1[0]);
@@ -296,7 +296,7 @@ void smu_4nf_dna_ltr(__m128i *qx0, __m128i *qx1, __m128i *ql0, __m128i *ql1,
 	}
 
 	/* to afffine */
-	low_inv(&qz0, &qz1, qz0, qz1);
+	low_inv_var(&qz0, &qz1, qz0, qz1);
 	low_mul(qx0, qx1, *qx0, *qx1, qz0, qz1);
 	low_mul(ql0, ql1, *ql0, *ql1, qz0, qz1);
 
@@ -552,7 +552,7 @@ void smu_pre_3nf_2d(__m128i *ppx0, __m128i *ppx1,
 	low_mul(&zin0[0], &zin1[0], tmp0[1], tmp1[1], ppz0[3], ppz1[3]);
 
 	/* part II */
-	low_inv(&zin0[0], &zin1[0], zin0[0], zin1[0]);
+	low_inv_var(&zin0[0], &zin1[0], zin0[0], zin1[0]);
 
 	/* part III */
 	low_mul(&zin0[3], &zin1[3], zin0[0], zin1[0], tmp0[1], tmp1[1]);
