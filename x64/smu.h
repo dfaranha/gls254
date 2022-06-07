@@ -708,8 +708,16 @@ void smu_3nf_2d_ltr(__m128i *qx0, __m128i *qx1, __m128i *ql0, __m128i *ql1,
 		smu_psi_end_cond(e1x0, e1x1, e1l0, e1l1, a1x0, a1x1, a1l0, a1l1,
 			_mm_set_epi64x(sig2 ^ sig3, 0x0), _mm_set_epi64x(cnd1, cnd1));
 
-		eca_dbl_add(qx0, qx1, ql0, ql1, &qz0, &qz1,
-			*qx0, *qx1, *ql0, *ql1, qz0, qz1, e1x0, e1x1, e1l0, e1l1);
+		if (i == 1) {
+			eca_dbl_ful(qx0, qx1, ql0, ql1, &qz0, &qz1,
+					*qx0, *qx1, *ql0, *ql1, qz0, qz1);
+			eca_add_mix_complete(qx0, qx1, ql0, ql1, &qz0, &qz1,
+					*qx0, *qx1, *ql0, *ql1, qz0, qz1, e1x0, e1x1, e1l0, e1l1);
+		} else {
+			eca_dbl_add(qx0, qx1, ql0, ql1, &qz0, &qz1,
+				*qx0, *qx1, *ql0, *ql1, qz0, qz1, e1x0, e1x1, e1l0, e1l1);
+		}
+
 	}
 
 	/* to afffine */
