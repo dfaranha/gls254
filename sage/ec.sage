@@ -205,12 +205,13 @@ def double_add_sub_mix(Xq, Lq, Zq, xP, lP):
     mt += 15
     sq += 9
     ma += 1
+    mb += 1
 
     T = Lq^2 + Lq * Zq + a * Zq^2
     X2 = T^2
     Z2 = T * Zq^2
-    L2 = (Xq * Zq)^2 + X2 + T * (Lq * Zq) + Z2
-    #4m + 4s
+    L2 = (Lq + Xq)^2 * ((Lq + Xq)^2 + T + Zq^2) + (a^2 + b) * Zq^4 + X2 + (a + 1) * Z2
+    #3m + ma + mb + 4s
 
     A = lP * Z2 + L2
     B = (xP*Z2 + X2)^2
@@ -225,7 +226,7 @@ def double_add_sub_mix(Xq, Lq, Zq, xP, lP):
     Xpmq = Xpq + C * Z2^2
     Zpmq = Zpq + B * Z2^2
     Lpmq = Lpq + (Z2*X2)^2 + Zpq + (B * Z2^2)*lP
-    #4 m
+    #4m
     return (Xpq, Lpq, Zpq, Xpmq, Lpmq, Zpmq)
 
 def double_add_add(Xq, Lq, Zq, xP1, lP1, xP2, lP2):
@@ -417,7 +418,7 @@ def smu_double_add_glv_reg(xP, lP, scalar, w = 4):
             (xP1, lP1) = neg_aff(xP1, lP1)
         if k2r[i] < 0:
             (xP2, lP2) = neg_aff(xP2, lP2)
-        
+
         if i == 0: #Complete formula at last iteration
             (Xq, Lq, Zq) = doubleb_prj(Xq, Lq, Zq)
             (Xq, Lq, Zq) = add_mix_complete(Xq, Lq, Zq, xP1, lP1)
@@ -432,7 +433,7 @@ def smu_double_add_glv_reg(xP, lP, scalar, w = 4):
 
 def smu_double_add_glv_reg_tab(xP, lP, scalar, w = 4):
     global inv, mt, ma, mb, sq
-    
+
     #b = F2m(z^49 + z^25 + 1)
     n, r, t, mu = curve_details(b)
     alpha1, alpha2, c1, c2, d = decomp_precomp(n, t)

@@ -66,7 +66,7 @@
     re1 = _mm_xor_si128(re1, re2);
 
 /* [F_q^2] Karatsuba multiplication */
-void low_mul(__m128i * re_0, __m128i * re_1, __m128i op00, __m128i op01,
+void low_mul(__m128i *re_0, __m128i *re_1, __m128i op00, __m128i op01,
 		__m128i op10, __m128i op11) {
 	/* var */
 	__m128i a00, a01, a02;
@@ -128,7 +128,7 @@ void low_mul(__m128i * re_0, __m128i * re_1, __m128i op00, __m128i op01,
 }
 
 /* [F_q^2] multiplication by (1 + u) */
-void low_mul_01u(__m128i * re_0, __m128i * re_1, __m128i op00, __m128i op01) {
+void low_mul_01u(__m128i *re_0, __m128i *re_1, __m128i op00, __m128i op01) {
 	/* var */
 	__m128i t00, t01;
 
@@ -148,7 +148,7 @@ void low_mul_01u(__m128i * re_0, __m128i * re_1, __m128i op00, __m128i op01) {
 }
 
 /* [F_q^2] multiplication by (0 + u) */
-void low_mul_00u(__m128i * re_0, __m128i * re_1, __m128i op00, __m128i op01) {
+void low_mul_00u(__m128i *re_0, __m128i *re_1, __m128i op00, __m128i op01) {
 	/* var */
 	__m128i t00, t01;
 
@@ -168,7 +168,7 @@ void low_mul_00u(__m128i * re_0, __m128i * re_1, __m128i op00, __m128i op01) {
 }
 
 /* [F_q^2] multiplication by (x^27 + u) */
-void low_mul_027(__m128i * re_0, __m128i * re_1, __m128i op00, __m128i op01) {
+void low_mul_027(__m128i *re_0, __m128i *re_1, __m128i op00, __m128i op01) {
 	/* var */
 	__m128i l01, r00;
 	__m128i alp, bet, gam;
@@ -193,7 +193,7 @@ void low_mul_027(__m128i * re_0, __m128i * re_1, __m128i op00, __m128i op01) {
 }
 
 /* [F_q^2] multiplication by (x^27 + u) */
-void low_mul_27u(__m128i * re_0, __m128i * re_1, __m128i op00, __m128i op01) {
+void low_mul_27u(__m128i *re_0, __m128i *re_1, __m128i op00, __m128i op01) {
 	/* var */
 	__m128i l01, r00;
 	__m128i alp, bet, gam;
@@ -231,7 +231,7 @@ void low_mul_27u(__m128i * re_0, __m128i * re_1, __m128i op00, __m128i op01) {
 }
 
 /* [F_q^2] multiplication by (b \in Fq) */
-void low_mul_fq1(__m128i * c_00, __m128i * c_01, __m128i a_00, __m128i a_01,
+void low_mul_fq1(__m128i *c_00, __m128i *c_01, __m128i a_00, __m128i a_01,
 		__m128i b_00) {
 	/* var */
 	__m128i re00, re01, im00, im01;
@@ -262,7 +262,7 @@ void low_mul_fq1(__m128i * c_00, __m128i * c_01, __m128i a_00, __m128i a_01,
 }
 
 /* [F_q  ] Karatsuba multiplication */
-void low_mul_bas(__m128i * re_0, __m128i op00, __m128i op10) {
+void low_mul_bas(__m128i *re_0, __m128i op00, __m128i op10) {
 	/* var */
 	__m128i a00, a01, a02;
 	__m128i k00, k01, k02;
@@ -293,7 +293,7 @@ void low_mul_bas(__m128i * re_0, __m128i op00, __m128i op10) {
 
 /* squaring */
 /* [F_q^2] squaring */
-void low_sqr(__m128i * re_0, __m128i * re_1, __m128i op00, __m128i op01) {
+void low_sqr(__m128i *re_0, __m128i *re_1, __m128i op00, __m128i op01) {
 	/* var */
 	__m128i a00, a01;
 	__m128i sal, sbe, sga, sde, st0, st1;
@@ -323,7 +323,7 @@ void low_sqr(__m128i * re_0, __m128i * re_1, __m128i op00, __m128i op01) {
 }
 
 /* [F_q  ] squaring */
-void low_sqr_bas(__m128i * re_0, __m128i op00) {
+void low_sqr_bas(__m128i *re_0, __m128i op00) {
 	/* var */
 	__m128i sal, sbe;
 	__m128i t00, t01;
@@ -351,7 +351,7 @@ void low_sqr_bas(__m128i * re_0, __m128i op00) {
     low_red_128_064_001_sqr_bas(sal,sbe,t00,t01,*re_0);
 
 /* [F_q  ] three squarings */
-void low_sqr_003_bas(__m128i * re_0, __m128i op00) {
+void low_sqr_003_bas(__m128i *re_0, __m128i op00) {
 	/* var */
 	__m128i sal, sbe;
 	__m128i t00, t01;
@@ -364,7 +364,7 @@ void low_sqr_003_bas(__m128i * re_0, __m128i op00) {
 }
 
 /* [F_q  ] six squarings */
-void low_sqr_006_bas(__m128i * re_0, __m128i op00) {
+void low_sqr_006_bas(__m128i *re_0, __m128i op00) {
 	/* var */
 	__m128i sal, sbe;
 	__m128i t00, t01;
@@ -378,7 +378,7 @@ void low_sqr_006_bas(__m128i * re_0, __m128i op00) {
 }
 
 /* [F_q  ] fifteen squarings */
-void low_sqr_015_bas(__m128i * re_0, __m128i op00) {
+void low_sqr_015_bas(__m128i *re_0, __m128i op00) {
 	/* var */
 	__m128i sal, sbe;
 	__m128i t00, t01;
@@ -395,7 +395,7 @@ void low_sqr_015_bas(__m128i * re_0, __m128i op00) {
 }
 
 /* [F_q  ] thirty squarings */
-void low_sqr_030_bas(__m128i * re_0, __m128i op00) {
+void low_sqr_030_bas(__m128i *re_0, __m128i op00) {
 	/* var */
 	__m128i sal, sbe;
 	__m128i t00, t01;
@@ -417,7 +417,7 @@ void low_sqr_030_bas(__m128i * re_0, __m128i op00) {
 }
 
 /* [F_q  ] sixty-three squarings */
-void low_sqr_063_bas(__m128i * re_0, __m128i op00) {
+void low_sqr_063_bas(__m128i *re_0, __m128i op00) {
 	/* var */
 	__m128i sal, sbe;
 	__m128i t00, t01;
@@ -577,7 +577,7 @@ void low_inv_tbl(__m128i *_b, __m128i a) {
 }
 
 /* [F_q^2] inversion */
-void low_inv_var(__m128i * re_0, __m128i * re_1, __m128i op00, __m128i op01) {
+void low_inv_var(__m128i *re_0, __m128i *re_1, __m128i op00, __m128i op01) {
 	/* var */
 	__m128i are, aim, cre, cim;
 	__m128i t00, t01, t02;
@@ -607,7 +607,7 @@ void low_inv_var(__m128i * re_0, __m128i * re_1, __m128i op00, __m128i op01) {
 
 /* inversion */
 /* [F_q  ] inversion */
-void low_inv_bas(__m128i * re_0, __m128i op00) {
+void low_inv_bas(__m128i *re_0, __m128i op00) {
 	/* var */
 	__m128i a00, a01, a03;
 
@@ -646,7 +646,7 @@ void low_inv_bas(__m128i * re_0, __m128i op00) {
 }
 
 /* [F_q^2] inversion */
-void low_inv(__m128i * re_0, __m128i * re_1, __m128i op00, __m128i op01) {
+void low_inv(__m128i *re_0, __m128i *re_1, __m128i op00, __m128i op01) {
 	/* var */
 	__m128i are, aim, cre, cim;
 	__m128i t00, t01, t02;
@@ -674,7 +674,28 @@ void low_inv(__m128i * re_0, __m128i * re_1, __m128i op00, __m128i op01) {
 	return;
 }
 
-void low_sqrt(__m128i * re_0, __m128i * re_1, __m128i op00, __m128i op01) {
+void low_inv_sim(__m128i *o0, __m128i *o1, __m128i *i0, __m128i *i1, uint64_t len, int ct) {
+    __m128i u0, u1, c0[len], c1[len];
+
+	c0[0] = i0[0];
+    c1[0] = i1[0];
+	for(int i = 1; i < len; i++) {
+        low_mul(&c0[i], &c1[i], c0[i-1], c1[i-1], i0[i], i1[i]);
+	}
+    if (ct) {
+        low_inv(&u0, &u1, c0[len - 1], c1[len - 1]);
+    } else {
+        low_inv_var(&u0, &u1, c0[len - 1], c1[len - 1]);
+    }
+	for(int i = len-1; i >= 1; i--) {
+        low_mul(&o0[i], &o1[i], u0, u1, c0[i-1], c1[i-1]);
+		low_mul(&u0, &u1, u0, u1, i0[i], i1[i]);
+	}
+    o0[0] = u0;
+    o1[0] = u1;
+}
+
+void low_sqrt(__m128i *re_0, __m128i *re_1, __m128i op00, __m128i op01) {
 	__m128i a0, aL, aH, uu0, uu1, vv0, vv1;
 	__m128i ma, mb;
 	uint64_t uu[2], vv[2];
@@ -784,7 +805,7 @@ void low_htr_tbl(__m128i *b, __m128i _a) {
 	*b = r0;
 }
 
-void low_htr(__m128i * re_0, __m128i * re_1, __m128i op00, __m128i op01) {
+void low_htr(__m128i *re_0, __m128i *re_1, __m128i op00, __m128i op01) {
 	__m128i ma, a0, a1, b0, b1;
 
 	a0 = _mm_unpacklo_epi64(op00, op01);
@@ -800,7 +821,7 @@ void low_htr(__m128i * re_0, __m128i * re_1, __m128i op00, __m128i op01) {
 	*re_1 = _mm_unpackhi_epi64(b0, b1);
 }
 
-void low_htr_bas(__m128i * b, __m128i a) {
+void low_htr_bas(__m128i *b, __m128i a) {
 	int i, j;
 	__m128i t, _b;
 
@@ -815,7 +836,7 @@ void low_htr_bas(__m128i * b, __m128i a) {
 	*b = _b;
 }
 
-void low_htr_const(__m128i * re_0, __m128i * re_1, __m128i op00, __m128i op01) {
+void low_htr_const(__m128i *re_0, __m128i *re_1, __m128i op00, __m128i op01) {
     __m128i ma, a0, a1, b0, b1;
 
 	a0 = _mm_unpacklo_epi64(op00, op01);
