@@ -768,24 +768,24 @@ void ec_precompute_w4_table2D_nonopt_ptr(ec_point_laffine *P, ec_point_laffine t
 void ec_precompute_w4_table2D_ptr(ec_point_laffine *P, ec_point_laffine table[]) {
 	ef_intrl_elem inv_inputs[16];
 	ef_intrl_elem inv_outputs[16];
-	
-	ec_point_lproj tmp_table_proj[4];
-	ec_point_lproj P2;
-	ec_double_mixed_ptr(P, &P2);
-	ec_laffine_to_lproj_ptr(P, &tmp_table_proj[0]);
-	ec_add_mixed_unchecked_ptr(P, &P2, &tmp_table_proj[1]);
-	ec_double_then_add_ptr(P, &P2, &tmp_table_proj[2]);
-	ec_double_then_add_ptr(P, &tmp_table_proj[1], &tmp_table_proj[3]);
-	inv_inputs[0] = tmp_table_proj[1].z;
-	inv_inputs[1] = tmp_table_proj[2].z;
-	inv_inputs[2] = tmp_table_proj[3].z;
+	ec_point_lproj tmp_table_proj[3];
+	ec_point_lproj tmp;
+
+	ec_triple_mixed_ptr(P, &tmp_table_proj[0]);
+	ec_double_alt_ptr(&tmp_table_proj[0], &tmp);
+	ec_add_sub_mixed_unchecked_ptr(P, &tmp, &tmp_table_proj[2], &tmp_table_proj[1]);
+	ec_neg_mut(&tmp_table_proj[1]);
+
+	inv_inputs[0] = tmp_table_proj[0].z;
+	inv_inputs[1] = tmp_table_proj[1].z;
+	inv_inputs[2] = tmp_table_proj[2].z;
 	
 	//Converting table to affine
 	ef_intrl_sim_inv(inv_inputs, inv_outputs, 3, 0);
 	ec_point_laffine tmp_table[4];
 	tmp_table[0] = *P;
 	for (int i = 1; i < 4; i++) {
-		tmp_table[i] = (ec_point_laffine) {ef_intrl_mull(tmp_table_proj[i].x, inv_outputs[i-1]), ef_intrl_mull(tmp_table_proj[i].l, inv_outputs[i-1])};
+		tmp_table[i] = (ec_point_laffine) {ef_intrl_mull(tmp_table_proj[i-1].x, inv_outputs[i-1]), ef_intrl_mull(tmp_table_proj[i-1].l, inv_outputs[i-1])};
 	}
 	
 	//Computing table in projective coords
