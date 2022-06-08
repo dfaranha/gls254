@@ -146,8 +146,7 @@ void smu_pre_4nf(__m128i *ppx0, __m128i *ppx1,
 		__m128i px0, __m128i px1, __m128i pl0, __m128i pl1) {
 	/* var */
 	__m128i zin0[4], zin1[4];
-	__m128i tmp0[1], tmp1[1];
-	__m128i ONE = _mm_set_epi64x(0x0, 0x1);
+	__m128i tmp0, tmp1;
 
 	/* pre-computation */
 	/* P1 */
@@ -168,19 +167,11 @@ void smu_pre_4nf(__m128i *ppx0, __m128i *ppx1,
 
 	/* inversion: montgomery`s trick */
 	/* part I */
-	low_mul(&tmp0[0], &tmp1[0], ppz0[1], ppz1[1], ppz0[2], ppz1[2]);
-	low_mul(&zin0[0], &zin1[0], tmp0[0], tmp1[0], ppz0[3], ppz1[3]);
-
-	/* part II */
-	low_inv_var(&zin0[0], &zin1[0], zin0[0], zin1[0]);
-
-	/* part III */
-	low_mul(&zin0[3], &zin1[3], zin0[0], zin1[0], tmp0[0], tmp1[0]);
-	low_mul(&zin0[0], &zin1[0], zin0[0], zin1[0], ppz0[3], ppz1[3]);
-	low_mul(&zin0[1], &zin1[1], zin0[0], zin1[0], ppz0[2], ppz1[2]);
-	low_mul(&zin0[2], &zin1[2], zin0[0], zin1[0], ppz0[1], ppz1[1]);
+	low_mul(&tmp0, &tmp1, ppz0[1], ppz1[1], ppz0[2], ppz1[2]);
+	low_mul(&zin0[0], &zin1[0], tmp0, tmp1, ppz0[3], ppz1[3]);
 
 	/* to affine */
+	low_inv_sim(zin0+1, zin1+1, ppz0+1, ppz1+1, 3, 1);
 	low_mul(&ppx0[1], &ppx1[1], ppx0[1], ppx1[1], zin0[1], zin1[1]);
 	low_mul(&ppl0[1], &ppl1[1], ppl0[1], ppl1[1], zin0[1], zin1[1]);
 	low_mul(&ppx0[2], &ppx1[2], ppx0[2], ppx1[2], zin0[2], zin1[2]);
@@ -346,33 +337,7 @@ void smu_pre_5nf(__m128i *ppx0, __m128i *ppx1,
 			ppx0[3], ppx1[3], ppl0[3], ppl1[3], ppz0[3], ppz1[3],
 			px0, px1, pl0, pl1);
 
-	/* inversion: montgomery`s trick */
-	/* part I */
-	low_mul(&tmp0[0], &tmp1[0], ppz0[1], ppz1[1], ppz0[2], ppz1[2]);
-	low_mul(&tmp0[1], &tmp1[1], tmp0[0], tmp1[0], ppz0[3], ppz1[3]);
-	low_mul(&tmp0[2], &tmp1[2], tmp0[1], tmp1[1], ppz0[4], ppz1[4]);
-	low_mul(&tmp0[3], &tmp1[3], tmp0[2], tmp1[2], ppz0[5], ppz1[5]);
-	low_mul(&tmp0[4], &tmp1[4], tmp0[3], tmp1[3], ppz0[6], ppz1[6]);
-	low_mul(&zin0[0], &zin1[0], tmp0[4], tmp1[4], ppz0[7], ppz1[7]);
-
-	/* part II */
-	low_inv_var(&zin0[0], &zin1[0], zin0[0], zin1[0]);
-
-	/* part III */
-	low_mul(&zin0[7], &zin1[7], zin0[0], zin1[0], tmp0[4], tmp1[4]);
-	low_mul(&zin0[0], &zin1[0], zin0[0], zin1[0], ppz0[7], ppz1[7]);
-	low_mul(&zin0[6], &zin1[6], zin0[0], zin1[0], tmp0[3], tmp1[3]);
-	low_mul(&zin0[0], &zin1[0], zin0[0], zin1[0], ppz0[6], ppz1[6]);
-	low_mul(&zin0[5], &zin1[5], zin0[0], zin1[0], tmp0[2], tmp1[2]);
-	low_mul(&zin0[0], &zin1[0], zin0[0], zin1[0], ppz0[5], ppz1[5]);
-	low_mul(&zin0[4], &zin1[4], zin0[0], zin1[0], tmp0[1], tmp1[1]);
-	low_mul(&zin0[0], &zin1[0], zin0[0], zin1[0], ppz0[4], ppz1[4]);
-	low_mul(&zin0[3], &zin1[3], zin0[0], zin1[0], tmp0[0], tmp1[0]);
-	low_mul(&zin0[0], &zin1[0], zin0[0], zin1[0], ppz0[3], ppz1[3]);
-	low_mul(&zin0[1], &zin1[1], zin0[0], zin1[0], ppz0[2], ppz1[2]);
-	low_mul(&zin0[2], &zin1[2], zin0[0], zin1[0], ppz0[1], ppz1[1]);
-
-	/* to affine */
+	low_inv_sim(zin0+1, zin1+1, ppz0+1, ppz1+1, 7, 1);
 	low_mul(&ppx0[1], &ppx1[1], ppx0[1], ppx1[1], zin0[1], zin1[1]);
 	low_mul(&ppl0[1], &ppl1[1], ppl0[1], ppl1[1], zin0[1], zin1[1]);
 	low_mul(&ppx0[2], &ppx1[2], ppx0[2], ppx1[2], zin0[2], zin1[2]);
@@ -511,7 +476,6 @@ void smu_5nf_dna_ltr(__m128i *qx0, __m128i *qx1, __m128i *ql0, __m128i *ql1,
 	return;
 }
 
-/* 5-NAF pre-computation */
 void smu_pre_3nf_2d(__m128i *ppx0, __m128i *ppx1,
 		__m128i *ppl0, __m128i *ppl1,
 		__m128i *ppz0, __m128i *ppz1,
@@ -545,24 +509,7 @@ void smu_pre_3nf_2d(__m128i *ppx0, __m128i *ppx1,
 		ppx0[1], ppx1[1], ppl0[1], ppl1[1], ppz0[1], ppz1[1],
 		tmp0[0], tmp0[1], tmp0[2], tmp0[3], tmp0[4], tmp0[5]);
 
-	/* inversion: montgomery`s trick */
-	/* part I */
-	low_mul(&tmp0[0], &tmp1[0], ppz0[0], ppz1[0], ppz0[1], ppz1[1]);
-	low_mul(&tmp0[1], &tmp1[1], tmp0[0], tmp1[0], ppz0[2], ppz1[2]);
-	low_mul(&zin0[0], &zin1[0], tmp0[1], tmp1[1], ppz0[3], ppz1[3]);
-
-	/* part II */
-	low_inv_var(&zin0[0], &zin1[0], zin0[0], zin1[0]);
-
-	/* part III */
-	low_mul(&zin0[3], &zin1[3], zin0[0], zin1[0], tmp0[1], tmp1[1]);
-	low_mul(&zin0[0], &zin1[0], zin0[0], zin1[0], ppz0[3], ppz1[3]);
-	low_mul(&zin0[2], &zin1[2], zin0[0], zin1[0], tmp0[0], tmp1[0]);
-	low_mul(&zin0[0], &zin1[0], zin0[0], zin1[0], ppz0[2], ppz1[2]);
-	low_mul(&zin0[1], &zin1[1], zin0[0], zin1[0], ppz0[0], ppz1[0]);
-	low_mul(&zin0[0], &zin1[0], zin0[0], zin1[0], ppz0[1], ppz1[1]);
-
-	/* to affine */
+	low_inv_sim(zin0, zin1, ppz0, ppz1, 4, 1);
 	low_mul(&ppx0[0], &ppx1[0], ppx0[0], ppx1[0], zin0[0], zin1[0]);
 	low_mul(&ppl0[0], &ppl1[0], ppl0[0], ppl1[0], zin0[0], zin1[0]);
 	low_mul(&ppx0[1], &ppx1[1], ppx0[1], ppx1[1], zin0[1], zin1[1]);
@@ -694,6 +641,238 @@ void smu_3nf_2d_ltr(__m128i *qx0, __m128i *qx1, __m128i *ql0, __m128i *ql1,
 		smu_lps(a0x1, a1x1, msk0, msk1, ppx1, 4);
 		smu_lps(a0l0, a1l0, msk0, msk1, ppl0, 4);
 		smu_lps(a0l1, a1l1, msk0, msk1, ppl1, 4);
+
+		a0l0 = _mm_xor_si128(a0l0, _mm_set_epi64x(0x0, sig1));
+		smu_psi_end_cond(e1x0, e1x1, e1l0, e1l1, a0x0, a0x1, a0l0, a0l1,
+			_mm_set_epi64x(sig0 ^ sig1, 0x0), _mm_set_epi64x(cnd0, cnd0));
+
+		eca_dbl_add(qx0, qx1, ql0, ql1, &qz0, &qz1,
+			*qx0, *qx1, *ql0, *ql1, qz0, qz1, e1x0, e1x1, e1l0, e1l1);
+
+		eca_dbl_ful(qx0, qx1, ql0, ql1, &qz0, &qz1,
+				*qx0, *qx1, *ql0, *ql1, qz0, qz1);
+
+		a1l0 = _mm_xor_si128(a1l0, _mm_set_epi64x(0x0, sig3));
+		smu_psi_end_cond(e1x0, e1x1, e1l0, e1l1, a1x0, a1x1, a1l0, a1l1,
+			_mm_set_epi64x(sig2 ^ sig3, 0x0), _mm_set_epi64x(cnd1, cnd1));
+
+		if (i == 1) {
+			eca_dbl_ful(qx0, qx1, ql0, ql1, &qz0, &qz1,
+					*qx0, *qx1, *ql0, *ql1, qz0, qz1);
+			eca_add_mix_complete(qx0, qx1, ql0, ql1, &qz0, &qz1,
+					*qx0, *qx1, *ql0, *ql1, qz0, qz1, e1x0, e1x1, e1l0, e1l1);
+		} else {
+			eca_dbl_add(qx0, qx1, ql0, ql1, &qz0, &qz1,
+				*qx0, *qx1, *ql0, *ql1, qz0, qz1, e1x0, e1x1, e1l0, e1l1);
+		}
+
+	}
+
+	/* to afffine */
+	low_inv(&qz0, &qz1, qz0, qz1);
+	low_mul(qx0, qx1, *qx0, *qx1, qz0, qz1);
+	low_mul(ql0, ql1, *ql0, *ql1, qz0, qz1);
+
+	/* final reduction */
+	low_red_127_063_000(*qx0, *qx1, ONE);
+	low_red_127_063_000(*ql0, *ql1, ONE);
+
+	return;
+}
+
+void smu_pre_4nf_2d(__m128i *ppx0, __m128i *ppx1,
+		__m128i *ppl0, __m128i *ppl1,
+		__m128i *ppz0, __m128i *ppz1,
+		__m128i px0, __m128i px1, __m128i pl0, __m128i pl1) {
+	/* var */
+	__m128i x0[4], x1[4], l0[4], l1[4], z0[4], z1[4];
+	__m128i zin0[16], zin1[16];
+	__m128i tmp0[6], tmp1[6];
+	__m128i A = _mm_set_epi64x(0x1, 0x0);
+	__m128i ONE = _mm_set_epi64x(0x0, 0x1);
+
+	/* pre-computation */
+	x0[0] = px0; x1[0] = px1; l0[0] = pl0; l1[0] = pl1;
+
+	/* Compute 2P. */
+	eca_dbl_mix(&tmp0[0], &tmp0[1], &tmp0[2], &tmp0[3], &tmp0[4], &tmp0[5],
+		px0, px1, pl0, pl1);
+	eca_add_mix(&x0[1], &x1[1], &l0[1], &l1[1], &z0[1], &z1[1],
+		tmp0[0], tmp0[1], tmp0[2], tmp0[3], tmp0[4], tmp0[5], px0, px1, pl0, pl1);
+	eca_dbl_add(&x0[2], &x1[2], &l0[2], &l1[2], &z0[2], &z1[2],
+		tmp0[0], tmp0[1], tmp0[2], tmp0[3], tmp0[4], tmp0[5], px0, px1, pl0, pl1);
+	eca_dbl_add(&x0[3], &x1[3], &l0[3], &l1[3], &z0[3], &z1[3],
+		x0[1], x1[1], l0[1], l1[1], z0[1], z0[1], px0, px1, pl0, pl1);
+
+	low_inv_sim(zin0+1, zin1+1, z0+1, z1+1, 3, 1);
+	/* to affine */
+	low_mul(&x0[1], &x1[1], x0[1], x1[1], zin0[1], zin1[1]);
+	low_mul(&l0[1], &l1[1], l0[1], l1[1], zin0[1], zin1[1]);
+	low_mul(&x0[2], &x1[2], x0[2], x1[2], zin0[2], zin1[2]);
+	low_mul(&l0[2], &l1[2], l0[2], l1[2], zin0[2], zin1[2]);
+	low_mul(&x0[3], &x1[3], x0[3], x1[3], zin0[3], zin1[3]);
+	low_mul(&l0[3], &l1[3], l0[3], l1[3], zin0[3], zin1[3]);
+
+	for(int i = 0; i < 4; i++) {
+		int index = 5*i;
+		smu_psi_end(ppx0[index], ppx1[index], ppl0[index], ppl1[index],
+			x0[index], x1[index], l0[index], l1[index], A);
+		eca_add_mma(&ppx0[index], &ppx1[index], &ppl0[index], &ppl1[index], &ppz0[index], &ppz1[index],
+			ppx0[index], ppx1[index], ppl0[index], ppl1[index],
+			x0[index], x1[index], l0[index], l1[index]);
+	}
+	for(int j = 1; j < 4; j++) {
+		smu_psi_end(tmp0[0], tmp0[1], tmp0[2], tmp0[3],
+			ppx0[j], ppx1[j], ppl0[j], ppl1[j],	A);
+		for(int i = 0; i < j; i++) {
+			int ij = 4*i+j;
+			int ji = 4*j+i;
+			eca_add_mma(&ppx0[ij], &ppx1[ij], &ppl0[ij], &ppl1[ij], &ppz0[ij], &ppz1[ij],
+				tmp0[0], tmp0[1], tmp0[2], tmp0[3], x0[i], x1[i], l0[i], l1[i]);
+			l0[i] = _mm_xor_si128(l0[i], ONE);
+			eca_add_mma(&ppx0[ji], &ppx1[ji], &ppl0[ji], &ppl1[ji], &ppz0[ji], &ppz1[ji],
+				tmp0[0], tmp0[1], tmp0[2], tmp0[3], x0[i], x1[i], l0[i], l1[i]);
+			l0[i] = _mm_xor_si128(l0[i], ONE);
+		}
+	}
+
+	low_inv_sim(zin0, zin1, ppz0, ppz1, 16, 1);
+	for (int i = 0; i < 16; i++) {
+		low_mul(&ppx0[i], &ppx1[i], ppx0[i], ppx1[i], zin0[i], zin1[i]);
+		low_mul(&ppl0[i], &ppl1[i], ppl0[i], ppl1[i], zin0[i], zin1[i]);
+	}
+
+	for(int j = 1; j < 4; j++) {
+		for(int i = 0; i < j; i++) {
+			int indexji = 4*j+i;
+			smu_psi_end(ppx0[indexji], ppx1[indexji], ppl0[indexji], ppl1[indexji], ppx0[indexji], ppx1[indexji], ppl0[indexji], ppl1[indexji], A);
+		}
+	}
+
+	/* end */
+	return;
+}
+
+/* protected 4-NAF double-and-add left-to-right scalar multiplication */
+void smu_4nf_2d_ltr(__m128i *qx0, __m128i *qx1, __m128i *ql0, __m128i *ql1,
+		__m128i px0, __m128i px1, __m128i pl0, __m128i pl1, uint64_t * k) {
+	/* var */
+	int8_t dg0[43], dg1[43];
+	int i, j;
+	uint64_t k0[2], k1[2], sig0, sig1, sig2, sig3, msk;
+	uint64_t abs0, abs1, cnd0, cnd1, k0n, k1n, ind0, ind1;
+	__m128i ppx0[16], ppl0[16], ppz0[16], ppx1[16], ppl1[16], ppz1[16];
+	__m128i a0x0, a0x1, a0l0, a0l1, a1x0, a1x1, a1l0, a1l1;
+	__m128i msk0[16], msk1[16], cmp[16], dig0, dig1, ssgn;
+	__m128i e1x0, e1x1, e1l0, e1l1, qz0, qz1;
+
+	/* init */
+	__m128i ONE = _mm_set_epi64x(0x1, 0x1);
+	cmp[0] = _mm_setzero_si128();
+	for (j = 1; j < 16; j++) {
+		cmp[j] = _mm_add_epi64(cmp[j - 1], ONE);
+	}
+
+	/* regular recoding */
+	gls_recoding(k, k0, k1, &k0n, &k1n);
+	smu_reg_rec(dg0, k0, 4);
+	smu_reg_rec(dg1, k1, 4);
+
+	/* pre computation */
+	smu_pre_4nf_2d(ppx0, ppx1, ppl0, ppl1, ppz0, ppz1, px0, px1, pl0, pl1);
+
+    /* first iteration */
+	/* digit */
+	smu_get_flg(dg0, 42, msk, abs0, sig0);
+	smu_get_flg(dg1, 42, msk, abs1, sig1);
+	sig0 ^= k0n;
+	sig1 ^= k1n;
+	cnd0 = -(sig0 ^ sig1);
+	ind0 = (abs0 ^ abs1) & cnd0;
+	abs0 ^= ind0;
+	abs1 ^= ind0;
+	ind0 = 4 * abs0 + abs1;
+
+	smu_get_flg(dg0, 41, msk, abs0, sig2);
+	smu_get_flg(dg1, 41, msk, abs1, sig3);
+	sig2 ^= k0n;
+	sig3 ^= k1n;
+	cnd1 = -(sig2 ^ sig3);
+	ind1 = (abs0 ^ abs1) & cnd1;
+	abs0 ^= ind1;
+	abs1 ^= ind1;
+	ind1 = 4 * abs0 + abs1;
+
+    /* linear pass */
+	dig0 = _mm_set_epi64x(ind0, ind0);
+    dig1 = _mm_set_epi64x(ind1, ind1);
+    for (j = 0; j < 16; j++) {
+        msk0[j] = _mm_cmpeq_epi64(cmp[j], dig0);
+        msk1[j] = _mm_cmpeq_epi64(cmp[j], dig1);
+    }
+
+    smu_lps(a0x0, a1x0, msk0, msk1, ppx0, 16);
+    smu_lps(a0x1, a1x1, msk0, msk1, ppx1, 16);
+    smu_lps(a0l0, a1l0, msk0, msk1, ppl0, 16);
+    smu_lps(a0l1, a1l1, msk0, msk1, ppl1, 16);
+
+	smu_psi_end_cond(e1x0, e1x1, e1l0, e1l1, a0x0, a0x1, a0l0, a0l1,
+		_mm_set_epi64x(sig0 ^ sig1, 0x0), _mm_set_epi64x(cnd0, cnd0));
+
+    *qx0 = e1x0;
+    *qx1 = e1x1;
+	*ql0 = _mm_xor_si128(e1l0, _mm_set_epi64x(0x0, sig1));
+	*ql1 = e1l1;
+
+	eca_dbl_mix(qx0, qx1, ql0, ql1, &qz0, &qz1, *qx0, *qx1, *ql0, *ql1);
+
+	smu_psi_end_cond(e1x0, e1x1, e1l0, e1l1, a1x0, a1x1, a1l0, a1l1,
+		_mm_set_epi64x(sig2 ^ sig3, 0x0), _mm_set_epi64x(cnd1, cnd1));
+
+	e1l0 = _mm_xor_si128(e1l0, _mm_set_epi64x(0x0, sig3));
+	eca_dbl_add(qx0, qx1, ql0, ql1, &qz0, &qz1,
+		*qx0, *qx1, *ql0, *ql1, qz0, qz1, e1x0, e1x1, e1l0, e1l1);
+
+	/* main loop */
+	for (i = 40; i > 0; i -= 2) {
+		/* point doubling */
+		eca_dbl_ful(qx0, qx1, ql0, ql1, &qz0, &qz1,
+				*qx0, *qx1, *ql0, *ql1, qz0, qz1);
+
+		/* digit */
+		smu_get_flg(dg0, i, msk, abs0, sig0);
+		smu_get_flg(dg1, i, msk, abs1, sig1);
+
+		sig0 ^= k0n;
+		sig1 ^= k1n;
+		cnd0 = -(sig0 ^ sig1);
+		ind0 = (abs0 ^ abs1) & cnd0;
+		abs0 ^= ind0;
+		abs1 ^= ind0;
+		ind0 = 4 * abs0 + abs1;
+
+		smu_get_flg(dg0, i-1, msk, abs0, sig2);
+		smu_get_flg(dg1, i-1, msk, abs1, sig3);
+
+		sig2 ^= k0n;
+		sig3 ^= k1n;
+		cnd1 = -(sig2 ^ sig3);
+		ind1 = (abs0 ^ abs1) & cnd1;
+		abs0 ^= ind1;
+		abs1 ^= ind1;
+		ind1 = 4 * abs0 + abs1;
+
+		/* linear pass */
+		dig0 = _mm_set_epi64x(ind0, ind0);
+		dig1 = _mm_set_epi64x(ind1, ind1);
+		for (j = 0; j < 16; j++) {
+			msk0[j] = _mm_cmpeq_epi64(cmp[j], dig0);
+			msk1[j] = _mm_cmpeq_epi64(cmp[j], dig1);
+		}
+		smu_lps(a0x0, a1x0, msk0, msk1, ppx0, 16);
+		smu_lps(a0x1, a1x1, msk0, msk1, ppx1, 16);
+		smu_lps(a0l0, a1l0, msk0, msk1, ppl0, 16);
+		smu_lps(a0l1, a1l1, msk0, msk1, ppl1, 16);
 
 		a0l0 = _mm_xor_si128(a0l0, _mm_set_epi64x(0x0, sig1));
 		smu_psi_end_cond(e1x0, e1x1, e1l0, e1l1, a0x0, a0x1, a0l0, a0l1,

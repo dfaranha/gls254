@@ -674,6 +674,27 @@ void low_inv(__m128i *re_0, __m128i *re_1, __m128i op00, __m128i op01) {
 	return;
 }
 
+void low_inv_sim(__m128i *o0, __m128i *o1, __m128i *i0, __m128i *i1, uint64_t len, int ct) {
+    __m128i u0, u1, c0[len], c1[len];
+
+	c0[0] = i0[0];
+    c1[0] = i1[0];
+	for(int i = 1; i < len; i++) {
+        low_mul(&c0[i], &c1[i], c0[i-1], c1[i-1], i0[i], i1[i]);
+	}
+    if (ct) {
+        low_inv(&u0, &u1, c0[len - 1], c1[len - 1]);
+    } else {
+        low_inv_var(&u0, &u1, c0[len - 1], c1[len - 1]);
+    }
+	for(int i = len-1; i >= 1; i--) {
+        low_mul(&o0[i], &o1[i], u0, u1, c0[i-1], c1[i-1]);
+		low_mul(&u0, &u1, u0, u1, i0[i], i1[i]);
+	}
+    o0[0] = u0;
+    o1[0] = u1;
+}
+
 void low_sqrt(__m128i *re_0, __m128i *re_1, __m128i op00, __m128i op01) {
 	__m128i a0, aL, aH, uu0, uu1, vv0, vv1;
 	__m128i ma, mb;
