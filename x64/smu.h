@@ -171,7 +171,7 @@ void smu_pre_4nf(__m128i *ppx0, __m128i *ppx1,
 	low_mul(&zin0[0], &zin1[0], tmp0, tmp1, ppz0[3], ppz1[3]);
 
 	/* to affine */
-	low_inv_sim(zin0+1, zin1+1, ppz0+1, ppz1+1, 3, 1);
+	low_inv_sim(zin0+1, zin1+1, ppz0+1, ppz1+1, 3, 0);
 	low_mul(&ppx0[1], &ppx1[1], ppx0[1], ppx1[1], zin0[1], zin1[1]);
 	low_mul(&ppl0[1], &ppl1[1], ppl0[1], ppl1[1], zin0[1], zin1[1]);
 	low_mul(&ppx0[2], &ppx1[2], ppx0[2], ppx1[2], zin0[2], zin1[2]);
@@ -287,7 +287,7 @@ void smu_4nf_dna_ltr(__m128i *qx0, __m128i *qx1, __m128i *ql0, __m128i *ql1,
 	}
 
 	/* to afffine */
-	low_inv_var(&qz0, &qz1, qz0, qz1);
+	low_inv(&qz0, &qz1, qz0, qz1);
 	low_mul(qx0, qx1, *qx0, *qx1, qz0, qz1);
 	low_mul(ql0, ql1, *ql0, *ql1, qz0, qz1);
 
@@ -337,7 +337,7 @@ void smu_pre_5nf(__m128i *ppx0, __m128i *ppx1,
 			ppx0[3], ppx1[3], ppl0[3], ppl1[3], ppz0[3], ppz1[3],
 			px0, px1, pl0, pl1);
 
-	low_inv_sim(zin0+1, zin1+1, ppz0+1, ppz1+1, 7, 1);
+	low_inv_sim(zin0+1, zin1+1, ppz0+1, ppz1+1, 7, 0);
 	low_mul(&ppx0[1], &ppx1[1], ppx0[1], ppx1[1], zin0[1], zin1[1]);
 	low_mul(&ppl0[1], &ppl1[1], ppl0[1], ppl1[1], zin0[1], zin1[1]);
 	low_mul(&ppx0[2], &ppx1[2], ppx0[2], ppx1[2], zin0[2], zin1[2]);
@@ -509,7 +509,7 @@ void smu_pre_3nf_2d(__m128i *ppx0, __m128i *ppx1,
 		ppx0[1], ppx1[1], ppl0[1], ppl1[1], ppz0[1], ppz1[1],
 		tmp0[0], tmp0[1], tmp0[2], tmp0[3], tmp0[4], tmp0[5]);
 
-	low_inv_sim(zin0, zin1, ppz0, ppz1, 4, 1);
+	low_inv_sim(zin0, zin1, ppz0, ppz1, 4, 0);
 	low_mul(&ppx0[0], &ppx1[0], ppx0[0], ppx1[0], zin0[0], zin1[0]);
 	low_mul(&ppl0[0], &ppl1[0], ppl0[0], ppl1[0], zin0[0], zin1[0]);
 	low_mul(&ppx0[1], &ppx1[1], ppx0[1], ppx1[1], zin0[1], zin1[1]);
@@ -703,7 +703,7 @@ void smu_pre_4nf_2d(__m128i *ppx0, __m128i *ppx1,
 			x0[1], x1[1], l0[1], l1[1], z0[1], z1[1],
 			x0[0], x1[0], l0[0], l1[0]);
 
-	low_inv_sim(zin0+1, zin1+1, z0+1, z1+1, 3, 1);
+	low_inv_sim(zin0+1, zin1+1, z0+1, z1+1, 3, 0);
 	low_mul(&x0[1], &x1[1], x0[1], x1[1], zin0[1], zin1[1]);
 	low_mul(&l0[1], &l1[1], l0[1], l1[1], zin0[1], zin1[1]);
 	low_mul(&x0[2], &x1[2], x0[2], x1[2], zin0[2], zin1[2]);
@@ -725,7 +725,7 @@ void smu_pre_4nf_2d(__m128i *ppx0, __m128i *ppx1,
 		}
 	}
 
-	low_inv_sim(zin0, zin1, ppz0, ppz1, 16, 1);
+	low_inv_sim(zin0, zin1, ppz0, ppz1, 16, 0);
 	for (int i = 0; i < 16; i++) {
 		low_mul(&ppx0[i], &ppx1[i], ppx0[i], ppx1[i], zin0[i], zin1[i]);
 		low_mul(&ppl0[i], &ppl1[i], ppl0[i], ppl1[i], zin0[i], zin1[i]);
