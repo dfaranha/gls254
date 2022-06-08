@@ -160,7 +160,7 @@ void smu_pre_4nf(__m128i *ppx0, __m128i *ppx1,
 			px0, px1, pl0, pl1, px0, px1, pl0, pl1);
 
 	/* P5 and P7 */
-	eca_dbl_add_sub(&ppx0[2], &ppx1[2], &ppl0[2], &ppl1[2], &ppz0[2], &ppz1[2],
+	eca_dbl_sub_add(&ppx0[2], &ppx1[2], &ppl0[2], &ppl1[2], &ppz0[2], &ppz1[2],
 			&ppx0[3], &ppx1[3], &ppl0[3], &ppl1[3], &ppz0[3], &ppz1[3],
 			ppx0[1], ppx1[1], ppl0[1], ppl1[1], ppz0[1], ppz1[1],
 			px0, px1, pl0, pl1);
@@ -320,19 +320,19 @@ void smu_pre_5nf(__m128i *ppx0, __m128i *ppx1,
 			px0, px1, pl0, pl1, px0, px1, pl0, pl1);
 
 	/* P5 and P7 */
-	eca_dbl_add_sub(&ppx0[2], &ppx1[2], &ppl0[2], &ppl1[2], &ppz0[2], &ppz1[2],
+	eca_dbl_sub_add(&ppx0[2], &ppx1[2], &ppl0[2], &ppl1[2], &ppz0[2], &ppz1[2],
 			&ppx0[3], &ppx1[3], &ppl0[3], &ppl1[3], &ppz0[3], &ppz1[3],
 			ppx0[1], ppx1[1], ppl0[1], ppl1[1], ppz0[1], ppz1[1],
 			px0, px1, pl0, pl1);
 
 	/* P9 and P11 */
-	eca_dbl_add_sub(&ppx0[4], &ppx1[4], &ppl0[4], &ppl1[4], &ppz0[4], &ppz1[4],
+	eca_dbl_sub_add(&ppx0[4], &ppx1[4], &ppl0[4], &ppl1[4], &ppz0[4], &ppz1[4],
 			&ppx0[5], &ppx1[5], &ppl0[5], &ppl1[5], &ppz0[5], &ppz1[5],
 			ppx0[2], ppx1[2], ppl0[2], ppl1[2], ppz0[2], ppz1[2],
 			px0, px1, pl0, pl1);
 
 	/* P9 and P11 */
-	eca_dbl_add_sub(&ppx0[6], &ppx1[6], &ppl0[6], &ppl1[6], &ppz0[6], &ppz1[6],
+	eca_dbl_sub_add(&ppx0[6], &ppx1[6], &ppl0[6], &ppl1[6], &ppz0[6], &ppz1[6],
 			&ppx0[7], &ppx1[7], &ppl0[7], &ppl1[7], &ppz0[7], &ppz1[7],
 			ppx0[3], ppx1[3], ppl0[3], ppl1[3], ppz0[3], ppz1[3],
 			px0, px1, pl0, pl1);
@@ -694,18 +694,16 @@ void smu_pre_4nf_2d(__m128i *ppx0, __m128i *ppx1,
 	/* pre-computation */
 	x0[0] = px0; x1[0] = px1; l0[0] = pl0; l1[0] = pl1;
 
-	/* Compute 2P. */
-	eca_dbl_mix(&tmp0[0], &tmp0[1], &tmp0[2], &tmp0[3], &tmp0[4], &tmp0[5],
-		px0, px1, pl0, pl1);
-	eca_add_mix(&x0[1], &x1[1], &l0[1], &l1[1], &z0[1], &z1[1],
-		tmp0[0], tmp0[1], tmp0[2], tmp0[3], tmp0[4], tmp0[5], px0, px1, pl0, pl1);
-	eca_dbl_add(&x0[2], &x1[2], &l0[2], &l1[2], &z0[2], &z1[2],
-		tmp0[0], tmp0[1], tmp0[2], tmp0[3], tmp0[4], tmp0[5], px0, px1, pl0, pl1);
-	eca_dbl_add(&x0[3], &x1[3], &l0[3], &l1[3], &z0[3], &z1[3],
-		x0[1], x1[1], l0[1], l1[1], z0[1], z0[1], px0, px1, pl0, pl1);
+	/* Compute 3P. */
+	eca_tpl_mix(&x0[1], &x1[1], &l0[1], &l1[1], &z0[1], &z1[1],
+		x0[0], x1[0], l0[0], l1[0]);
+	/* P5 and P7 */
+	eca_dbl_sub_add(&x0[2], &x1[2], &l0[2], &l1[2], &z0[2], &z1[2],
+			&x0[3], &x1[3], &l0[3], &l1[3], &z0[3], &z1[3],
+			x0[1], x1[1], l0[1], l1[1], z0[1], z1[1],
+			x0[0], x1[0], l0[0], l1[0]);
 
 	low_inv_sim(zin0+1, zin1+1, z0+1, z1+1, 3, 1);
-	/* to affine */
 	low_mul(&x0[1], &x1[1], x0[1], x1[1], zin0[1], zin1[1]);
 	low_mul(&l0[1], &l1[1], l0[1], l1[1], zin0[1], zin1[1]);
 	low_mul(&x0[2], &x1[2], x0[2], x1[2], zin0[2], zin1[2]);
@@ -713,26 +711,17 @@ void smu_pre_4nf_2d(__m128i *ppx0, __m128i *ppx1,
 	low_mul(&x0[3], &x1[3], x0[3], x1[3], zin0[3], zin1[3]);
 	low_mul(&l0[3], &l1[3], l0[3], l1[3], zin0[3], zin1[3]);
 
-	for(int i = 0; i < 4; i++) {
-		int index = 5*i;
-		smu_psi_end(ppx0[index], ppx1[index], ppl0[index], ppl1[index],
-			x0[index], x1[index], l0[index], l1[index], A);
-		eca_add_mma(&ppx0[index], &ppx1[index], &ppl0[index], &ppl1[index], &ppz0[index], &ppz1[index],
-			ppx0[index], ppx1[index], ppl0[index], ppl1[index],
-			x0[index], x1[index], l0[index], l1[index]);
-	}
-	for(int j = 1; j < 4; j++) {
+	for (int i = 0; i < 4; i++) {
 		smu_psi_end(tmp0[0], tmp0[1], tmp0[2], tmp0[3],
-			ppx0[j], ppx1[j], ppl0[j], ppl1[j],	A);
-		for(int i = 0; i < j; i++) {
-			int ij = 4*i+j;
-			int ji = 4*j+i;
-			eca_add_mma(&ppx0[ij], &ppx1[ij], &ppl0[ij], &ppl1[ij], &ppz0[ij], &ppz1[ij],
-				tmp0[0], tmp0[1], tmp0[2], tmp0[3], x0[i], x1[i], l0[i], l1[i]);
-			l0[i] = _mm_xor_si128(l0[i], ONE);
-			eca_add_mma(&ppx0[ji], &ppx1[ji], &ppl0[ji], &ppl1[ji], &ppz0[ji], &ppz1[ji],
-				tmp0[0], tmp0[1], tmp0[2], tmp0[3], x0[i], x1[i], l0[i], l1[i]);
-			l0[i] = _mm_xor_si128(l0[i], ONE);
+			x0[i], x1[i], l0[i], l1[i], A);
+		eca_add_mma(&ppx0[4*i+i], &ppx1[4*i+i], &ppl0[4*i+i], &ppl1[4*i+i], &ppz0[4*i+i], &ppz1[4*i+i],
+			x0[i], x1[i], l0[i], l1[i], tmp0[0], tmp0[1], tmp0[2], tmp0[3]);
+		for (int j = i + 1; j < 4; j++) {
+			smu_psi_end(tmp0[0], tmp0[1], tmp0[2], tmp0[3],
+				x0[j], x1[j], l0[j], l1[j], A);
+			eca_sub_add_mma(&ppx0[4*j+i], &ppx1[4*j+i], &ppl0[4*j+i], &ppl1[4*j+i], &ppz0[4*j+i], &ppz1[4*j+i],
+				&ppx0[4*i+j], &ppx1[4*i+j], &ppl0[4*i+j], &ppl1[4*i+j], &ppz0[4*i+j], &ppz1[4*i+j],
+				x0[i], x1[i], l0[i], l1[i], tmp0[0], tmp0[1], tmp0[2], tmp0[3]);
 		}
 	}
 
@@ -742,10 +731,13 @@ void smu_pre_4nf_2d(__m128i *ppx0, __m128i *ppx1,
 		low_mul(&ppl0[i], &ppl1[i], ppl0[i], ppl1[i], zin0[i], zin1[i]);
 	}
 
-	for(int j = 1; j < 4; j++) {
-		for(int i = 0; i < j; i++) {
-			int indexji = 4*j+i;
-			smu_psi_end(ppx0[indexji], ppx1[indexji], ppl0[indexji], ppl1[indexji], ppx0[indexji], ppx1[indexji], ppl0[indexji], ppl1[indexji], A);
+	for (int i = 0; i < 4; i++) {
+		for (int j = i + 1; j < 4; j++) {
+			smu_psi_end(tmp0[0], tmp0[1], tmp0[2], tmp0[3], ppx0[4*j+i], ppx1[4*j+i], ppl0[4*j+i], ppl1[4*j+i], A);
+			ppx0[4*j+i] = tmp0[0];
+			ppx1[4*j+i] = tmp0[1];
+			ppl0[4*j+i] = tmp0[2];
+			ppl1[4*j+i] = tmp0[3];
 		}
 	}
 
@@ -825,6 +817,8 @@ void smu_4nf_2d_ltr(__m128i *qx0, __m128i *qx1, __m128i *ql0, __m128i *ql1,
 	*ql1 = e1l1;
 
 	eca_dbl_mix(qx0, qx1, ql0, ql1, &qz0, &qz1, *qx0, *qx1, *ql0, *ql1);
+	eca_dbl_ful(qx0, qx1, ql0, ql1, &qz0, &qz1,
+			*qx0, *qx1, *ql0, *ql1, qz0, qz1);
 
 	smu_psi_end_cond(e1x0, e1x1, e1l0, e1l1, a1x0, a1x1, a1l0, a1l1,
 		_mm_set_epi64x(sig2 ^ sig3, 0x0), _mm_set_epi64x(cnd1, cnd1));
@@ -836,6 +830,8 @@ void smu_4nf_2d_ltr(__m128i *qx0, __m128i *qx1, __m128i *ql0, __m128i *ql1,
 	/* main loop */
 	for (i = 40; i > 0; i -= 2) {
 		/* point doubling */
+		eca_dbl_ful(qx0, qx1, ql0, ql1, &qz0, &qz1,
+				*qx0, *qx1, *ql0, *ql1, qz0, qz1);
 		eca_dbl_ful(qx0, qx1, ql0, ql1, &qz0, &qz1,
 				*qx0, *qx1, *ql0, *ql1, qz0, qz1);
 
@@ -874,31 +870,64 @@ void smu_4nf_2d_ltr(__m128i *qx0, __m128i *qx1, __m128i *ql0, __m128i *ql1,
 		smu_lps(a0l0, a1l0, msk0, msk1, ppl0, 16);
 		smu_lps(a0l1, a1l1, msk0, msk1, ppl1, 16);
 
-		a0l0 = _mm_xor_si128(a0l0, _mm_set_epi64x(0x0, sig1));
 		smu_psi_end_cond(e1x0, e1x1, e1l0, e1l1, a0x0, a0x1, a0l0, a0l1,
 			_mm_set_epi64x(sig0 ^ sig1, 0x0), _mm_set_epi64x(cnd0, cnd0));
+		e1l0 = _mm_xor_si128(e1l0, _mm_set_epi64x(0x0, sig1));
 
 		eca_dbl_add(qx0, qx1, ql0, ql1, &qz0, &qz1,
 			*qx0, *qx1, *ql0, *ql1, qz0, qz1, e1x0, e1x1, e1l0, e1l1);
 
 		eca_dbl_ful(qx0, qx1, ql0, ql1, &qz0, &qz1,
 				*qx0, *qx1, *ql0, *ql1, qz0, qz1);
+		eca_dbl_ful(qx0, qx1, ql0, ql1, &qz0, &qz1,
+				*qx0, *qx1, *ql0, *ql1, qz0, qz1);
 
-		a1l0 = _mm_xor_si128(a1l0, _mm_set_epi64x(0x0, sig3));
 		smu_psi_end_cond(e1x0, e1x1, e1l0, e1l1, a1x0, a1x1, a1l0, a1l1,
 			_mm_set_epi64x(sig2 ^ sig3, 0x0), _mm_set_epi64x(cnd1, cnd1));
+		e1l0 = _mm_xor_si128(e1l0, _mm_set_epi64x(0x0, sig3));
 
-		if (i == 1) {
-			eca_dbl_ful(qx0, qx1, ql0, ql1, &qz0, &qz1,
-					*qx0, *qx1, *ql0, *ql1, qz0, qz1);
-			eca_add_mix_complete(qx0, qx1, ql0, ql1, &qz0, &qz1,
-					*qx0, *qx1, *ql0, *ql1, qz0, qz1, e1x0, e1x1, e1l0, e1l1);
-		} else {
-			eca_dbl_add(qx0, qx1, ql0, ql1, &qz0, &qz1,
-				*qx0, *qx1, *ql0, *ql1, qz0, qz1, e1x0, e1x1, e1l0, e1l1);
-		}
-
+		eca_dbl_add(qx0, qx1, ql0, ql1, &qz0, &qz1,
+			*qx0, *qx1, *ql0, *ql1, qz0, qz1, e1x0, e1x1, e1l0, e1l1);
 	}
+
+	/* point doubling */
+	eca_dbl_ful(qx0, qx1, ql0, ql1, &qz0, &qz1,
+			*qx0, *qx1, *ql0, *ql1, qz0, qz1);
+	eca_dbl_ful(qx0, qx1, ql0, ql1, &qz0, &qz1,
+			*qx0, *qx1, *ql0, *ql1, qz0, qz1);
+	eca_dbl_ful(qx0, qx1, ql0, ql1, &qz0, &qz1,
+			*qx0, *qx1, *ql0, *ql1, qz0, qz1);
+
+	/* digit */
+	smu_get_flg(dg0, 0, msk, abs0, sig0);
+	smu_get_flg(dg1, 0, msk, abs1, sig1);
+
+	sig0 ^= k0n;
+	sig1 ^= k1n;
+	cnd0 = -(sig0 ^ sig1);
+	ind0 = (abs0 ^ abs1) & cnd0;
+	abs0 ^= ind0;
+	abs1 ^= ind0;
+	ind0 = 4 * abs0 + abs1;
+
+	/* linear pass */
+	dig0 = _mm_set_epi64x(ind0, ind0);
+	dig1 = _mm_set_epi64x(ind0, ind0);
+	for (j = 0; j < 16; j++) {
+		msk0[j] = _mm_cmpeq_epi64(cmp[j], dig0);
+		msk1[j] = _mm_cmpeq_epi64(cmp[j], dig1);
+	}
+	smu_lps(a0x0, a1x0, msk0, msk1, ppx0, 16);
+	smu_lps(a0x1, a1x1, msk0, msk1, ppx1, 16);
+	smu_lps(a0l0, a1l0, msk0, msk1, ppl0, 16);
+	smu_lps(a0l1, a1l1, msk0, msk1, ppl1, 16);
+
+	smu_psi_end_cond(e1x0, e1x1, e1l0, e1l1, a0x0, a0x1, a0l0, a0l1,
+		_mm_set_epi64x(sig0 ^ sig1, 0x0), _mm_set_epi64x(cnd0, cnd0));
+	e1l0 = _mm_xor_si128(e1l0, _mm_set_epi64x(0x0, sig1));
+
+	eca_add_mix_complete(qx0, qx1, ql0, ql1, &qz0, &qz1,
+		*qx0, *qx1, *ql0, *ql1, qz0, qz1, e1x0, e1x1, e1l0, e1l1);
 
 	/* to afffine */
 	low_inv(&qz0, &qz1, qz0, qz1);
