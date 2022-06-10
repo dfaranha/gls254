@@ -91,6 +91,41 @@ void eca_dbl_mix(__m128i *rx0, __m128i *rx1,
 }
 
 /* [p > p] full doubling alternative */
+void eca_tpl_mix(__m128i *rx0, __m128i *rx1,
+                 __m128i *rl0, __m128i *rl1,
+                 __m128i *rz0, __m128i *rz1,
+                 __m128i px0, __m128i px1,
+                 __m128i pl0, __m128i pl1) {
+    /* var */
+    __m128i a0, a1, c0, c1, t0, t1;
+
+    /* point doubling */
+    /* T */
+    low_sqr(&t0, &t1, pl0, pl1);
+    t0 = _mm_xor_si128(t0, pl0); t1 = _mm_xor_si128(t1, pl1);
+    t0 = _mm_xor_si128(t0, _mm_set_epi64x(0x1, 0));
+    /* A */
+    a0 = _mm_xor_si128(px0, t0); a1 = _mm_xor_si128(px1, t1);
+    low_sqr(&a0, &a1, a0, a1);
+    a0 = _mm_xor_si128(a0, t0); a1 = _mm_xor_si128(a1, t1);
+    /* rx */
+    low_sqr(rx0, rx1, a0, a1);
+    low_mul(rx0, rx1, *rx0, *rx1, px0, px1);
+    /* rz */
+    *rz0 = _mm_xor_si128(a0, t0); *rz1 = _mm_xor_si128(a1, t1);
+    low_mul(rz0, rz1, *rz0, *rz1, a0, a1);
+    /* rl */
+    low_sqr(&c0, &c1, t0, t1);
+    low_mul(&c0, &c1, c0, c1, t0, t1);
+    pl0 = _mm_xor_si128(pl0, _mm_set_epi64x(0x0, 0x1));
+    low_mul(rl0, rl1, pl0, pl1, *rz0, *rz1);
+    *rl0 = _mm_xor_si128(*rl0, c0); *rl1 = _mm_xor_si128(*rl1, c1);
+
+    /* end */
+    return;
+}
+
+/* [p > p] full doubling alternative */
 void eca_dbl_ful(__m128i *rx0, __m128i *rx1,
                  __m128i *rl0, __m128i *rl1,
                  __m128i *rz0, __m128i *rz1,
@@ -345,6 +380,56 @@ void eca_add_mma(__m128i *rx0, __m128i *rx1,
     return;
 }
 
+void eca_sub_add_mma(__m128i *rx0, __m128i *rx1,
+                     __m128i *rl0, __m128i *rl1,
+                     __m128i *rz0, __m128i *rz1,
+                     __m128i *sx0, __m128i *sx1,
+                     __m128i *sl0, __m128i *sl1,
+                     __m128i *sz0, __m128i *sz1,
+                     __m128i px0, __m128i px1,
+                     __m128i pl0, __m128i pl1,
+                     __m128i qx0, __m128i qx1,
+                     __m128i ql0, __m128i ql1) {
+    /* var */
+    __m128i d0, d1, e0, e1;
+    __m128i t0, t1, a0, a1, b0, b1;
+    __m128i x0, x1;
+    __m128i ONE = _mm_set_epi64x(0x0, 0x1);
+
+    /* A */
+    a0 = _mm_xor_si128(pl0, ql0); a1 = _mm_xor_si128(pl1, ql1);
+    /* B */
+    b0 = _mm_xor_si128(px0, qx0); b1 = _mm_xor_si128(px1, qx1);
+    low_sqr(&b0, &b1, b0, b1);
+
+    /* sx */
+    low_mul(&d0, &d1, px0, px1, qx0, qx1);
+    low_sqr(sx0, sx1, a0, a1);
+    low_mul(sx0, sx1, *sx0, *sx1, d0, d1);
+    /* sz */
+    low_mul(sz0, sz1, a0, a1, b0, b1);
+    /* sl */
+    low_mul(&e0, &e1, a0, a1, qx0, qx1);
+    *sl0 = _mm_xor_si128(e0, b0); *sl1 = _mm_xor_si128(e1, b1);
+    low_sqr(sl0, sl1, *sl0, *sl1);
+    pl0 = _mm_xor_si128(pl0, ONE);
+    low_mul(&e0, &e1, *sz0, *sz1, pl0, pl1);
+    *sl0 = _mm_xor_si128(*sl0, e0); *sl1 = _mm_xor_si128(*sl1, e1);
+
+    /* rx */
+    *rx0 = _mm_xor_si128(*sx0, d0); *rx1 = _mm_xor_si128(*sx1, d1);
+    /* rz */
+    *rz0 = _mm_xor_si128(*sz0, b0); *rz1 = _mm_xor_si128(*sz1, b1);
+    /* rl */
+    low_sqr(&d0, &d1, qx0, qx1);
+    *rl0 = _mm_xor_si128(*sl0, d0); *rl1 = _mm_xor_si128(*sl1, d1);
+    low_mul(&b0, &b1, b0, b1, pl0, pl1);
+    *rl0 = _mm_xor_si128(*rl0, b0); *rl1 = _mm_xor_si128(*rl1, b1);
+
+    /* end */
+    return;
+}
+
 /* [mm > p] doubling-and-mixed-addition */
 void eca_dbl_mma(__m128i *rx0, __m128i *rx1,
                      __m128i *rl0, __m128i *rl1,
@@ -455,7 +540,7 @@ void eca_dbl_add(__m128i *rx0, __m128i *rx1,
 }
 
 /* [pm > p] doubling-and-addition-subtraction */
-void eca_dbl_add_sub(__m128i *sx0, __m128i *sx1,
+void eca_dbl_sub_add(__m128i *sx0, __m128i *sx1,
                     __m128i *sl0, __m128i *sl1,
                     __m128i *sz0, __m128i *sz1,
                     __m128i *rx0, __m128i *rx1,
