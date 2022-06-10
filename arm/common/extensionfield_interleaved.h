@@ -24,8 +24,8 @@ void ef_intrl_print_unred_expr_nl(ef_intrl_elem_unred a);
 
 static inline ef_elem ef_intrl_disentangle(ef_intrl_elem a) {
 	ef_elem res;
-	res.val[0] = (poly64x2_t) vzip1q_u64((uint64x2_t) a.val[0], a.val[1]);
-	res.val[1] = (poly64x2_t) vzip2q_u64((uint64x2_t) a.val[0], a.val[1]);
+	res.val[0] = (poly64x2_t) vzip1q_u64((uint64x2_t) a.val[0], (uint64x2_t) a.val[1]);
+	res.val[1] = (poly64x2_t) vzip2q_u64((uint64x2_t) a.val[0], (uint64x2_t) a.val[1]);
 	return res;
 }
 
@@ -116,7 +116,7 @@ static inline ef_intrl_elem ef_intrl_mull_B(ef_intrl_elem a) {
 	poly64x2_t top0 = (poly64x2_t) vshrq_n_u64((uint64x2_t) a.val[0], 37);
 	poly64x2_t bot1 = (poly64x2_t) vshlq_n_u64((uint64x2_t) a.val[1], 27);
 	poly64x2_t top1 = (poly64x2_t) vshrq_n_u64((uint64x2_t) a.val[1], 37);
-	r.val[1] = (poly64x2_t) veorq_u64((uint64x2_t) a.val[1], bot1);
+	r.val[1] = (poly64x2_t) veorq_u64((uint64x2_t) a.val[1], (uint64x2_t) bot1);
 	r.val[1] = (poly64x2_t) veorq_u64((uint64x2_t) r.val[1], (uint64x2_t) top0);
 	r.val[1] = (poly64x2_t) veorq_u64((uint64x2_t) r.val[1], (uint64x2_t) top1);
 	r.val[0] = (poly64x2_t) veorq_u64((uint64x2_t) a.val[0], (uint64x2_t) bot0);

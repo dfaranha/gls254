@@ -412,14 +412,6 @@ void ec_add_endo_laffine_unchecked_ptr(ec_point_laffine *P, ec_point_lproj *R) {
 	R->l = ef_intrl_add(ef_intrl_square(ef_intrl_add(G,H)), ef_intrl_mull(R->z, ef_intrl_add(P->l, (ef_intrl_elem) {{{1, 0}, {0, 0}}})));
 }
 
-/*
- * I think I have found a proof for why we don't need to check that P = -P here.
- * It seems that our projective lambda coords do not allow finite points of order 2:
- * 2*P = infty <-> P = -P <-> (x, l, z) = (x, l+z, z) => z=0
- *
- * For the case of the point at infty,
- * a quick calculation shows that this alg outputs infty again!
- */
 ec_point_lproj ec_double(ec_point_lproj P) {
 	ef_intrl_elem Z_sqr = ef_intrl_square(P.z);
 	ef_intrl_elem S = ef_intrl_mull(P.l, P.z); //U = L_P * Z_P

@@ -85,15 +85,12 @@ void ec_print_rec(signed char *rec, uint64_t l);
 ec_split_scalar ec_scalar_decomp(uint64x2x2_t k);
 
 static inline uint64x2x2_t ec_get_lookup_data_table2D(signed char k1_digit, signed char k2_digit, ec_split_scalar *decomp, int ncols) {
-	//Code to find correct scalar values, as we can't redefine P as -P for negative k1 or k2. But we can, different points!!
-	//Val comp is 2's complement conversion, but why the zero?
-	uint64_t zero = 0;
 	uint64_t k1_digit_sign = ((unsigned char)k1_digit >> 7);
-	signed char k1_val = (k1_digit^(zero - k1_digit_sign))+k1_digit_sign; //why zero
+	signed char k1_val = (k1_digit^(-k1_digit_sign))+k1_digit_sign;
 	uint64_t k1_sign = k1_digit_sign^decomp->k1_sign;
 
 	uint64_t k2_digit_sign = ((unsigned char)k2_digit >> 7);
-	signed char k2_val = (k2_digit^(zero - k2_digit_sign))+k2_digit_sign;
+	signed char k2_val = (k2_digit^(-k2_digit_sign))+k2_digit_sign;
 	uint64_t k2_sign = k2_digit_sign^decomp->k2_sign;
 	
 	uint64_t sign_xor = k1_sign ^ k2_sign;

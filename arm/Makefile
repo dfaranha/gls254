@@ -1,29 +1,18 @@
-#To compile with gcc: "make runtests gcc=1"
-CLANGFLAGS = -O3
-GCCFLAGS = -march=armv8.4-a+crypto -O3
+CC=clang
+ifeq "$(CC)" "gcc"
+    FLAGS = -march=armv8.4-a+crypto -O3
+else ifeq "$(CC)" "clang"
+    FLAGS = -O3
+endif
 
 runsandbox:
-ifdef gcc
-	gcc -o run_sandbox_gcc $(GCCFLAGS) sandboxmain.c common/*.c common/linear_pass.S
-	./run_sandbox_gcc
-else
-	clang -o run_sandbox_clang $(CLANGFLAGS) sandboxmain.c common/*.c common/linear_pass.S
-	./run_sandbox_clang
-endif
-runtests:
-ifdef gcc
-	gcc -o run_tests_gcc $(GCCFLAGS) testmain.c common/*.c tests/*.c benchmark/benchmark_tool.c common/linear_pass.S
-	./run_tests_gcc
-else
-	clang -o run_tests_clang $(CLANGFLAGS) testmain.c common/*.c tests/*.c benchmark/benchmark_tool.c common/linear_pass.S
-	./run_tests_clang
-endif
-runbench:
-ifdef gcc
+	$(CC) -o run_sandbox $(FLAGS) sandboxmain.c common/*.c common/linear_pass.S
+	./run_sandbox
 
-	gcc -o run_bench_gcc $(GCCFLAGS) benchmain.c common/*.c benchmark/*.c common/linear_pass.S
-	./run_bench_gcc
-else
-	clang -o run_bench_clang $(CLANGFLAGS) benchmain.c common/*.c benchmark/*.c common/linear_pass.S
-	./run_bench_clang
-endif
+runtests:
+	$(CC) -o run_tests $(FLAGS) testmain.c common/*.c tests/*.c benchmark/benchmark_tool.c common/linear_pass.S
+	./run_tests
+
+runbench:
+	$(CC) -o run_bench $(FLAGS) benchmain.c common/*.c benchmark/*.c common/linear_pass.S
+	./run_bench
