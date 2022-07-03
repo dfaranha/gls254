@@ -44,6 +44,22 @@ int crypto_dh_gls254prot_opt_keypair(unsigned char *pk, unsigned char *sk) {
 }
 
 /* Shared secret computation. */
+int crypto_dh_gls254prot_1dw4(unsigned char *out, unsigned char *pk,
+                unsigned char *sk) {
+        __m128i px0, px1, pl0, pl1;
+
+        sk[31] &= 0x3F;
+
+        ec_dec(&px0, &px1, &pl0, &pl1, pk);
+
+        smu_4nf_dna_ltr(&px0, &px1, &pl0, &pl1, px0, px1, pl0, pl1, (uint64_t *)sk);
+
+        ec_enc(out, px0, px1, pl0, pl1);
+
+        return 0;
+}
+
+/* Shared secret computation. */
 int crypto_dh_gls254prot_1dw5(unsigned char *out, unsigned char *pk,
 		unsigned char *sk) {
 	__m128i px0, px1, pl0, pl1;
@@ -237,6 +253,13 @@ void bench() {
 			__builtin_ia32_rdrand64_step(&u[i]);
 		}
 		BENCH_ADD(crypto_dh_gls254prot_opt_keypair(p, (unsigned char *)u));
+	} BENCH_END;
+
+	BENCH_BEGIN("crypto_dh_gls254prot_1dw4") {
+		for (int i = 0; i < 4; i++) {
+			__builtin_ia32_rdrand64_step(&u[i]);
+		}
+		BENCH_ADD(crypto_dh_gls254prot_1dw4(p, p, (unsigned char *)u));
 	} BENCH_END;
 
 	BENCH_BEGIN("crypto_dh_gls254prot_1dw5") {
