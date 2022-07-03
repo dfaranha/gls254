@@ -44,7 +44,55 @@ int crypto_dh_gls254prot_opt_keypair(unsigned char *pk, unsigned char *sk) {
 }
 
 /* Shared secret computation. */
-int crypto_dh_gls254prot_opt(unsigned char *out, unsigned char *pk,
+int crypto_dh_gls254prot_1dw4(unsigned char *out, unsigned char *pk,
+                unsigned char *sk) {
+        __m128i px0, px1, pl0, pl1;
+
+        sk[31] &= 0x3F;
+
+        ec_dec(&px0, &px1, &pl0, &pl1, pk);
+
+        smu_4nf_dna_ltr(&px0, &px1, &pl0, &pl1, px0, px1, pl0, pl1, (uint64_t *)sk);
+
+        ec_enc(out, px0, px1, pl0, pl1);
+
+        return 0;
+}
+
+/* Shared secret computation. */
+int crypto_dh_gls254prot_1dw5(unsigned char *out, unsigned char *pk,
+		unsigned char *sk) {
+	__m128i px0, px1, pl0, pl1;
+
+	sk[31] &= 0x3F;
+
+	ec_dec(&px0, &px1, &pl0, &pl1, pk);
+
+	smu_5nf_dna_ltr(&px0, &px1, &pl0, &pl1, px0, px1, pl0, pl1, (uint64_t *)sk);
+
+	ec_enc(out, px0, px1, pl0, pl1);
+
+	return 0;
+}
+
+/* Shared secret computation. */
+int crypto_dh_gls254prot_2dw3(unsigned char *out, unsigned char *pk,
+		unsigned char *sk) {
+	__m128i px0, px1, pl0, pl1;
+
+	sk[31] &= 0x3F;
+
+	ec_dec(&px0, &px1, &pl0, &pl1, pk);
+
+	smu_3nf_2d_ltr(&px0, &px1, &pl0, &pl1, px0, px1, pl0, pl1, (uint64_t *)sk);
+
+	ec_enc(out, px0, px1, pl0, pl1);
+
+	return 0;
+}
+
+/* Shared secret computation. */
+int crypto_dh_gls254prot_2dw4(unsigned char *out, unsigned char *pk,
 		unsigned char *sk) {
 	__m128i px0, px1, pl0, pl1;
 
@@ -96,7 +144,7 @@ static void ec_test() {
 	u[3] = 0x2000000000000000;
 
 	crypto_dh_generator(q);
-	crypto_dh_gls254prot_opt(p, q, (unsigned char*)u);
+	crypto_dh_gls254prot_2dw3(p, q, (unsigned char*)u);
 	assert(memcmp(p, q, 32) == 0);
 
 
@@ -106,7 +154,13 @@ static void ec_test() {
 
 	crypto_dh_generator(q);
 	crypto_dh_gls254prot_opt_keypair(p, (unsigned char*)u);
-	crypto_dh_gls254prot_opt(q, q, (unsigned char*)u);
+	crypto_dh_gls254prot_1dw5(q, q, (unsigned char*)u);
+	assert(memcmp(p, q, 32) == 0);
+	crypto_dh_generator(q);
+	crypto_dh_gls254prot_2dw3(q, q, (unsigned char*)u);
+	assert(memcmp(p, q, 32) == 0);
+	crypto_dh_generator(q);
+	crypto_dh_gls254prot_2dw4(q, q, (unsigned char*)u);
 	assert(memcmp(p, q, 32) == 0);
 
 	l0 = _mm_loadu_si128((__m128i *) u);
@@ -120,7 +174,7 @@ static void ec_test() {
 
 	crypto_dh_gls254prot_opt_keypair(p, (unsigned char*)u);
 	assert(ec_dec(&x0, &x1, &l0, &l1, p));
-	crypto_dh_gls254prot_opt(p, p, (unsigned char *)u);
+	crypto_dh_gls254prot_2dw3(p, p, (unsigned char *)u);
 	assert(ec_dec(&x0, &x1, &l0, &l1, p));
 	ec_enc(q, x0, x1, l0, l1);
 	assert(memcmp(p, q, 32) == 0);
@@ -140,8 +194,8 @@ static void dh_test() {
 
 	crypto_dh_gls254prot_opt_keypair(pa, (unsigned char *)sa);
 	crypto_dh_gls254prot_opt_keypair(pb, (unsigned char *)sb);
-	crypto_dh_gls254prot_opt(k1, pa, (unsigned char *)sb);
-	crypto_dh_gls254prot_opt(k2, pb, (unsigned char *)sa);
+	crypto_dh_gls254prot_2dw3(k1, pa, (unsigned char *)sb);
+	crypto_dh_gls254prot_2dw3(k2, pb, (unsigned char *)sa);
 	assert(memcmp(k1, k2, 32) == 0);
 }
 
@@ -149,6 +203,8 @@ void bench() {
 	uint8_t p[64], q[64];
 	unsigned long long int u[4], l[4];
 	__m128i x0, x1, l0, l1;
+
+	printf("-- Low-level benchmarks:\n\n");
 
 	BENCH_BEGIN("low_sqr") {
 		for (int i = 0; i < 4; i++) {
@@ -190,6 +246,8 @@ void bench() {
 		BENCH_ADD(ec_sw(&x0, &x1, &l0, &l1, l0, l1));
 	} BENCH_END;
 
+	printf("-- Scalar multiplication benchmarks:\n\n");
+
 	BENCH_BEGIN("crypto_dh_gls254prot_opt_keypair") {
 		for (int i = 0; i < 4; i++) {
 			__builtin_ia32_rdrand64_step(&u[i]);
@@ -197,11 +255,32 @@ void bench() {
 		BENCH_ADD(crypto_dh_gls254prot_opt_keypair(p, (unsigned char *)u));
 	} BENCH_END;
 
-	BENCH_BEGIN("crypto_dh_gls254prot_opt") {
+	BENCH_BEGIN("crypto_dh_gls254prot_1dw4") {
 		for (int i = 0; i < 4; i++) {
 			__builtin_ia32_rdrand64_step(&u[i]);
 		}
-		BENCH_ADD(crypto_dh_gls254prot_opt(p, p, (unsigned char *)u));
+		BENCH_ADD(crypto_dh_gls254prot_1dw4(p, p, (unsigned char *)u));
+	} BENCH_END;
+
+	BENCH_BEGIN("crypto_dh_gls254prot_1dw5") {
+		for (int i = 0; i < 4; i++) {
+			__builtin_ia32_rdrand64_step(&u[i]);
+		}
+		BENCH_ADD(crypto_dh_gls254prot_1dw5(p, p, (unsigned char *)u));
+	} BENCH_END;
+
+	BENCH_BEGIN("crypto_dh_gls254prot_2dw3") {
+		for (int i = 0; i < 4; i++) {
+			__builtin_ia32_rdrand64_step(&u[i]);
+		}
+		BENCH_ADD(crypto_dh_gls254prot_2dw3(p, p, (unsigned char *)u));
+	} BENCH_END;
+
+	BENCH_BEGIN("crypto_dh_gls254prot_2dw4") {
+		for (int i = 0; i < 4; i++) {
+			__builtin_ia32_rdrand64_step(&u[i]);
+		}
+		BENCH_ADD(crypto_dh_gls254prot_2dw4(p, p, (unsigned char *)u));
 	} BENCH_END;
 }
 
@@ -212,7 +291,7 @@ int main(int argc, char const *argv[]) {
 		dh_test();
 	}
 
-	printf("PASS!\n");
+	printf("\nTests PASSED!\n\n");
 
 	bench();
 	return 0;
