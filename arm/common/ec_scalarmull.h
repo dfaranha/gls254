@@ -44,6 +44,8 @@ ec_point_laffine ec_scalarmull_single_endo_w4_randaccess(ec_point_laffine P, uin
 
 ec_point_laffine ec_scalarmull_single_endo_w5_randaccess(ec_point_laffine P, uint64x2x2_t k);
 
+void ec_scalarmull_single_endo_w4_randaccess_ptr(ec_point_laffine *P, uint64x2x2_t k, ec_point_laffine *R);
+
 void ec_scalarmull_single_endo_w5_randaccess_ptr(ec_point_laffine *P, uint64x2x2_t k, ec_point_laffine *R);
 
 ec_point_laffine ec_scalarmull_single_endo_w6_randaccess(ec_point_laffine P, uint64x2x2_t k);
@@ -57,6 +59,8 @@ void ec_scalarmull_single_endo_w4_table2D_bulk_ptr(ec_point_laffine *P, uint64x2
 void precompute_w3(ec_point_laffine P, ec_point_laffine* table);
 
 void precompute_w4(ec_point_laffine P, ec_point_laffine* table);
+
+void precompute_w4_ptr(ec_point_laffine *P, ec_point_laffine* table);
 
 void precompute_w5(ec_point_laffine P, ec_point_laffine* table);
 

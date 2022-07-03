@@ -241,6 +241,83 @@ ec_point_laffine ec_scalarmull_single_endo_w4_randaccess(ec_point_laffine P, uin
 	return ec_lproj_to_laffine(Q, 1);
 }
 
+void ec_scalarmull_single_endo_w4_randaccess_ptr(ec_point_laffine *P, uint64x2x2_t k, ec_point_laffine *R) {
+	uint64_t new_ptr, con = 1;
+	int l = 43;
+
+	ec_split_scalar decomp = ec_scalar_decomp(k);
+
+	// Compute recodings
+	signed char rec_k1[l];
+	signed char rec_k2[l];
+
+	reg_rec(decomp.k1, 4, rec_k1, l);
+	reg_rec(decomp.k2, 4, rec_k2, l);
+
+	// Precomputation
+	ec_point_laffine table[4];
+	precompute_w4_ptr(P, table);
+
+	signed char k1_digit = rec_k1[l-1];
+	uint64_t k1_digit_sign = ((unsigned char)k1_digit >> 7);
+	signed char k1_val = (k1_digit^(-k1_digit_sign))+k1_digit_sign;
+	uint64_t k1_sign = k1_digit_sign^decomp.k1_sign;
+
+	signed char k2_digit = rec_k2[l-1];
+	uint64_t k2_digit_sign = (unsigned char)k2_digit >> 7;
+	signed char k2_val = (k2_digit^(-k2_digit_sign))+k2_digit_sign;
+	uint64_t k2_sign = k2_digit_sign^decomp.k2_sign;
+
+	ec_point_laffine P1;
+	ec_point_laffine P2;
+
+	lin_pass_w4(&P1, &P2, &table, k1_val/2, k2_val/2);
+	P2 = ec_endo_laffine(P2);
+
+	ec_point_laffine P1_neg = ec_neg_laffine(P1);
+	CSEL(k1_sign, con, P1, P1_neg, new_ptr, typeof(ec_point_laffine));
+
+	ec_point_laffine P2_neg = ec_neg_laffine(P2);
+	CSEL(k2_sign, con, P2, P2_neg, new_ptr, typeof(ec_point_laffine));
+
+	ec_point_lproj Q, Q1, Q2;
+	ec_add_laffine_unchecked_ptr(&P1, &P2, &Q);
+
+	for(int i=l-2; i>=0; i--) {
+		ec_double_alt_ptr(&Q, &Q1);
+		ec_double_alt_ptr(&Q1, &Q2);
+
+		k1_digit = rec_k1[i];
+		k1_digit_sign = ((unsigned char)k1_digit >> 7);
+		k1_val = (k1_digit^(-k1_digit_sign))+k1_digit_sign;
+		k1_sign = k1_digit_sign^decomp.k1_sign;
+
+		k2_digit = rec_k2[i];
+		k2_digit_sign = ((unsigned char)k2_digit >> 7);
+		k2_val = (k2_digit^(-k2_digit_sign))+k2_digit_sign;
+		k2_sign = k2_digit_sign^decomp.k2_sign;
+
+		lin_pass_w4(&P1, &P2, &table, k1_val/2, k2_val/2);
+		P2 = ec_endo_laffine(P2);
+
+		P1_neg = ec_neg_laffine(P1);
+		CSEL(k1_sign, con, P1, P1_neg, new_ptr, typeof(ec_point_laffine));
+
+		P2_neg = ec_neg_laffine(P2);
+		CSEL(k2_sign, con, P2, P2_neg, new_ptr, typeof(ec_point_laffine));
+
+		if(i == 0) {
+			ec_double_alt_ptr(&Q2, &Q1);
+			ec_add_mixed_ptr(&P1, &Q1, &Q2);
+			ec_add_mixed_ptr(&P2, &Q2, &Q);
+		} else {
+			ec_double_then_addtwo_ptr(&P1, &P2, &Q2, &Q);
+		}
+	}
+
+	ec_lproj_to_laffine_ptr(&Q, R, 1);
+}
+
 ec_point_laffine ec_scalarmull_single_endo_w5_randaccess(ec_point_laffine P, uint64x2x2_t k) {
 	uint64_t new_ptr, con = 1;
 	int l = 32;
@@ -483,6 +560,27 @@ void precompute_w4(ec_point_laffine P, ec_point_laffine table[]) {
 	table[1] = (ec_point_laffine) {ef_intrl_mull(P3.x, inv_outputs[0]), ef_intrl_mull(P3.l, inv_outputs[0])};
 	table[2] = (ec_point_laffine) {ef_intrl_mull(P5.x, inv_outputs[1]), ef_intrl_mull(P5.l, inv_outputs[1])};
 	table[3] = (ec_point_laffine) {ef_intrl_mull(P7.x, inv_outputs[2]), ef_intrl_mull(P7.l, inv_outputs[2])};
+}
+
+void precompute_w4_ptr(ec_point_laffine *P, ec_point_laffine table[]) {
+	ec_point_lproj tmp;
+	ec_point_lproj table_proj[3];
+
+	ec_triple_mixed_ptr(P, &table_proj[0]);
+	ec_double_alt_ptr(&table_proj[0], &tmp);
+	ec_add_sub_mixed_unchecked_ptr(P, &tmp, &table_proj[2], &table_proj[1]);
+	ec_neg_mut(&table_proj[1]);
+	
+	ef_intrl_elem inv_inputs[3];
+	ef_intrl_elem inv_outputs[3];
+	for (int i = 0; i < 3; i++) {
+		inv_inputs[i] = table_proj[i].z;
+	}
+	ef_intrl_sim_inv(inv_inputs, inv_outputs, 3, 0);
+	table[0] = *P;
+	for (int i = 0; i < 3; i++) {
+		table[i+1] = (ec_point_laffine) {ef_intrl_mull(table_proj[i].x, inv_outputs[i]), ef_intrl_mull(table_proj[i].l, inv_outputs[i])};
+	}
 }
 
 void precompute_w5(ec_point_laffine P, ec_point_laffine table[]) {

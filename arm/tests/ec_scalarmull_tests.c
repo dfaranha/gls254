@@ -39,7 +39,7 @@ void ec_scalarmull_test_1D_rnd(test_ctr *ctr) {
 		ec_point_laffine actual;
 
 		//Act
-		ec_scalarmull_single_endo_w5_randaccess_ptr(&P, k, &actual);
+		ec_scalarmull_single_endo_w4_randaccess_ptr(&P, k, &actual);
 
 		//Assert
 		uint64_t equal = ec_equal_point_laffine(actual, expected);
