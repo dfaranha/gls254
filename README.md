@@ -1,6 +1,6 @@
 # GLS254 repository
 
-The code repository for the paper "2D-GLS: Faster and exception-free scalar multiplication in the GLS254 binary curve".
+The code repository for the paper "2DT-GLS: Faster and exception-free scalar multiplication in the GLS254 binary curve": https://eprint.iacr.org/2022/748
 
 ## Project structure
 
