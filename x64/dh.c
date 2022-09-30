@@ -206,6 +206,51 @@ void bench() {
 
 	printf("-- Low-level benchmarks:\n\n");
 
+	BENCH_BEGIN("low_sqr_bas") {
+		for (int i = 0; i < 4; i++) {
+			__builtin_ia32_rdrand64_step(&u[i]);
+		}
+		l0 = _mm_loadu_si128((__m128i *) u);
+		l1 = _mm_loadu_si128((__m128i *) (u + 2));
+		BENCH_ADD(low_sqr_bas(&x0, x0));
+	} BENCH_END;
+
+	BENCH_BEGIN("low_mul_bas") {
+		for (int i = 0; i < 4; i++) {
+			__builtin_ia32_rdrand64_step(&u[i]);
+		}
+		l0 = _mm_loadu_si128((__m128i *) u);
+		l1 = _mm_loadu_si128((__m128i *) (u + 2));
+		BENCH_ADD(low_mul_bas(&x0, x0, x1));
+	} BENCH_END;
+
+	BENCH_BEGIN("low_red_bas") {
+		for (int i = 0; i < 4; i++) {
+			__builtin_ia32_rdrand64_step(&u[i]);
+		}
+		l0 = _mm_loadu_si128((__m128i *) u);
+		l1 = _mm_loadu_si128((__m128i *) (u + 2));
+		BENCH_ADD(low_red_128_064_001_bas(x0, x1, l0, l1, x0, x1));
+	} BENCH_END;
+
+	BENCH_BEGIN("low_inv_bas") {
+		for (int i = 0; i < 4; i++) {
+			__builtin_ia32_rdrand64_step(&u[i]);
+		}
+		l0 = _mm_loadu_si128((__m128i *) u);
+		l1 = _mm_loadu_si128((__m128i *) (u + 2));
+		BENCH_ADD(low_inv_bas(&x0, x0));
+	} BENCH_END;
+
+	BENCH_BEGIN("low_inv_tbl") {
+		for (int i = 0; i < 4; i++) {
+			__builtin_ia32_rdrand64_step(&u[i]);
+		}
+		l0 = _mm_loadu_si128((__m128i *) u);
+		l1 = _mm_loadu_si128((__m128i *) (u + 2));
+		BENCH_ADD(low_inv_tbl(&x0, x0));
+	} BENCH_END;
+
 	BENCH_BEGIN("low_sqr") {
 		for (int i = 0; i < 4; i++) {
 			__builtin_ia32_rdrand64_step(&u[i]);
@@ -222,6 +267,15 @@ void bench() {
 		x0 = _mm_loadu_si128((__m128i *) u);
 		x1 = _mm_loadu_si128((__m128i *) (u + 2));
 		BENCH_ADD(low_mul(&x0, &x1, x0, x1, l0, l1));
+	} BENCH_END;
+
+	BENCH_BEGIN("low_red") {
+		for (int i = 0; i < 4; i++) {
+			__builtin_ia32_rdrand64_step(&u[i]);
+		}
+		l0 = _mm_loadu_si128((__m128i *) u);
+		l1 = _mm_loadu_si128((__m128i *) (u + 2));
+		BENCH_ADD(low_red_128_064_001(x0, x1, l0, l1, x0, x1, x0, x1));
 	} BENCH_END;
 
 	BENCH_BEGIN("low_inv") {
