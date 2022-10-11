@@ -68,7 +68,7 @@ def double_prj(Xp, Lp, Zp):
 def doubleb_prj(Xp, Lp, Zp):
     global inv, mt, ma, mb, sq
     mt += 3
-    ma += 1
+    ma += 4
     mb += 1
     sq += 4
     T = Lp^2 + Lp * Zp + a * Zp^2
